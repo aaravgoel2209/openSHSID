@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Grade(models.Model):
@@ -30,7 +31,8 @@ class Article(models.Model):
     content = models.TextField(verbose_name="内容")
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE, verbose_name="年级")
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name="学科")
-    author_name = models.CharField(max_length=100, blank=True, verbose_name="作者")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="作者")
+    author_name = models.CharField(max_length=100, blank=True, verbose_name="作者名")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
 
     class Meta:

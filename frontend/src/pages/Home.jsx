@@ -1,0 +1,62 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@heroui/react/button';
+import { Spinner } from '@heroui/react/spinner';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { getQuestions } from '../api/qa';
+
+export default function Home() {
+  const navigate = useNavigate();
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getQuestions()
+      .then(setQuestions)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">所有问题</h1>
+        <Button color="primary" variant="flat" onPress={() => navigate('/ask')}>
+          <PlusIcon className="w-5 h-5" />
+          提问
+        </Button>
+      </div>
+
+      {questions.length === 0 ? (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-700">
+          还没有问题，<button className="text-blue-700 underline font-medium" onClick={() => navigate('/ask')}>来提第一个问题吧</button>。
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {questions.map((q) => (
+            <div
+              key={q.id}
+              className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-primary-300 hover:shadow-sm transition-all"
+              onClick={() => navigate(`/questions/${q.id}`)}
+            >
+              <h2 className="text-lg font-semibold mb-1">{q.title}</h2>
+              <p className="text-sm text-gray-500">
+                {q.created_at?.slice(0, 16).replace('T', ' ')}
+                {q.author_name ? ` · ${q.author_name}` : ''}
+                {' · '}
+                {q.answer_count} 个回答
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

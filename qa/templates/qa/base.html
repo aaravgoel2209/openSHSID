@@ -22,7 +22,20 @@
                         <a class="nav-link" href="{% url 'article_list' %}">知识库</a>
                     </li>
                 </ul>
-                <a class="btn btn-outline-light btn-sm" href="{% url 'ask_question' %}">提问</a>
+                <div class="d-flex align-items-center gap-2">
+                    {% if user.is_authenticated %}
+                        <span class="text-light small">{{ user.username }}</span>
+                        <a class="btn btn-outline-light btn-sm" href="{% url 'profile' %}">个人中心</a>
+                        <form method="post" action="{% url 'logout' %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-light btn-sm">登出</button>
+                        </form>
+                    {% else %}
+                        <a class="btn btn-outline-light btn-sm" href="{% url 'login' %}">登录</a>
+                        <a class="btn btn-light btn-sm" href="{% url 'register' %}">注册</a>
+                    {% endif %}
+                    <a class="btn btn-outline-light btn-sm" href="{% url 'ask_question' %}">提问</a>
+                </div>
             </div>
         </div>
     </nav>

@@ -1,0 +1,37 @@
+{% extends 'qa/base.html' %}
+{% block title %}注册 - SHSID 校园{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <h2 class="mb-4">注册</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">用户名</label>
+                    <input type="text" name="username" id="id_username" class="form-control" maxlength="150" required>
+                    <div class="form-text">必填。不超过150个字符。仅包含字母、数字和 @/./+/-/_ 。</div>
+                </div>
+                <div class="mb-3">
+                    <label for="id_password1" class="form-label">密码</label>
+                    <input type="password" name="password1" id="id_password1" class="form-control" required>
+                    <div class="form-text">密码不能与个人信息太相似，至少8个字符，不能是常见密码，不能全是数字。</div>
+                </div>
+                <div class="mb-3">
+                    <label for="id_password2" class="form-label">确认密码</label>
+                    <input type="password" name="password2" id="id_password2" class="form-control" required>
+                </div>
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}{{ error }}<br>{% endfor %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <button type="submit" class="btn btn-primary w-100">注册</button>
+            </form>
+            <p class="mt-3 text-center">
+                已有账号？<a href="{% url 'login' %}">登录</a>
+            </p>
+        </div>
+    </div>
+{% endblock %}

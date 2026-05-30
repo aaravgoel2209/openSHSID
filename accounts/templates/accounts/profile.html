@@ -1,0 +1,43 @@
+{% extends 'qa/base.html' %}
+{% block title %}个人中心 - SHSID 校园{% endblock %}
+{% block content %}
+    <h2 class="mb-4">个人中心</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ user.username }}</h5>
+            <p class="card-text text-muted">加入时间：{{ user.date_joined|date:"Y-m-d" }}</p>
+        </div>
+    </div>
+
+    <h4>我的提问</h4>
+    {% with user_questions=user.question_set.all %}
+        {% if user_questions %}
+            <div class="list-group mb-4">
+                {% for q in user_questions %}
+                    <a href="{% url 'question_detail' q.pk %}" class="list-group-item list-group-item-action">
+                        {{ q.title }}
+                        <small class="text-muted float-end">{{ q.created_at|date:"Y-m-d" }}</small>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">还没有提问过。</p>
+        {% endif %}
+    {% endwith %}
+
+    <h4>我的文章</h4>
+    {% with user_articles=user.article_set.all %}
+        {% if user_articles %}
+            <div class="list-group mb-4">
+                {% for a in user_articles %}
+                    <a href="{% url 'article_detail' a.pk %}" class="list-group-item list-group-item-action">
+                        {{ a.title }}
+                        <small class="text-muted float-end">{{ a.created_at|date:"Y-m-d" }}</small>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">还没有发表文章。</p>
+        {% endif %}
+    {% endwith %}
+{% endblock %}

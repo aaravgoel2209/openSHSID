@@ -10,7 +10,14 @@
             {% endif %}
         </div>
         <h2>{{ article.title }}</h2>
-        <p class="text-muted">{{ article.created_at|date:"Y-m-d H:i" }}</p>
+        <p class="text-muted">
+            {{ article.created_at|date:"Y-m-d H:i" }}
+            {% if article.author %}
+                · {{ article.author.username }}
+            {% elif article.author_name %}
+                · {{ article.author_name }}
+            {% endif %}
+        </p>
         <hr>
         <div class="lead">{{ article.content|linebreaksbr }}</div>
     </article>

@@ -1,55 +1,55 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
 from .models import Article, Grade, Subject
+from .serializers import (
+    GradeSerializer, SubjectSerializer,
+    ArticleListSerializer, ArticleDetailSerializer,
+)
 
 
-def article_list(request):
-    articles = Article.objects.all()
-    selected_grade = request.GET.get('grade')
-    selected_subject = request.GET.get('subject')
-
-    if selected_grade:
-        articles = articles.filter(grade_id=selected_grade)
-    if selected_subject:
-        articles = articles.filter(subject_id=selected_subject)
-
+@api_view(['GET'])
+def grade_list(request):
     grades = Grade.objects.all()
+    serializer = GradeSerializer(grades, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def subject_list(request):
     subjects = Subject.objects.all()
-
-    return render(request, 'knowledge/article_list.html', {
-        'articles': articles,
-        'grades': grades,
-        'subjects': subjects,
-        'selected_grade': int(selected_grade) if selected_grade else None,
-        'selected_subject': int(selected_subject) if selected_subject else None,
-    })
+    serializer = SubjectSerializer(subjects, many=True)
+    return Response(serializer.data)
 
 
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def article_list(request):
+    if request.method == 'GET':
+        articles = Article.objects.all()
+        grade = request.query_params.get('grade')
+        subject = request.query_params.get('subject')
+        if grade:
+            articles = articles.filter(grade_id=grade)
+        if subject:
+            articles = articles.filter(subject_id=subject)
+        serializer = ArticleListSerializer(articles, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        serializer = ArticleDetailSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(
+                author=request.user if request.user.is_authenticated else None,
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
 def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk)
-    return render(request, 'knowledge/article_detail.html', {'article': article})
-
-
-def create_article(request):
-    if request.method == 'POST':
-        title = request.POST.get('title', '').strip()
-        content = request.POST.get('content', '').strip()
-        grade_id = request.POST.get('grade')
-        subject_id = request.POST.get('subject')
-        author_name = request.POST.get('author_name', '').strip()
-
-        if title and content and grade_id and subject_id:
-            Article.objects.create(
-                title=title,
-                content=content,
-                grade_id=grade_id,
-                subject_id=subject_id,
-                author_name=author_name,
-            )
-            return redirect('article_list')
-
-    grades = Grade.objects.all()
-    subjects = Subject.objects.all()
-    return render(request, 'knowledge/create_article.html', {
-        'grades': grades,
-        'subjects': subjects,
-    })
+    serializer = ArticleDetailSerializer(article)
+    return Response(serializer.data)
