@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Avatar } from '@heroui/react/avatar';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
+import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
 import { AuthContext } from '../context/AuthContext';
 
 export default function Layout() {
@@ -45,17 +45,19 @@ export default function Layout() {
                     color="primary"
                   />
                 </DropdownTrigger>
-                <DropdownMenu onAction={(key) => {
-                  if (key === 'profile') navigate('/profile');
-                  if (key === 'logout') { logout(); navigate('/'); }
-                }}>
-                  <DropdownItem key="info" className="h-14 gap-2" textValue="用户名">
-                    <p className="font-semibold">{user.username}</p>
-                    <p className="text-xs text-default-500">已登录</p>
-                  </DropdownItem>
-                  <DropdownItem key="profile">个人中心</DropdownItem>
-                  <DropdownItem key="logout" className="text-danger">登出</DropdownItem>
-                </DropdownMenu>
+                <DropdownPopover>
+                  <DropdownMenu onAction={(key) => {
+                    if (key === 'profile') navigate('/profile');
+                    if (key === 'logout') { logout(); navigate('/'); }
+                  }}>
+                    <DropdownItem key="info" textValue="用户名">
+                      <p className="font-semibold">{user.username}</p>
+                      <p className="text-xs text-default-500">已登录</p>
+                    </DropdownItem>
+                    <DropdownItem key="profile">个人中心</DropdownItem>
+                    <DropdownItem key="logout" className="text-danger">登出</DropdownItem>
+                  </DropdownMenu>
+                </DropdownPopover>
               </Dropdown>
             ) : (
               <>

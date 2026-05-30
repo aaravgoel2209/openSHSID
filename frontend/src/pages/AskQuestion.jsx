@@ -26,7 +26,7 @@ export default function AskQuestion() {
   return (
     <div className="max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">提问</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           label="标题"
           placeholder="一句话概括你的问题"
@@ -34,6 +34,7 @@ export default function AskQuestion() {
           onValueChange={setTitle}
           isRequired
           maxLength={200}
+          labelPlacement="outside"
         />
         <TextArea
           label="详细内容"
@@ -42,8 +43,9 @@ export default function AskQuestion() {
           onValueChange={setContent}
           isRequired
           minRows={5}
+          labelPlacement="outside"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-2">
           <Button type="submit" color="primary" isLoading={submitting}>
             {submitting ? '发布中...' : '发布问题'}
           </Button>

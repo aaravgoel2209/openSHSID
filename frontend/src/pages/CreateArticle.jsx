@@ -42,37 +42,44 @@ export default function CreateArticle() {
   return (
     <div className="max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">分享经验</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           label="标题"
           value={title}
           onValueChange={setTitle}
           isRequired
           maxLength={200}
+          labelPlacement="outside"
         />
         <div className="flex gap-4">
-          <select
-            className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
-            value={grade}
-            onChange={(e) => setGrade(e.target.value)}
-            required
-          >
-            <option value="">选择年级</option>
-            {grades.map((g) => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-          <select
-            className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            required
-          >
-            <option value="">选择学科</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-gray-700">年级</label>
+            <select
+              className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+              required
+            >
+              <option value="">选择年级</option>
+              {grades.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-gray-700">学科</label>
+            <select
+              className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              required
+            >
+              <option value="">选择学科</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <Input
           label="作者（选填）"
@@ -80,13 +87,15 @@ export default function CreateArticle() {
           value={authorName}
           onValueChange={setAuthorName}
           maxLength={100}
+          labelPlacement="outside"
         />
         <TextArea
           label="内容"
           isRequired
           value={content}
           onValueChange={setContent}
-          minRows={10}
+          minRows={12}
+          labelPlacement="outside"
         />
         <div className="flex gap-2">
           <Button type="submit" color="primary" isLoading={submitting}>
