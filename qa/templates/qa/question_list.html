@@ -1,0 +1,17 @@
+{% extends 'qa/base.html' %}
+{% block title %}问题列表 - 简单问答{% endblock %}
+{% block content %}
+    <h2 class="mb-4">所有问题</h2>
+    {% if questions %}
+        <div class="list-group">
+            {% for question in questions %}
+                <a href="{% url 'question_detail' question.pk %}" class="list-group-item list-group-item-action">
+                    <h5 class="mb-1">{{ question.title }}</h5>
+                    <small class="text-muted">{{ question.created_at|date:"Y-m-d H:i" }} · {{ question.answers.count }} 个回答</small>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">还没有问题，<a href="{% url 'ask_question' %}">来提第一个问题吧</a>。</div>
+    {% endif %}
+{% endblock %}

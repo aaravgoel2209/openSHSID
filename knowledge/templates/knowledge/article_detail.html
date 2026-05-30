@@ -1,0 +1,19 @@
+{% extends 'qa/base.html' %}
+{% block title %}{{ article.title }} - 经验知识库{% endblock %}
+{% block content %}
+    <article>
+        <div class="mb-3">
+            <span class="badge bg-primary">{{ article.grade.name }}</span>
+            <span class="badge bg-success">{{ article.subject.name }}</span>
+            {% if article.author_name %}
+                <span class="text-muted ms-2">by {{ article.author_name }}</span>
+            {% endif %}
+        </div>
+        <h2>{{ article.title }}</h2>
+        <p class="text-muted">{{ article.created_at|date:"Y-m-d H:i" }}</p>
+        <hr>
+        <div class="lead">{{ article.content|linebreaksbr }}</div>
+    </article>
+    <hr>
+    <a href="{% url 'article_list' %}" class="btn btn-outline-secondary">返回知识库</a>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'qa/base.html' %}
+{% block title %}经验知识库 - 简单问答{% endblock %}
+{% block content %}
+    <h2 class="mb-4">经验知识库</h2>
+
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-auto">
+            <select name="grade" class="form-select" onchange="this.form.submit()">
+                <option value="">全部年级</option>
+                {% for g in grades %}
+                    <option value="{{ g.id }}" {% if selected_grade == g.id %}selected{% endif %}>{{ g.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="subject" class="form-select" onchange="this.form.submit()">
+                <option value="">全部学科</option>
+                {% for s in subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject == s.id %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'article_list' %}" class="btn btn-outline-secondary">清除筛选</a>
+        </div>
+    </form>
+
+    {% if articles %}
+        <div class="list-group">
+            {% for article in articles %}
+                <a href="{% url 'article_detail' article.pk %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ article.title }}</h5>
+                        <small class="text-muted">{{ article.created_at|date:"Y-m-d" }}</small>
+                    </div>
+                    <p class="mb-1 text-muted small">{{ article.content|truncatechars:120 }}</p>
+                    <small>
+                        <span class="badge bg-primary">{{ article.grade.name }}</span>
+                        <span class="badge bg-success">{{ article.subject.name }}</span>
+                        {% if article.author_name %}
+                            <span class="text-muted ms-2">by {{ article.author_name }}</span>
+                        {% endif %}
+                    </small>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">还没有经验分享，<a href="{% url 'create_article' %}">来写第一篇吧</a>。</div>
+    {% endif %}
+{% endblock %}

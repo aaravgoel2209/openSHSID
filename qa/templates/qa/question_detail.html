@@ -1,0 +1,36 @@
+{% extends 'qa/base.html' %}
+{% block title %}{{ question.title }} - 简单问答{% endblock %}
+{% block content %}
+    <article class="mb-4">
+        <h2>{{ question.title }}</h2>
+        <p class="text-muted">{{ question.created_at|date:"Y-m-d H:i" }}</p>
+        <p class="lead">{{ question.content|linebreaksbr }}</p>
+    </article>
+
+    <hr>
+
+    <h4 class="mb-3">回答 ({{ question.answers.count }})</h4>
+
+    {% for answer in question.answers.all %}
+        <div class="card mb-2">
+            <div class="card-body">
+                <p class="card-text">{{ answer.content|linebreaksbr }}</p>
+                <small class="text-muted">{{ answer.created_at|date:"Y-m-d H:i" }}</small>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-muted">暂无回答。</p>
+    {% endfor %}
+
+    <hr>
+
+    <h5>提交回答</h5>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <textarea name="content" class="form-control" rows="3" placeholder="写下你的回答..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">提交</button>
+        <a href="{% url 'question_list' %}" class="btn btn-outline-secondary">返回列表</a>
+    </form>
+{% endblock %}

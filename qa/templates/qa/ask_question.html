@@ -1,0 +1,18 @@
+{% extends 'qa/base.html' %}
+{% block title %}提问 - 简单问答{% endblock %}
+{% block content %}
+    <h2 class="mb-4">提问</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="title" class="form-label">标题</label>
+            <input type="text" name="title" id="title" class="form-control" placeholder="一句话概括你的问题" required maxlength="200">
+        </div>
+        <div class="mb-3">
+            <label for="content" class="form-label">详细内容</label>
+            <textarea name="content" id="content" class="form-control" rows="5" placeholder="补充问题细节..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">发布问题</button>
+        <a href="{% url 'question_list' %}" class="btn btn-outline-secondary">取消</a>
+    </form>
+{% endblock %}
