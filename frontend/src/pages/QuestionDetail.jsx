@@ -46,14 +46,14 @@ export default function QuestionDetail() {
   }
 
   if (!question) {
-    return <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">问题不存在。</div>;
+    return <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-300">问题不存在。</div>;
   }
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">{question.title}</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {question.created_at?.slice(0, 16).replace('T', ' ')}
           {question.author_name ? ` · ${question.author_name}` : ''}
         </p>
@@ -72,9 +72,9 @@ export default function QuestionDetail() {
 
       <div className="space-y-3 mb-6">
         {question.answers?.map((a) => (
-          <div key={a.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+          <div key={a.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
             <p className="text-gray-700 whitespace-pre-wrap">{a.content}</p>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               {a.created_at?.slice(0, 16).replace('T', ' ')}
               {a.author_name ? ` · ${a.author_name}` : ''}
             </p>
@@ -89,11 +89,12 @@ export default function QuestionDetail() {
         <TextArea
           placeholder={user ? '写下你的回答...' : '登录后可回答'}
           value={content}
-          onValueChange={setContent}
+          onChange={(e) => setContent(e.target.value)}
           isRequired
           isDisabled={!user}
           className="mb-4"
           minRows={3}
+          labelPlacement="outside"
         />
         <div className="flex items-center gap-2">
           <Button type="submit" color="primary" isLoading={submitting} isDisabled={submitting || !user}>
@@ -101,7 +102,7 @@ export default function QuestionDetail() {
           </Button>
           <Button variant="light" onPress={() => navigate('/')}>返回列表</Button>
           {!user && (
-            <p className="text-sm text-gray-500 ml-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 ml-2">
               <Link to="/login" className="text-primary-600 underline">登录</Link>后可以回答
             </p>
           )}

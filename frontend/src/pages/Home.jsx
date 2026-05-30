@@ -35,19 +35,19 @@ export default function Home() {
       </div>
 
       {questions.length === 0 ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-700">
-          还没有问题，<button className="text-blue-700 underline font-medium" onClick={() => navigate('/ask')}>来提第一个问题吧</button>。
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-blue-700 dark:text-blue-300">
+          还没有问题，<button className="text-blue-700 dark:text-blue-300 underline font-medium" onClick={() => navigate('/ask')}>来提第一个问题吧</button>。
         </div>
       ) : (
         <div className="space-y-2">
           {questions.map((q) => (
             <div
               key={q.id}
-              className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-primary-300 hover:shadow-sm transition-all"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-sm transition-all"
               onClick={() => navigate(`/questions/${q.id}`)}
             >
               <h2 className="text-lg font-semibold mb-1">{q.title}</h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {q.created_at?.slice(0, 16).replace('T', ' ')}
                 {q.author_name ? ` · ${q.author_name}` : ''}
                 {' · '}

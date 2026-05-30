@@ -43,7 +43,7 @@ export default function KnowledgeBase() {
 
       <div className="flex gap-3 mb-6 items-center flex-wrap">
         <select
-          className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
           value={selectedGrade}
           onChange={(e) => setSelectedGrade(e.target.value)}
         >
@@ -53,7 +53,7 @@ export default function KnowledgeBase() {
           ))}
         </select>
         <select
-          className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
           value={selectedSubject}
           onChange={(e) => setSelectedSubject(e.target.value)}
         >
@@ -72,7 +72,7 @@ export default function KnowledgeBase() {
           <Spinner size="lg" />
         </div>
       ) : articles.length === 0 ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-700">
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-blue-700 dark:text-blue-300">
           还没有经验分享，<button className="text-blue-700 underline font-medium" onClick={() => navigate('/knowledge/create')}>来写第一篇吧</button>。
         </div>
       ) : (
@@ -80,18 +80,18 @@ export default function KnowledgeBase() {
           {articles.map((a) => (
             <div
               key={a.id}
-              className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-primary-300 hover:shadow-sm transition-all"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-sm transition-all"
               onClick={() => navigate(`/knowledge/${a.id}`)}
             >
               <div className="flex justify-between items-start mb-2">
                 <h2 className="text-lg font-semibold">{a.title}</h2>
-                <span className="text-sm text-gray-500 shrink-0 ml-2">{a.created_at?.slice(0, 10)}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-2">{a.created_at?.slice(0, 10)}</span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <Chip size="sm" color="primary">{a.grade_name}</Chip>
                 <Chip size="sm" color="success">{a.subject_name}</Chip>
                 {a.author_name_display && (
-                  <span className="text-sm text-gray-500">by {a.author_name_display}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">by {a.author_name_display}</span>
                 )}
               </div>
             </div>

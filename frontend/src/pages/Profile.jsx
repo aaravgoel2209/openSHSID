@@ -31,8 +31,8 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-700">
-        请先<Link to="/login" className="text-yellow-700 underline font-medium">登录</Link>。
+      <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-yellow-700 dark:text-yellow-300">
+        请先<Link to="/login" className="text-yellow-700 dark:text-yellow-300 underline font-medium">登录</Link>。
       </div>
     );
   }
@@ -40,7 +40,7 @@ export default function Profile() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">个人中心</h1>
-      <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-6 shadow-sm">
         <h2 className="text-lg font-semibold">{user.username}</h2>
         <p className="text-sm text-gray-500">加入时间：{user.date_joined?.slice(0, 10)}</p>
       </div>
@@ -60,7 +60,7 @@ export default function Profile() {
             >
               <div className="flex justify-between items-center">
                 <span className="font-medium">{q.title}</span>
-                <span className="text-sm text-gray-500">{q.created_at?.slice(0, 10)}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{q.created_at?.slice(0, 10)}</span>
               </div>
             </div>
           ))}
@@ -77,12 +77,12 @@ export default function Profile() {
           {myArticles.map((a) => (
             <div
               key={a.id}
-              className="bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-primary-300 transition-all"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 transition-all"
               onClick={() => navigate(`/knowledge/${a.id}`)}
             >
               <div className="flex justify-between items-center">
                 <span className="font-medium">{a.title}</span>
-                <span className="text-sm text-gray-500">{a.created_at?.slice(0, 10)}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{a.created_at?.slice(0, 10)}</span>
               </div>
             </div>
           ))}

@@ -46,16 +46,16 @@ export default function CreateArticle() {
         <Input
           label="标题"
           value={title}
-          onValueChange={setTitle}
+          onChange={(e) => setTitle(e.target.value)}
           isRequired
           maxLength={200}
           labelPlacement="outside"
         />
         <div className="flex gap-4">
           <div className="flex flex-col gap-1.5 w-full">
-            <label className="text-sm font-medium text-gray-700">年级</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">年级</label>
             <select
-              className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
+              className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
               required
@@ -67,9 +67,9 @@ export default function CreateArticle() {
             </select>
           </div>
           <div className="flex flex-col gap-1.5 w-full">
-            <label className="text-sm font-medium text-gray-700">学科</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">学科</label>
             <select
-              className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
+              className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               required
@@ -85,7 +85,7 @@ export default function CreateArticle() {
           label="作者（选填）"
           placeholder="你的名字或昵称"
           value={authorName}
-          onValueChange={setAuthorName}
+          onChange={(e) => setAuthorName(e.target.value)}
           maxLength={100}
           labelPlacement="outside"
         />
@@ -93,7 +93,7 @@ export default function CreateArticle() {
           label="内容"
           isRequired
           value={content}
-          onValueChange={setContent}
+          onChange={(e) => setContent(e.target.value)}
           minRows={12}
           labelPlacement="outside"
         />

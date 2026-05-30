@@ -28,19 +28,19 @@ export default function Login() {
 
   return (
     <div className="flex justify-center">
-      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <div className="w-full max-w-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm">
         <h1 className="text-xl font-bold text-center mb-6">登录</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input label="用户名" value={username} onValueChange={setUsername} isRequired />
-          <Input label="密码" type="password" value={password} onValueChange={setPassword} isRequired />
+          <Input label="用户名" value={username} onChange={(e) => setUsername(e.target.value)} isRequired labelPlacement="outside" />
+          <Input label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} isRequired labelPlacement="outside" />
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{error}</div>
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">{error}</div>
           )}
           <Button type="submit" color="primary" fullWidth isLoading={submitting}>
             {submitting ? '登录中...' : '登录'}
           </Button>
         </form>
-        <p className="text-sm text-center mt-4 text-gray-500">
+        <p className="text-sm text-center mt-4 text-gray-500 dark:text-gray-400">
           还没有账号？<Link to="/register" className="text-primary-600 underline">注册</Link>
         </p>
       </div>

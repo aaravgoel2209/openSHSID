@@ -31,7 +31,7 @@ export default function AskQuestion() {
           label="标题"
           placeholder="一句话概括你的问题"
           value={title}
-          onValueChange={setTitle}
+          onChange={(e) => setTitle(e.target.value)}
           isRequired
           maxLength={200}
           labelPlacement="outside"
@@ -40,7 +40,7 @@ export default function AskQuestion() {
           label="详细内容"
           placeholder="补充问题细节..."
           value={content}
-          onValueChange={setContent}
+          onChange={(e) => setContent(e.target.value)}
           isRequired
           minRows={5}
           labelPlacement="outside"
