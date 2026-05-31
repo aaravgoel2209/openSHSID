@@ -65,6 +65,12 @@ export default function QuestionDetail() {
           {' · '}
           {question.views} 次浏览
         </p>
+        {question.embedding && (
+          <details className="mt-2 text-xs text-gray-400 dark:text-gray-500 cursor-pointer">
+            <summary className="inline">向量 (32维)</summary>
+            <p className="mt-1 font-mono">[{question.embedding.map(v => v.toFixed(4)).join(', ')}]</p>
+          </details>
+        )}
         <p className="mt-4 text-gray-700 whitespace-pre-wrap">{question.content}</p>
       </div>
 

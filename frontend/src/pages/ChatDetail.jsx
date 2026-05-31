@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
+import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { getMessages, sendMessage } from '../api/chat';
 import { AuthContext } from '../context/AuthContext';
@@ -15,6 +16,12 @@ export default function ChatDetail() {
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
+
+const colors = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
+const avatarUrl = (name) => {
+  const idx = Math.abs(name.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % colors.length;
+  return `https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/${colors[idx]}.jpg`;
+};
 
   const fetch = () => {
     setLoading(true);
@@ -67,8 +74,15 @@ export default function ChatDetail() {
         ) : (
           messages.map((m) => {
             const isMe = m.sender === user.id;
+            const name = isMe ? user.username : m.sender_name;
             return (
-              <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+              <div key={m.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+                <button onClick={() => navigate(`/user/${m.sender}`)} className="shrink-0">
+                  <Avatar size="sm" className="cursor-pointer hover:opacity-80 transition-opacity">
+                    <AvatarImage src={avatarUrl(name)} />
+                    <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </button>
                 <div className={`max-w-[70%] rounded-xl px-4 py-2 ${
                   isMe
                     ? 'bg-blue-500 text-white rounded-br-sm'

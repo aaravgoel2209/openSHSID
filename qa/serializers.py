@@ -35,7 +35,7 @@ class QuestionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'title', 'content', 'author', 'author_name', 'answers', 'views', 'created_at']
+        fields = ['id', 'title', 'content', 'author', 'author_name', 'answers', 'views', 'embedding', 'created_at']
 
     def get_author_name(self, obj):
         return obj.author.username if obj.author else None

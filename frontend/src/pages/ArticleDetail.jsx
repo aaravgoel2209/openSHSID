@@ -51,6 +51,12 @@ export default function ArticleDetail() {
         {' · '}
         {article.views} 次浏览
       </p>
+      {article.embedding && (
+        <details className="mt-2 mb-4 text-xs text-gray-400 dark:text-gray-500 cursor-pointer">
+          <summary className="inline">向量 (32维)</summary>
+          <p className="mt-1 font-mono">[{article.embedding.map(v => v.toFixed(4)).join(', ')}]</p>
+        </details>
+      )}
       <hr className="border-gray-200 mb-6" />
       <p className="text-gray-700 whitespace-pre-wrap">{article.content}</p>
       <hr className="border-gray-200 my-6" />

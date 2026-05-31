@@ -9,8 +9,15 @@ class AnswerInline(admin.TabularInline):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ['title', 'created_at']
+    list_display = ['title', 'created_at', 'views']
+    readonly_fields = ['embedding_display']
     inlines = [AnswerInline]
+
+    @admin.display(description="向量 (32维)")
+    def embedding_display(self, obj):
+        if not obj.embedding:
+            return "-"
+        return f"[{', '.join(f'{x:.4f}' for x in obj.embedding[:4])} ...] ({len(obj.embedding)}维)"
 
 
 @admin.register(Answer)

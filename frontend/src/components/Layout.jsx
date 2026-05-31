@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
-import { Avatar } from '@heroui/react/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
@@ -52,10 +52,12 @@ export default function Layout() {
                   <Avatar
                     as="button"
                     className="cursor-pointer"
-                    name={user.username?.charAt(0).toUpperCase()}
                     size="sm"
                     color="primary"
-                  />
+                  >
+                    <AvatarImage src={`https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/${['blue','green','red','purple','orange','indigo','emerald','sky','rose'][Math.abs(user.username.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0))%9]}.jpg`} />
+                    <AvatarFallback>{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
                 </DropdownTrigger>
                 <DropdownPopover>
                   <DropdownMenu>

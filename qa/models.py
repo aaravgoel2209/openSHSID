@@ -7,6 +7,7 @@ class Question(models.Model):
     content = models.TextField(verbose_name="内容")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="作者")
     views = models.PositiveIntegerField(default=0, verbose_name="浏览量")
+    embedding = models.JSONField(null=True, blank=True, verbose_name="向量 (32维)")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
 
     class Meta:

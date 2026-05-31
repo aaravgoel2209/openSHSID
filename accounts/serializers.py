@@ -18,6 +18,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    embedding = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'date_joined']
+        fields = ['id', 'username', 'date_joined', 'embedding']
+
+    def get_embedding(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_staff:
+            profile = getattr(obj, 'profile', None)
+            if profile and profile.embedding:
+                return {'vector': profile.embedding[:4], 'dim': len(profile.embedding)}
+        return None
