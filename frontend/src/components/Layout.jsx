@@ -68,7 +68,7 @@ export default function Layout() {
                     <DropdownItem key="profile" onPress={() => navigate('/profile')}>
                       个人中心
                     </DropdownItem>
-                    <DropdownItem key="logout" color="danger" onPress={() => { logout(); navigate('/'); }}>
+                    <DropdownItem key="logout" className="text-red-500 data-[hover]:bg-red-50 dark:text-red-400 dark:data-[hover]:bg-red-900/20" onPress={() => { logout(); navigate('/'); }}>
                       登出
                     </DropdownItem>
                   </DropdownMenu>

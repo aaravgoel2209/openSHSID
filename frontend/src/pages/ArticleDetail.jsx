@@ -96,8 +96,7 @@ export default function ArticleDetail() {
         <Button variant="light" onPress={() => navigate(-1)}>返回</Button>
         {user?.is_staff && (
           <Button
-            color="danger"
-            variant="flat"
+            className="bg-red-500 text-white hover:bg-red-600"
             onPress={async () => {
               if (!window.confirm('确认删除这篇文章？')) return;
                 try {
