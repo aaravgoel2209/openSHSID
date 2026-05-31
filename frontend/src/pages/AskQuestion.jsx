@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
+import { TextField } from '@heroui/react/textfield';
+import { Label } from '@heroui/react/label';
 import { Input } from '@heroui/react/input';
 import { TextArea } from '@heroui/react/textarea';
 import { createQuestion } from '../api/qa';
@@ -17,7 +19,7 @@ export default function AskQuestion() {
     setSubmitting(true);
     try {
       const q = await createQuestion(title, content);
-      navigate(`/questions/${q.id}`);
+      navigate(`/qa/questions/${q.id}`);
     } finally {
       setSubmitting(false);
     }
@@ -27,29 +29,29 @@ export default function AskQuestion() {
     <div className="max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">提问</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Input
-          label="标题"
-          placeholder="一句话概括你的问题"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          isRequired
-          maxLength={200}
-          labelPlacement="outside"
-        />
-        <TextArea
-          label="详细内容"
-          placeholder="补充问题细节..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          isRequired
-          minRows={5}
-          labelPlacement="outside"
-        />
+        <TextField>
+          <Label>标题</Label>
+          <Input
+            placeholder="一句话概括你的问题"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={200}
+          />
+        </TextField>
+        <TextField>
+          <Label>详细内容</Label>
+          <TextArea
+            placeholder="补充问题细节..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            minRows={5}
+          />
+        </TextField>
         <div className="flex gap-2 pt-2">
           <Button type="submit" color="primary" isLoading={submitting}>
             {submitting ? '发布中...' : '发布问题'}
           </Button>
-          <Button variant="light" onPress={() => navigate('/')}>取消</Button>
+          <Button variant="light" onPress={() => navigate('/qa')}>取消</Button>
         </div>
       </form>
     </div>

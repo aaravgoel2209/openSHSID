@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
+import { TextField } from '@heroui/react/textfield';
+import { Label } from '@heroui/react/label';
 import { Input } from '@heroui/react/input';
 import { TextArea } from '@heroui/react/textarea';
 import { getGrades, getSubjects, createArticle } from '../api/knowledge';
@@ -43,14 +45,10 @@ export default function CreateArticle() {
     <div className="max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">分享经验</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Input
-          label="标题"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          isRequired
-          maxLength={200}
-          labelPlacement="outside"
-        />
+        <TextField>
+          <Label>标题</Label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
+        </TextField>
         <div className="flex gap-4">
           <div className="flex flex-col gap-1.5 w-full">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">年级</label>
@@ -81,22 +79,14 @@ export default function CreateArticle() {
             </select>
           </div>
         </div>
-        <Input
-          label="作者（选填）"
-          placeholder="你的名字或昵称"
-          value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
-          maxLength={100}
-          labelPlacement="outside"
-        />
-        <TextArea
-          label="内容"
-          isRequired
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          minRows={12}
-          labelPlacement="outside"
-        />
+        <TextField>
+          <Label>作者（选填）</Label>
+          <Input placeholder="你的名字或昵称" value={authorName} onChange={(e) => setAuthorName(e.target.value)} maxLength={100} />
+        </TextField>
+        <TextField>
+          <Label>内容</Label>
+          <TextArea value={content} onChange={(e) => setContent(e.target.value)} minRows={12} />
+        </TextField>
         <div className="flex gap-2">
           <Button type="submit" color="primary" isLoading={submitting}>
             {submitting ? '发布中...' : '发布'}

@@ -28,15 +28,14 @@ export default function Home() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">所有问题</h1>
-        <Button color="primary" variant="flat" onPress={() => navigate('/ask')}>
-          <PlusIcon className="w-5 h-5" />
+        <Button color="primary" variant="flat" onPress={() => navigate('/qa/ask')}>
           提问
         </Button>
       </div>
 
       {questions.length === 0 ? (
         <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-blue-700 dark:text-blue-300">
-          还没有问题，<button className="text-blue-700 dark:text-blue-300 underline font-medium" onClick={() => navigate('/ask')}>来提第一个问题吧</button>。
+          还没有问题，<button className="text-blue-700 dark:text-blue-300 underline font-medium" onClick={() => navigate('/qa/ask')}>来提第一个问题吧</button>。
         </div>
       ) : (
         <div className="space-y-2">
@@ -44,7 +43,7 @@ export default function Home() {
             <div
               key={q.id}
               className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-sm transition-all"
-              onClick={() => navigate(`/questions/${q.id}`)}
+              onClick={() => navigate(`/qa/questions/${q.id}`)}
             >
               <h2 className="text-lg font-semibold mb-1">{q.title}</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -52,6 +51,8 @@ export default function Home() {
                 {q.author_name ? ` · ${q.author_name}` : ''}
                 {' · '}
                 {q.answer_count} 个回答
+                {' · '}
+                {q.views} 次浏览
               </p>
             </div>
           ))}

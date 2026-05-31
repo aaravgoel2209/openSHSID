@@ -85,7 +85,7 @@ export default function KnowledgeBase() {
             >
               <div className="flex justify-between items-start mb-2">
                 <h2 className="text-lg font-semibold">{a.title}</h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-2">{a.created_at?.slice(0, 10)}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-2">{a.created_at?.slice(0, 10)} · {a.views} 次浏览</span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <Chip size="sm" color="primary">{a.grade_name}</Chip>

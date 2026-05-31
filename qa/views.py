@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.db import models as django_models
 from .models import Question, Answer
 from .serializers import QuestionListSerializer, QuestionDetailSerializer, AnswerSerializer
 
@@ -28,6 +29,12 @@ def question_detail(request, pk):
     question = get_object_or_404(Question, pk=pk)
     serializer = QuestionDetailSerializer(question)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+def view_question(request, pk):
+    Question.objects.filter(pk=pk).update(views=django_models.F('views') + 1)
+    return Response({'ok': True})
 
 
 @api_view(['GET', 'POST'])

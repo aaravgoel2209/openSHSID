@@ -1,9 +1,10 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { TextArea } from '@heroui/react/textarea';
 import { getQuestion, createAnswer } from '../api/qa';
+import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 
 export default function QuestionDetail() {
@@ -14,12 +15,17 @@ export default function QuestionDetail() {
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const viewed = useRef(null);
 
   const fetch = () => {
     setLoading(true);
     getQuestion(id)
       .then(setQuestion)
       .finally(() => setLoading(false));
+    if (viewed.current !== id) {
+      viewed.current = id;
+      client.post(`/qa/questions/${id}/view/`).catch(() => {});
+    }
   };
 
   useEffect(fetch, [id]);
@@ -56,6 +62,8 @@ export default function QuestionDetail() {
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {question.created_at?.slice(0, 16).replace('T', ' ')}
           {question.author_name ? ` · ${question.author_name}` : ''}
+          {' · '}
+          {question.views} 次浏览
         </p>
         <p className="mt-4 text-gray-700 whitespace-pre-wrap">{question.content}</p>
       </div>
@@ -100,7 +108,7 @@ export default function QuestionDetail() {
           <Button type="submit" color="primary" isLoading={submitting} isDisabled={submitting || !user}>
             {submitting ? '提交中...' : '提交'}
           </Button>
-          <Button variant="light" onPress={() => navigate('/')}>返回列表</Button>
+          <Button variant="light" onPress={() => navigate('/qa')}>返回列表</Button>
           {!user && (
             <p className="text-sm text-gray-500 dark:text-gray-400 ml-2">
               <Link to="/login" className="text-primary-600 underline">登录</Link>后可以回答

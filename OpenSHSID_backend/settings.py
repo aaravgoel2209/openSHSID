@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-*zab9p&)=o8ji6kg^u)7yh#moe%(k&-i1jo3b@_=ih#w2^vbqm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'qa',
     'knowledge',
     'accounts',
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -123,9 +124,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # CORS - allow React dev server
-CORS_ALLOW_ALL_ORIGINS = True  # Dev only
+CORS_ALLOW_ALL_ORIGINS = True  # Dev / Docker only
 CORS_ALLOW_CREDENTIALS = True
 
 # Django REST Framework

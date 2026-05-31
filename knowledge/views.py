@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.db import models as django_models
 from .models import Article, Grade, Subject
 from .serializers import (
     GradeSerializer, SubjectSerializer,
@@ -53,3 +54,9 @@ def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk)
     serializer = ArticleDetailSerializer(article)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+def view_article(request, pk):
+    Article.objects.filter(pk=pk).update(views=django_models.F('views') + 1)
+    return Response({'ok': True})

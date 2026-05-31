@@ -1,20 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { Chip } from '@heroui/react/chip';
 import { getArticle } from '../api/knowledge';
+import client from '../api/client';
 
 export default function ArticleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
+  const viewed = useRef(null);
 
   useEffect(() => {
+    setLoading(true);
     getArticle(id)
       .then(setArticle)
       .finally(() => setLoading(false));
+    if (viewed.current !== id) {
+      viewed.current = id;
+      client.post(`/knowledge/articles/${id}/view/`).catch(() => {});
+    }
   }, [id]);
 
   if (loading) {
@@ -41,6 +48,8 @@ export default function ArticleDetail() {
       <h1 className="text-2xl font-bold mb-2">{article.title}</h1>
       <p className="text-sm text-gray-500 mb-4">
         {article.created_at?.slice(0, 16).replace('T', ' ')}
+        {' · '}
+        {article.views} 次浏览
       </p>
       <hr className="border-gray-200 mb-6" />
       <p className="text-gray-700 whitespace-pre-wrap">{article.content}</p>

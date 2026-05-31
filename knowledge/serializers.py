@@ -22,7 +22,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'title', 'grade', 'grade_name', 'subject', 'subject_name',
-                  'author_name_display', 'created_at']
+                  'author_name_display', 'views', 'created_at']
 
     def get_author_name_display(self, obj):
         if obj.author:
@@ -38,7 +38,7 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'title', 'content', 'grade', 'grade_name', 'subject', 'subject_name',
-                  'author', 'author_name', 'author_name_display', 'created_at']
+                  'author', 'author_name', 'author_name_display', 'views', 'created_at']
         read_only_fields = ['author', 'created_at']
 
     def get_author_name_display(self, obj):
