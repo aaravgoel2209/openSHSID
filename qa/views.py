@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -27,8 +27,30 @@ def question_list(request):
 @api_view(['GET'])
 def question_detail(request, pk):
     question = get_object_or_404(Question, pk=pk)
-    serializer = QuestionDetailSerializer(question)
+    serializer = QuestionDetailSerializer(question, context={'request': request})
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def like_question(request, pk):
+    question = get_object_or_404(Question, pk=pk)
+    if question.likes.filter(id=request.user.id).exists():
+        question.likes.remove(request.user)
+    else:
+        question.likes.add(request.user)
+    return Response({'liked': question.likes.filter(id=request.user.id).exists(), 'count': question.likes.count()})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def like_answer(request, pk):
+    answer = get_object_or_404(Answer, pk=pk)
+    if answer.likes.filter(id=request.user.id).exists():
+        answer.likes.remove(request.user)
+    else:
+        answer.likes.add(request.user)
+    return Response({'liked': answer.likes.filter(id=request.user.id).exists(), 'count': answer.likes.count()})
 
 
 @api_view(['POST'])
@@ -43,7 +65,7 @@ def answer_list(request, pk):
     question = get_object_or_404(Question, pk=pk)
     if request.method == 'GET':
         answers = question.answers.all()
-        serializer = AnswerSerializer(answers, many=True)
+        serializer = AnswerSerializer(answers, many=True, context={'request': request})
         return Response(serializer.data)
 
     if request.method == 'POST':

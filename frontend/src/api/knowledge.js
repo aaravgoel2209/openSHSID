@@ -18,3 +18,6 @@ export const getArticle = (id) =>
 
 export const createArticle = (data) =>
   client.post('/knowledge/articles/', data).then((r) => r.data);
+
+export const toggleArticleLike = (id) =>
+  client.post(`/knowledge/articles/${id}/like/`).then((r) => r.data);

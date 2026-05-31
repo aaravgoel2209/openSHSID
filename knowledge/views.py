@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -52,7 +52,7 @@ def article_list(request):
 @api_view(['GET'])
 def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk)
-    serializer = ArticleDetailSerializer(article)
+    serializer = ArticleDetailSerializer(article, context={'request': request})
     return Response(serializer.data)
 
 
@@ -60,3 +60,14 @@ def article_detail(request, pk):
 def view_article(request, pk):
     Article.objects.filter(pk=pk).update(views=django_models.F('views') + 1)
     return Response({'ok': True})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def like_article(request, pk):
+    article = get_object_or_404(Article, pk=pk)
+    if article.likes.filter(id=request.user.id).exists():
+        article.likes.remove(request.user)
+    else:
+        article.likes.add(request.user)
+    return Response({'liked': article.likes.filter(id=request.user.id).exists(), 'count': article.likes.count()})

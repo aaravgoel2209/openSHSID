@@ -14,3 +14,9 @@ export const getAnswers = (questionId) =>
 
 export const createAnswer = (questionId, content) =>
   client.post(`/qa/questions/${questionId}/answers/`, { content }).then((r) => r.data);
+
+export const toggleQuestionLike = (id) =>
+  client.post(`/qa/questions/${id}/like/`).then((r) => r.data);
+
+export const toggleAnswerLike = (id) =>
+  client.post(`/qa/answers/${id}/like/`).then((r) => r.data);

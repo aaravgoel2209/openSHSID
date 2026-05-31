@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { TextArea } from '@heroui/react/textarea';
-import { getQuestion, createAnswer } from '../api/qa';
+import { getQuestion, createAnswer, toggleQuestionLike, toggleAnswerLike } from '../api/qa';
 import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 
@@ -59,12 +59,21 @@ export default function QuestionDetail() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">{question.title}</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {question.created_at?.slice(0, 16).replace('T', ' ')}
-          {question.author_name ? ` · ${question.author_name}` : ''}
-          {' · '}
-          {question.views} 次浏览
-        </p>
+        <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+          <span>{question.created_at?.slice(0, 16).replace('T', ' ')}{question.author_name ? ` · ${question.author_name}` : ''} · {question.views} 次浏览</span>
+          <button
+            onClick={async () => {
+              const res = await toggleQuestionLike(question.id);
+              setQuestion({...question, is_liked: res.liked, like_count: res.count});
+            }}
+            className={`flex items-center gap-1 transition-colors ${question.is_liked ? 'text-red-500' : 'hover:text-red-400'}`}
+          >
+            <svg className="w-4 h-4" fill={question.is_liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
+            </svg>
+            {question.like_count}
+          </button>
+        </div>
         {question.embedding && (
           <details className="mt-2 text-xs text-gray-400 dark:text-gray-500 cursor-pointer">
             <summary className="inline">向量 (32维)</summary>
@@ -88,10 +97,22 @@ export default function QuestionDetail() {
         {question.answers?.map((a) => (
           <div key={a.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
             <p className="text-gray-700 whitespace-pre-wrap">{a.content}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              {a.created_at?.slice(0, 16).replace('T', ' ')}
-              {a.author_name ? ` · ${a.author_name}` : ''}
-            </p>
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <span>{a.created_at?.slice(0, 16).replace('T', ' ')}{a.author_name ? ` · ${a.author_name}` : ''}</span>
+              <button
+                onClick={async () => {
+                  const res = await toggleAnswerLike(a.id);
+                  const updated = question.answers.map(x => x.id === a.id ? {...x, is_liked: res.liked, like_count: res.count} : x);
+                  setQuestion({...question, answers: updated});
+                }}
+                className={`flex items-center gap-1 transition-colors ${a.is_liked ? 'text-red-500' : 'hover:text-red-400'}`}
+              >
+                <svg className="w-3.5 h-3.5" fill={a.is_liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
+                </svg>
+                {a.like_count || 0}
+              </button>
+            </div>
           </div>
         ))}
       </div>
