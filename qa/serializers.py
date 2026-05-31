@@ -49,10 +49,11 @@ class QuestionDetailSerializer(serializers.ModelSerializer):
     answers = AnswerSerializer(many=True, read_only=True)
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    heat = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
-        fields = ['id', 'title', 'content', 'author', 'author_name', 'answers', 'views', 'like_count', 'is_liked', 'embedding', 'created_at']
+        fields = ['id', 'title', 'content', 'author', 'author_name', 'answers', 'views', 'like_count', 'is_liked', 'heat', 'embedding', 'created_at']
 
     def get_author_name(self, obj):
         return obj.author.username if obj.author else None
@@ -65,3 +66,9 @@ class QuestionDetailSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.likes.filter(id=request.user.id).exists()
         return False
+
+    def get_heat(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_staff:
+            return obj.heat
+        return None

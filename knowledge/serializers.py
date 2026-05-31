@@ -23,7 +23,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'title', 'grade', 'grade_name', 'subject', 'subject_name',
-                  'author_name_display', 'views', 'like_count', 'created_at']
+                  'author_name_display', 'views', 'like_count', 'embedding', 'created_at']
 
     def get_author_name_display(self, obj):
         if obj.author:
@@ -40,12 +40,13 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
     author_name_display = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    heat = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
         fields = ['id', 'title', 'content', 'grade', 'grade_name', 'subject', 'subject_name',
                   'author', 'author_name', 'author_name_display', 'views', 'like_count', 'is_liked',
-                  'embedding', 'created_at']
+                  'heat', 'embedding', 'created_at']
         read_only_fields = ['author', 'created_at']
 
     def get_author_name_display(self, obj):
@@ -61,3 +62,9 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.likes.filter(id=request.user.id).exists()
         return False
+
+    def get_heat(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_staff:
+            return obj.heat
+        return None

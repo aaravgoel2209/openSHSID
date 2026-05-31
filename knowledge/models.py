@@ -43,5 +43,11 @@ class Article(models.Model):
         verbose_name = "文章"
         verbose_name_plural = "文章"
 
+    @property
+    def heat(self):
+        clicks = self.views
+        likes = self.likes.count()
+        return round(max(0.0, 2.0 + clicks * 0.1 + likes * 0.3), 4)
+
     def __str__(self):
         return self.title

@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
+import HomeArticles from './pages/HomeArticles';
 import QuestionDetail from './pages/QuestionDetail';
 import AskQuestion from './pages/AskQuestion';
 import KnowledgeBase from './pages/KnowledgeBase';
@@ -22,7 +23,7 @@ export default function App() {
         <AuthProvider>
           <Routes>
             <Route element={<Layout />}>
-              <Route path="/" element={<div className="text-center text-gray-400 dark:text-gray-600 py-20"><p className="text-lg">欢迎来到 SHSID 校园</p></div>} />
+              <Route path="/" element={<HomeArticles />} />
               <Route path="/qa" element={<Home />} />
               <Route path="/qa/questions/:id" element={<QuestionDetail />} />
               <Route path="/qa/ask" element={<AskQuestion />} />

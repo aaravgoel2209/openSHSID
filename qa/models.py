@@ -16,6 +16,13 @@ class Question(models.Model):
         verbose_name = "问题"
         verbose_name_plural = "问题"
 
+    @property
+    def heat(self):
+        clicks = self.views
+        likes = self.likes.count()
+        comments = self.answers.count()
+        return round(max(0.0, 2.0 + clicks * 0.1 + likes * 0.3 + comments * 0.2), 4)
+
     def __str__(self):
         return self.title
 

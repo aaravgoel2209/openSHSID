@@ -1,27 +1,46 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { Chip } from '@heroui/react/chip';
 import { getArticle, toggleArticleLike } from '../api/knowledge';
 import client from '../api/client';
+import { AuthContext } from '../context/AuthContext';
+
+const FLASK_URL = 'http://localhost:5000';
 
 export default function ArticleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const viewed = useRef(null);
 
   useEffect(() => {
+    const viewedId = viewed.current;
     setLoading(true);
-    getArticle(id)
-      .then(setArticle)
-      .finally(() => setLoading(false));
-    if (viewed.current !== id) {
-      viewed.current = id;
-      client.post(`/knowledge/articles/${id}/view/`).catch(() => {});
-    }
+    getArticle(id).then((data) => {
+      setArticle(data);
+      if (viewedId !== id) {
+        viewed.current = id;
+        client.post(`/knowledge/articles/${id}/view/`).catch(() => {});
+        // 通知 Flask 训练
+        if (user && data.embedding) {
+          client.get('/auth/profile/').then((prof) => {
+            const userEmb = prof.data.embedding?.vector || Array(32).fill(0);
+            fetch(`${FLASK_URL}/click`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                user_emb: userEmb,
+                items: [{ emb: data.embedding, heat: 2.0 + (data.views || 0) * 0.1 + (data.like_count || 0) * 0.3, clicked: true }],
+              }),
+            }).catch(() => {});
+          }).catch(() => {});
+        }
+      }
+    }).finally(() => setLoading(false));
   }, [id]);
 
   if (loading) {
@@ -67,10 +86,30 @@ export default function ArticleDetail() {
           <p className="mt-1 font-mono">[{article.embedding.map(v => v.toFixed(4)).join(', ')}]</p>
         </details>
       )}
+      {article.heat !== null && article.heat !== undefined && (
+        <p className="mt-1 mb-4 text-xs text-gray-400">热度: {article.heat}</p>
+      )}
       <hr className="border-gray-200 mb-6" />
       <p className="text-gray-700 whitespace-pre-wrap">{article.content}</p>
       <hr className="border-gray-200 my-6" />
-      <Button variant="light" onPress={() => navigate('/knowledge')}>返回知识库</Button>
+      <div className="flex items-center gap-2">
+        <Button variant="light" onPress={() => navigate(-1)}>返回</Button>
+        {user?.is_staff && (
+          <Button
+            color="danger"
+            variant="flat"
+            onPress={async () => {
+              if (!window.confirm('确认删除这篇文章？')) return;
+                try {
+                  await client.delete(`/knowledge/articles/${id}/`);
+                  navigate('/');
+                } catch {}
+            }}
+          >
+            删除
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

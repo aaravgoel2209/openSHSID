@@ -29,6 +29,7 @@ export default function Home() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">所有问题</h1>
         <Button color="primary" variant="flat" onPress={() => navigate('/qa/ask')}>
+          <PlusIcon className="w-5 h-5" />
           提问
         </Button>
       </div>
@@ -53,6 +54,8 @@ export default function Home() {
                 {q.answer_count} 个回答
                 {' · '}
                 {q.views} 次浏览
+                {' · '}
+                {q.like_count} 赞
               </p>
             </div>
           ))}

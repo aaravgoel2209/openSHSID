@@ -80,6 +80,9 @@ export default function QuestionDetail() {
             <p className="mt-1 font-mono">[{question.embedding.map(v => v.toFixed(4)).join(', ')}]</p>
           </details>
         )}
+        {question.heat !== null && question.heat !== undefined && (
+          <p className="mt-1 text-xs text-gray-400">热度: {question.heat}</p>
+        )}
         <p className="mt-4 text-gray-700 whitespace-pre-wrap">{question.content}</p>
       </div>
 

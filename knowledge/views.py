@@ -37,7 +37,20 @@ def article_list(request):
         if subject:
             articles = articles.filter(subject_id=subject)
         serializer = ArticleListSerializer(articles, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+
+        # 内联排序（无 HTTP 开销）
+        if request.user and request.user.is_authenticated and not grade and not subject:
+            try:
+                from .ranking import rank_articles
+                user_emb = getattr(getattr(request.user, 'profile', None), 'embedding', None)
+                if user_emb:
+                    data = rank_articles(data, user_emb, user_id=request.user.id,
+                                         show_score=request.user.is_staff)
+            except Exception:
+                pass
+
+        return Response(data)
 
     if request.method == 'POST':
         serializer = ArticleDetailSerializer(data=request.data)
@@ -49,9 +62,14 @@ def article_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'DELETE'])
 def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk)
+    if request.method == 'DELETE':
+        if not request.user.is_staff:
+            return Response({'error': '仅管理员可删除'}, status=403)
+        article.delete()
+        return Response({'ok': True}, status=200)
     serializer = ArticleDetailSerializer(article, context={'request': request})
     return Response(serializer.data)
 
