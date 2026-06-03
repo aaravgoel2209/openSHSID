@@ -50,7 +50,7 @@
 
 ### 运行
 
-```powershell
+```shell
 ./scripts/start.ps1
 ```
 

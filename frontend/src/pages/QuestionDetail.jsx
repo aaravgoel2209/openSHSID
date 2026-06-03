@@ -98,25 +98,19 @@ export default function QuestionDetail() {
 
       <div className="space-y-3 mb-6">
         {question.answers?.map((a) => (
-          <div key={a.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
-            <p className="text-gray-700 whitespace-pre-wrap">{a.content}</p>
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-              <span>{a.created_at?.slice(0, 16).replace('T', ' ')}{a.author_name ? ` · ${a.author_name}` : ''}</span>
-              <button
-                onClick={async () => {
-                  const res = await toggleAnswerLike(a.id);
-                  const updated = question.answers.map(x => x.id === a.id ? {...x, is_liked: res.liked, like_count: res.count} : x);
-                  setQuestion({...question, answers: updated});
-                }}
-                className={`flex items-center gap-1 transition-colors ${a.is_liked ? 'text-red-500' : 'hover:text-red-400'}`}
-              >
-                <svg className="w-3.5 h-3.5" fill={a.is_liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
-                </svg>
-                {a.like_count || 0}
-              </button>
-            </div>
-          </div>
+          <AnswerCard key={a.id} answer={a} question={question} user={user}
+            onToggleLike={async (id) => {
+              const res = await toggleAnswerLike(id);
+              const updateItem = (items) => items.map(x => ({
+                ...x,
+                is_liked: x.id === id ? res.liked : x.is_liked,
+                like_count: x.id === id ? res.count : x.like_count,
+                replies: x.replies ? updateItem(x.replies) : x.replies,
+              }));
+              setQuestion({...question, answers: updateItem(question.answers)});
+            }}
+            onReply={() => { fetch(); }}
+          />
         ))}
       </div>
 
@@ -146,6 +140,63 @@ export default function QuestionDetail() {
           )}
         </div>
       </form>
+    </div>
+  );
+}
+
+function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
+  const [showReply, setShowReply] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleReply = async (e) => {
+    e.preventDefault();
+    if (!replyContent.trim()) return;
+    setSending(true);
+    try {
+      await client.post(`/qa/questions/${question.id}/answers/`, {
+        content: replyContent,
+        parent: answer.id,
+      });
+      setReplyContent('');
+      setShowReply(false);
+      onReply(answer.id, replyContent);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+      <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{answer.content}</p>
+      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+        <span>{answer.created_at?.slice(0, 16).replace('T', ' ')}{answer.author_name ? ` · ${answer.author_name}` : ''}</span>
+        <button onClick={() => onToggleLike(answer.id)}
+          className={`flex items-center gap-1 transition-colors ${answer.is_liked ? 'text-red-500' : 'hover:text-red-400'}`}>
+          <svg className="w-3.5 h-3.5" fill={answer.is_liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
+          </svg>
+          {answer.like_count || 0}
+        </button>
+        <button onClick={() => setShowReply(!showReply)} className="hover:text-primary transition-colors">回复</button>
+      </div>
+
+      {showReply && (
+        <form onSubmit={handleReply} className="mt-3 flex gap-2">
+          <input className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            placeholder="写下回复..." value={replyContent} onChange={(e) => setReplyContent(e.target.value)} disabled={!user} />
+          <Button type="submit" size="sm" color="primary" isLoading={sending} isDisabled={!user || !replyContent.trim()}>回复</Button>
+        </form>
+      )}
+
+      {answer.replies?.length > 0 && (
+        <div className="mt-3 ml-4 pl-3 border-l-2 border-gray-200 dark:border-gray-600 space-y-2">
+          {answer.replies.map((r) => (
+            <AnswerCard key={r.id} answer={r} question={question} user={user}
+              onToggleLike={onToggleLike} onReply={onReply} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -64,16 +64,20 @@ def view_question(request, pk):
 def answer_list(request, pk):
     question = get_object_or_404(Question, pk=pk)
     if request.method == 'GET':
-        answers = question.answers.all()
+        answers = question.answers.filter(parent=None)
         serializer = AnswerSerializer(answers, many=True, context={'request': request})
         return Response(serializer.data)
 
     if request.method == 'POST':
         serializer = AnswerSerializer(data=request.data)
         if serializer.is_valid():
+            parent_id = request.data.get('parent')
+            if parent_id:
+                parent = get_object_or_404(Answer, pk=parent_id, question=question)
             serializer.save(
                 question=question,
                 author=request.user if request.user.is_authenticated else None,
+                parent=parent if parent_id else None,
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -17,22 +17,20 @@ export default function ChatDetail() {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
 
-const colors = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
-const avatarUrl = (name) => {
-  const idx = Math.abs(name.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % colors.length;
-  return `https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/${colors[idx]}.jpg`;
-};
-
-  const fetch = () => {
-    setLoading(true);
-    getMessages(userId).then(setMessages).finally(() => setLoading(false));
+  const colors = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
+  const avatarUrl = (name) => {
+    const idx = Math.abs(name.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % colors.length;
+    return `https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/${colors[idx]}.jpg`;
   };
 
-  useEffect(fetch, [userId]);
-
+  // 轮询新消息
+  const pollRef = useRef(null);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const doFetch = () => getMessages(userId).then(setMessages).catch(() => {});
+    doFetch().then(() => setLoading(false));
+    pollRef.current = setInterval(doFetch, 3000);
+    return () => clearInterval(pollRef.current);
+  }, [userId]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -41,7 +39,8 @@ const avatarUrl = (name) => {
     try {
       await sendMessage(parseInt(userId), content);
       setContent('');
-      fetch();
+      const msgs = await getMessages(userId);
+      setMessages(msgs);
     } finally {
       setSending(false);
     }
