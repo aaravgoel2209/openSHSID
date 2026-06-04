@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db import models as django_models
+from django.db.models import Q
 from .models import Article, Grade, Subject
 from .serializers import (
     GradeSerializer, SubjectSerializer,
@@ -32,10 +33,13 @@ def article_list(request):
         articles = Article.objects.all()
         grade = request.query_params.get('grade')
         subject = request.query_params.get('subject')
+        search = request.query_params.get('search')
         if grade:
             articles = articles.filter(grade_id=grade)
         if subject:
             articles = articles.filter(subject_id=subject)
+        if search:
+            articles = articles.filter(Q(title__icontains=search) | Q(content__icontains=search))
         serializer = ArticleListSerializer(articles, many=True)
         data = serializer.data
 
@@ -55,9 +59,11 @@ def article_list(request):
     if request.method == 'POST':
         serializer = ArticleDetailSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(
-                author=request.user if request.user.is_authenticated else None,
-            )
+            label_ids = request.data.get('labels', [])
+            a = serializer.save(author=request.user if request.user.is_authenticated else None)
+            if label_ids:
+                from qa.models import Label
+                a.labels.set(Label.objects.filter(id__in=label_ids))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

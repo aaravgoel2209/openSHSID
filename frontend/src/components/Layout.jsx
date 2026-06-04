@@ -1,8 +1,9 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
+import { ScrollShadow } from '@heroui/react/scroll-shadow';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
@@ -31,6 +32,18 @@ export default function Layout() {
             </Link>
           </nav>
           <div className="flex items-center gap-2">
+            <input
+              id="search-input"
+              type="text"
+              placeholder="搜索..."
+              className="w-32 lg:w-48 h-8 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.target.value.trim()) {
+                  navigate(`/search?q=${encodeURIComponent(e.target.value.trim())}`);
+                  e.target.value = '';
+                }
+              }}
+            />
             <button
               onClick={toggle}
               className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
@@ -83,9 +96,9 @@ export default function Layout() {
           </div>
         </div>
       </header>
-      <main className="max-w-4xl mx-auto px-4 py-6 dark:text-gray-200">
+      <ScrollShadow className="max-w-4xl mx-auto px-4 py-6 dark:text-gray-200" hideScrollBar>
         <Outlet />
-      </main>
+      </ScrollShadow>
     </div>
   );
 }

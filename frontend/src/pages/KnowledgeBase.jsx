@@ -84,7 +84,12 @@ export default function KnowledgeBase() {
               onClick={() => navigate(`/knowledge/${a.id}`)}
             >
               <div className="flex justify-between items-start mb-2">
-                <h2 className="text-lg font-semibold">{a.title}</h2>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h2 className="text-lg font-semibold">{a.title}</h2>
+                  {a.labels?.map((l) => (
+                    <span key={l.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{l.name}</span>
+                  ))}
+                </div>
                 <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-2">{a.created_at?.slice(0, 10)} · {a.views} 次浏览</span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">

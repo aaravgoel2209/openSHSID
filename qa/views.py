@@ -4,8 +4,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db import models as django_models
-from .models import Question, Answer
-from .serializers import QuestionListSerializer, QuestionDetailSerializer, AnswerSerializer
+from django.db.models import Q
+from .models import Label, Question, Answer
+from .serializers import LabelSerializer, QuestionListSerializer, QuestionDetailSerializer, AnswerSerializer
+
+
+@api_view(['GET'])
+def label_list(request):
+    labels = Label.objects.all()
+    return Response(LabelSerializer(labels, many=True).data)
 
 
 @api_view(['GET', 'POST'])
@@ -13,14 +20,20 @@ from .serializers import QuestionListSerializer, QuestionDetailSerializer, Answe
 def question_list(request):
     if request.method == 'GET':
         questions = Question.objects.all()
+        q = request.query_params.get('search')
+        if q:
+            questions = questions.filter(Q(title__icontains=q) | Q(content__icontains=q))
         serializer = QuestionListSerializer(questions, many=True)
         return Response(serializer.data)
 
     if request.method == 'POST':
         serializer = QuestionListSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(author=request.user if request.user.is_authenticated else None)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            label_ids = request.data.get('labels', [])
+            q = serializer.save(author=request.user if request.user.is_authenticated else None)
+            if label_ids:
+                q.labels.set(Label.objects.filter(id__in=label_ids))
+            return Response(QuestionDetailSerializer(q, context={'request': request}).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

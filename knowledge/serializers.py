@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from qa.serializers import LabelSerializer
 from .models import Grade, Subject, Article
 
 
@@ -19,11 +20,12 @@ class ArticleListSerializer(serializers.ModelSerializer):
     subject_name = serializers.CharField(source='subject.name', read_only=True)
     author_name_display = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
+    labels = LabelSerializer(many=True, read_only=True)
 
     class Meta:
         model = Article
         fields = ['id', 'title', 'grade', 'grade_name', 'subject', 'subject_name',
-                  'author_name_display', 'views', 'like_count', 'embedding', 'created_at']
+                  'author_name_display', 'views', 'like_count', 'labels', 'embedding', 'created_at']
 
     def get_author_name_display(self, obj):
         if obj.author:
@@ -41,12 +43,13 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     heat = serializers.SerializerMethodField()
+    labels = LabelSerializer(many=True, read_only=True)
 
     class Meta:
         model = Article
         fields = ['id', 'title', 'content', 'grade', 'grade_name', 'subject', 'subject_name',
                   'author', 'author_name', 'author_name_display', 'views', 'like_count', 'is_liked',
-                  'heat', 'embedding', 'created_at']
+                  'heat', 'labels', 'embedding', 'created_at']
         read_only_fields = ['author', 'created_at']
 
     def get_author_name_display(self, obj):

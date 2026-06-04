@@ -35,6 +35,7 @@ class Article(models.Model):
     author_name = models.CharField(max_length=100, blank=True, verbose_name="作者名")
     views = models.PositiveIntegerField(default=0, verbose_name="浏览量")
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='liked_articles', verbose_name="点赞")
+    labels = models.ManyToManyField('qa.Label', blank=True, related_name='articles', verbose_name="标签")
     embedding = models.JSONField(null=True, blank=True, verbose_name="向量 (32维)")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
 

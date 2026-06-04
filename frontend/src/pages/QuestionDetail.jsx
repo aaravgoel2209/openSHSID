@@ -59,6 +59,13 @@ export default function QuestionDetail() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">{question.title}</h1>
+        {question.labels?.length > 0 && (
+          <div className="flex gap-1.5 mb-2 flex-wrap">
+            {question.labels.map((l) => (
+              <span key={l.id} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{l.name}</span>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
           <span>{question.created_at?.slice(0, 16).replace('T', ' ')}{question.author_name ? ` · ${question.author_name}` : ''} · {question.views} 次浏览</span>
           <button

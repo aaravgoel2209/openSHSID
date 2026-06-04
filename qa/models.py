@@ -2,12 +2,25 @@ from django.db import models
 from django.conf import settings
 
 
+class Label(models.Model):
+    name = models.CharField(max_length=50, unique=True, verbose_name="标签")
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "标签"
+        verbose_name_plural = "标签"
+
+    def __str__(self):
+        return self.name
+
+
 class Question(models.Model):
     title = models.CharField(max_length=200, verbose_name="标题")
     content = models.TextField(verbose_name="内容")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="作者")
     views = models.PositiveIntegerField(default=0, verbose_name="浏览量")
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='liked_questions', verbose_name="点赞")
+    labels = models.ManyToManyField('Label', blank=True, related_name='questions', verbose_name="标签")
     embedding = models.JSONField(null=True, blank=True, verbose_name="向量 (32维)")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
 

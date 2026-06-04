@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import Question, Answer
+from .models import Label, Question, Answer
+
+
+class LabelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Label
+        fields = ['id', 'name']
 
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -34,10 +40,11 @@ class QuestionListSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     answer_count = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
+    labels = LabelSerializer(many=True, read_only=True)
 
     class Meta:
         model = Question
-        fields = ['id', 'title', 'author', 'author_name', 'answer_count', 'views', 'like_count', 'created_at']
+        fields = ['id', 'title', 'author', 'author_name', 'answer_count', 'views', 'like_count', 'labels', 'created_at']
 
     def get_like_count(self, obj):
         return obj.likes.count()
@@ -55,10 +62,11 @@ class QuestionDetailSerializer(serializers.ModelSerializer):
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     heat = serializers.SerializerMethodField()
+    labels = LabelSerializer(many=True, read_only=True)
 
     class Meta:
         model = Question
-        fields = ['id', 'title', 'content', 'author', 'author_name', 'answers', 'views', 'like_count', 'is_liked', 'heat', 'embedding', 'created_at']
+        fields = ['id', 'title', 'content', 'author', 'author_name', 'answers', 'views', 'like_count', 'is_liked', 'heat', 'labels', 'embedding', 'created_at']
 
     def get_answers(self, obj):
         qs = obj.answers.filter(parent=None)

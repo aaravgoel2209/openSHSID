@@ -1,7 +1,7 @@
 import client from './client';
 
-export const getQuestions = () =>
-  client.get('/qa/questions/').then((r) => r.data);
+export const getQuestions = (search) =>
+  client.get('/qa/questions/', { params: search ? { search } : {} }).then((r) => r.data);
 
 export const getQuestion = (id) =>
   client.get(`/qa/questions/${id}/`).then((r) => r.data);

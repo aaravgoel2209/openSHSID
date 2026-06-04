@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Question, Answer
+from .models import Label, Question, Answer
+
+
+@admin.register(Label)
+class LabelAdmin(admin.ModelAdmin):
+    list_display = ['name']
 
 
 class AnswerInline(admin.TabularInline):

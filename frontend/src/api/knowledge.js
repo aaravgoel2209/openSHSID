@@ -6,10 +6,11 @@ export const getGrades = () =>
 export const getSubjects = () =>
   client.get('/knowledge/subjects/').then((r) => r.data);
 
-export const getArticles = (grade, subject) => {
+export const getArticles = (grade, subject, search) => {
   const params = {};
   if (grade) params.grade = grade;
   if (subject) params.subject = subject;
+  if (search) params.search = search;
   return client.get('/knowledge/articles/', { params }).then((r) => r.data);
 };
 
