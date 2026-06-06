@@ -68,7 +68,7 @@ export default function AskQuestion() {
                   className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                     selectedLabels.includes(l.id)
                       ? 'bg-primary text-white border-primary'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-primary'
+                      : 'bg-gray-100 dark:bg-slate-950 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-primary'
                   }`}
                 >{l.name}</button>
               ))}

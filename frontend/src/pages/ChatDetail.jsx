@@ -20,7 +20,7 @@ export default function ChatDetail() {
   const colors = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
   const avatarUrl = (name) => {
     const idx = Math.abs(name.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % colors.length;
-    return `https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/${colors[idx]}.jpg`;
+    return `/images/${colors[idx]}.jpg`;
   };
 
   // 轮询新消息
@@ -60,7 +60,7 @@ export default function ChatDetail() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)]">
-      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-gray-900">
         <Button variant="light" size="sm" onPress={() => navigate('/chat')}>← 返回</Button>
         <h1 className="text-xl font-bold">{otherName}</h1>
       </div>
@@ -85,7 +85,7 @@ export default function ChatDetail() {
                 <div className={`max-w-[70%] rounded-xl px-4 py-2 ${
                   isMe
                     ? 'bg-blue-500 text-white rounded-br-sm'
-                    : 'bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-bl-sm'
+                    : 'bg-gray-100 dark:bg-slate-950 dark:text-gray-300 rounded-bl-sm'
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                   <p className={`text-xs mt-1 ${isMe ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>
@@ -101,7 +101,7 @@ export default function ChatDetail() {
 
       <form onSubmit={handleSend} className="flex gap-2 items-end">
         <input
-          className="flex-1 h-10 px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="flex-1 h-10 px-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
           placeholder="输入消息..."
           value={content}
           onChange={(e) => setContent(e.target.value)}

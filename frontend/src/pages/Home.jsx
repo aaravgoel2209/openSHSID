@@ -43,13 +43,13 @@ export default function Home() {
           {questions.map((q) => (
             <div
               key={q.id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-sm transition-all"
+              className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-sm transition-all"
               onClick={() => navigate(`/qa/questions/${q.id}`)}
             >
               <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                 <h2 className="text-lg font-semibold">{q.title}</h2>
                 {q.labels?.map((l) => (
-                  <span key={l.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{l.name}</span>
+                  <span key={l.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-950 text-gray-500 dark:text-gray-400">{l.name}</span>
                 ))}
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">

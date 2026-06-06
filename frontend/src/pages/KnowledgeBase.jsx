@@ -43,7 +43,7 @@ export default function KnowledgeBase() {
 
       <div className="flex gap-3 mb-6 items-center flex-wrap">
         <select
-          className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
           value={selectedGrade}
           onChange={(e) => setSelectedGrade(e.target.value)}
         >
@@ -53,7 +53,7 @@ export default function KnowledgeBase() {
           ))}
         </select>
         <select
-          className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
           value={selectedSubject}
           onChange={(e) => setSelectedSubject(e.target.value)}
         >
@@ -80,14 +80,14 @@ export default function KnowledgeBase() {
           {articles.map((a) => (
             <div
               key={a.id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-sm transition-all"
+              className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-sm transition-all"
               onClick={() => navigate(`/knowledge/${a.id}`)}
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h2 className="text-lg font-semibold">{a.title}</h2>
                   {a.labels?.map((l) => (
-                    <span key={l.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{l.name}</span>
+                    <span key={l.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-950 text-gray-500 dark:text-gray-400">{l.name}</span>
                   ))}
                 </div>
                 <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-2">{a.created_at?.slice(0, 10)} · {a.views} 次浏览</span>

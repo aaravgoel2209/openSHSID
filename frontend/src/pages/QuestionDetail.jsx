@@ -62,7 +62,7 @@ export default function QuestionDetail() {
         {question.labels?.length > 0 && (
           <div className="flex gap-1.5 mb-2 flex-wrap">
             {question.labels.map((l) => (
-              <span key={l.id} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{l.name}</span>
+              <span key={l.id} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-950 text-gray-500 dark:text-gray-400">{l.name}</span>
             ))}
           </div>
         )}
@@ -82,7 +82,7 @@ export default function QuestionDetail() {
           </button>
         </div>
         {question.embedding && (
-          <details className="mt-2 text-xs text-gray-400 dark:text-gray-500 cursor-pointer">
+          <details className="mt-2 text-xs text-gray-400 dark:text-gray-400 cursor-pointer">
             <summary className="inline">向量 (32维)</summary>
             <p className="mt-1 font-mono">[{question.embedding.map(v => v.toFixed(4)).join(', ')}]</p>
           </details>
@@ -174,7 +174,7 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
   };
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+    <div className="border border-gray-200 dark:border-gray-900 rounded-lg p-4 bg-white dark:bg-slate-950">
       <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{answer.content}</p>
       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
         <span>{answer.created_at?.slice(0, 16).replace('T', ' ')}{answer.author_name ? ` · ${answer.author_name}` : ''}</span>
@@ -190,14 +190,14 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
 
       {showReply && (
         <form onSubmit={handleReply} className="mt-3 flex gap-2">
-          <input className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          <input className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
             placeholder="写下回复..." value={replyContent} onChange={(e) => setReplyContent(e.target.value)} disabled={!user} />
           <Button type="submit" size="sm" color="primary" isLoading={sending} isDisabled={!user || !replyContent.trim()}>回复</Button>
         </form>
       )}
 
       {answer.replies?.length > 0 && (
-        <div className="mt-3 ml-4 pl-3 border-l-2 border-gray-200 dark:border-gray-600 space-y-2">
+        <div className="mt-3 ml-4 pl-3 border-l-2 border-gray-200 dark:border-gray-800 space-y-2">
           {answer.replies.map((r) => (
             <AnswerCard key={r.id} answer={r} question={question} user={user}
               onToggleLike={onToggleLike} onReply={onReply} />

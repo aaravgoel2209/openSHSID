@@ -8,7 +8,7 @@ import client from '../api/client';
 const colors = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
 const avatarUrl = (name) => {
   const idx = Math.abs(name.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % colors.length;
-  return `https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/${colors[idx]}.jpg`;
+  return `/images/${colors[idx]}.jpg`;
 };
 
 export default function UserProfile() {
@@ -35,7 +35,7 @@ export default function UserProfile() {
 
   return (
     <div className="max-w-md mx-auto">
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm text-center">
+      <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-xl p-6 shadow-sm text-center">
         <Avatar size="lg" className="mx-auto mb-4">
           <AvatarImage src={avatarUrl(profile.username)} />
           <AvatarFallback>{profile.username?.charAt(0).toUpperCase()}</AvatarFallback>
@@ -45,7 +45,7 @@ export default function UserProfile() {
           加入时间：{profile.date_joined?.slice(0, 10)}
         </p>
         {profile.embedding && (
-          <details className="mt-4 text-xs text-gray-400 dark:text-gray-500 cursor-pointer text-left">
+          <details className="mt-4 text-xs text-gray-400 dark:text-gray-400 cursor-pointer text-left">
             <summary className="inline">向量 ({profile.embedding.dim}维)</summary>
             <p className="mt-1 font-mono">[{profile.embedding.vector.join(', ')} ...]</p>
           </details>

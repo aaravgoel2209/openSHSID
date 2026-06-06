@@ -56,7 +56,7 @@ export default function HomeArticles() {
           {articles.map((a) => (
             <div
               key={a.id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 transition-all"
+              className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 transition-all"
               onClick={() => handleClick(a)}
             >
               <div className="flex justify-between items-start mb-1">

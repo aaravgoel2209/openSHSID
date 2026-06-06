@@ -42,7 +42,7 @@ export default function SearchResults() {
                   <h2 className="text-lg font-semibold mb-3">问答 ({questions.length})</h2>
                   <div className="space-y-2 mb-6">
                     {questions.map((q) => (
-                      <div key={q.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 cursor-pointer hover:border-primary-300 transition-all" onClick={() => navigate(`/qa/questions/${q.id}`)}>
+                      <div key={q.id} className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-lg p-3 cursor-pointer hover:border-primary-300 transition-all" onClick={() => navigate(`/qa/questions/${q.id}`)}>
                         <div className="font-medium">{q.title}</div>
                         <div className="text-xs text-gray-500 mt-1">{q.answer_count} 个回答 · {q.views} 次浏览</div>
                       </div>
@@ -55,7 +55,7 @@ export default function SearchResults() {
                   <h2 className="text-lg font-semibold mb-3">知识库 ({articles.length})</h2>
                   <div className="space-y-2">
                     {articles.map((a) => (
-                      <div key={a.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 cursor-pointer hover:border-primary-300 transition-all" onClick={() => navigate(`/knowledge/${a.id}`)}>
+                      <div key={a.id} className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-lg p-3 cursor-pointer hover:border-primary-300 transition-all" onClick={() => navigate(`/knowledge/${a.id}`)}>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{a.title}</span>
                           <Chip size="sm" color="primary">{a.grade_name}</Chip>

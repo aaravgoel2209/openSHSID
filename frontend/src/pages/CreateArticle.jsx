@@ -65,7 +65,7 @@ export default function CreateArticle() {
           <div className="flex flex-col gap-1.5 w-full">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">年级</label>
             <select
-              className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
+              className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-900 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
               required
@@ -79,7 +79,7 @@ export default function CreateArticle() {
           <div className="flex flex-col gap-1.5 w-full">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">学科</label>
             <select
-              className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
+              className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-900 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               required
@@ -108,7 +108,7 @@ export default function CreateArticle() {
                   className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                     selectedLabels.includes(l.id)
                       ? 'bg-primary text-white border-primary'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-primary'
+                      : 'bg-gray-100 dark:bg-slate-950 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-primary'
                   }`}
                 >{l.name}</button>
               ))}

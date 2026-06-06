@@ -40,7 +40,7 @@ export default function Profile() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">个人中心</h1>
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-xl p-5 mb-6 shadow-sm">
         <h2 className="text-lg font-semibold">{user.username}</h2>
         <p className="text-sm text-gray-500">加入时间：{user.date_joined?.slice(0, 10)}</p>
       </div>
@@ -77,7 +77,7 @@ export default function Profile() {
           {myArticles.map((a) => (
             <div
               key={a.id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 transition-all"
+              className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-lg p-3 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 transition-all"
               onClick={() => navigate(`/knowledge/${a.id}`)}
             >
               <div className="flex justify-between items-center">

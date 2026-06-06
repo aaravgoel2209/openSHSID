@@ -45,7 +45,7 @@ export default function Register() {
 
   return (
     <div className="flex justify-center">
-      <div className="w-full max-w-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm">
+      <div className="w-full max-w-sm bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-xl p-6 shadow-sm">
         <h1 className="text-xl font-bold text-center mb-6">注册</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <TextField>

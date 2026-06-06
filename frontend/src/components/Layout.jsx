@@ -14,8 +14,8 @@ export default function Layout() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
-      <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60 transition-colors">
+    <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors">
+      <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 transition-colors">
         <div className="max-w-5xl mx-auto flex h-14 items-center px-4">
             <Link to="/" className="text-lg font-bold text-inherit no-underline mr-8 dark:text-white">
               SHSID 校园
@@ -36,7 +36,7 @@ export default function Layout() {
               id="search-input"
               type="text"
               placeholder="搜索..."
-              className="w-32 lg:w-48 h-8 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-32 lg:w-48 h-8 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && e.target.value.trim()) {
                   navigate(`/search?q=${encodeURIComponent(e.target.value.trim())}`);
@@ -55,7 +55,7 @@ export default function Layout() {
               variant="flat"
               color="primary"
               size="sm"
-              onPress={() => navigate('/ask')}
+              onPress={() => navigate('/qa/ask')}
             >
               提问
             </Button>
@@ -68,7 +68,7 @@ export default function Layout() {
                     size="sm"
                     color="primary"
                   >
-                    <AvatarImage src={`https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/${['blue','green','red','purple','orange','indigo','emerald','sky','rose'][Math.abs(user.username.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0))%9]}.jpg`} />
+                    <AvatarImage src={`/images/${['blue','green','red','purple','orange','indigo','emerald','sky','rose'][Math.abs(user.username.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0))%9]}.jpg`} />
                     <AvatarFallback>{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </DropdownTrigger>
@@ -96,7 +96,7 @@ export default function Layout() {
           </div>
         </div>
       </header>
-      <ScrollShadow className="max-w-4xl mx-auto px-4 py-6 dark:text-gray-200" hideScrollBar>
+      <ScrollShadow className="max-w-4xl mx-auto px-4 py-6 dark:text-gray-300" hideScrollBar>
         <Outlet />
       </ScrollShadow>
     </div>

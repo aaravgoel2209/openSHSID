@@ -68,7 +68,7 @@ export default function ArticleDetail() {
       {article.labels?.length > 0 && (
         <div className="flex gap-1.5 mb-2 flex-wrap">
           {article.labels.map((l) => (
-            <span key={l.id} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{l.name}</span>
+            <span key={l.id} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-950 text-gray-500 dark:text-gray-400">{l.name}</span>
           ))}
         </div>
       )}
@@ -88,7 +88,7 @@ export default function ArticleDetail() {
         </button>
       </div>
       {article.embedding && (
-        <details className="mt-2 mb-4 text-xs text-gray-400 dark:text-gray-500 cursor-pointer">
+        <details className="mt-2 mb-4 text-xs text-gray-400 dark:text-gray-400 cursor-pointer">
           <summary className="inline">向量 (32维)</summary>
           <p className="mt-1 font-mono">[{article.embedding.map(v => v.toFixed(4)).join(', ')}]</p>
         </details>

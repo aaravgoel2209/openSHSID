@@ -66,21 +66,21 @@ export default function ChatList() {
       </div>
 
       {showNew && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 space-y-3">
+        <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-xl p-4 mb-4 space-y-3">
           <input
-            className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
             placeholder="搜索用户..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           {results.length > 0 && (
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="border border-gray-200 dark:border-gray-900 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
               {results.map((u) => (
                 <div key={u.id} className="p-3 space-y-2">
                   <p className="text-sm font-medium">{u.username}</p>
                   <div className="flex gap-2">
                     <input
-                      className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm dark:text-gray-200"
+                      className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 text-sm dark:text-gray-300"
                       placeholder="发一条消息..."
                       value={newContent}
                       onChange={(e) => setNewContent(e.target.value)}
@@ -110,7 +110,7 @@ export default function ChatList() {
           {conversations.map((c) => (
             <div
               key={c.user_id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 transition-all"
+              className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 transition-all"
               onClick={() => navigate(`/chat/${c.user_id}`)}
             >
               <div className="flex justify-between items-start mb-1">
