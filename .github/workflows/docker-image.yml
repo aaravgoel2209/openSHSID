@@ -46,7 +46,7 @@ jobs:
         docker build . --file Dockerfile --tag shsid-backend:${{ env.TIMESTAMP }}
         docker tag shsid-backend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-backend:${{ env.TIMESTAMP }}
         docker tag shsid-backend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-backend:latest
-        docker build ./frontend --file frontend/Dockerfile --tag shsid-frontend:${{ env.TIMESTAMP }}
+        docker build . --file frontend/Dockerfile --tag shsid-frontend:${{ env.TIMESTAMP }}
         docker tag shsid-frontend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-frontend:${{ env.TIMESTAMP }}
         docker tag shsid-frontend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-frontend:latest
 
