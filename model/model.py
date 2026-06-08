@@ -1,32 +1,64 @@
 """
-输入: item_vec (32-dim) * heat, user_vec (32-dim) → 拼接(64-dim) → 5层FC → 0~10 float
+双编码器排序模型
+item_enc: 32-dim → 64-dim
+user_enc: 32-dim → 64-dim
+fusion:   128-dim → 64 → 32 → 1 (score in [0, 10])
+heat 作为 item 向量的标量缩放，在模型外部应用
 """
 
 import torch
 import torch.nn as nn
 
 
-class Model(nn.Module):
-    def __init__(self):
+def _make_encoder(in_dim: int, out_dim: int, dropout: float) -> nn.Sequential:
+    return nn.Sequential(
+        nn.Linear(in_dim, out_dim),
+        nn.GELU(),
+        nn.Dropout(dropout),
+        nn.Linear(out_dim, out_dim),
+        nn.GELU(),
+    )
+
+
+class RecoModel(nn.Module):
+    def __init__(self, emb_dim: int = 32, hidden: int = 64, dropout: float = 0.1):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(64, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 16),
-            nn.ReLU(),
-            nn.Linear(16, 1),
+        self.item_enc = _make_encoder(emb_dim, hidden, dropout)
+        self.user_enc = _make_encoder(emb_dim, hidden, dropout)
+        self.fusion = nn.Sequential(
+            nn.Linear(hidden * 2, hidden),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden, 32),
+            nn.GELU(),
+            nn.Linear(32, 1),
         )
+        self._init_weights()
         self._print_params()
 
-    def forward(self, item_vec, user_vec):
-        x = torch.cat([item_vec, user_vec], dim=-1)
-        x = self.net(x)
-        return torch.sigmoid(x) * 10.0
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.zeros_(m.bias)
+
+    def _fuse(self, item_vec: torch.Tensor, user_vec: torch.Tensor) -> torch.Tensor:
+        item_h = self.item_enc(item_vec)
+        user_h = self.user_enc(user_vec)
+        return self.fusion(torch.cat([item_h, user_h], dim=-1))
+
+    def forward(self, item_vec: torch.Tensor, user_vec: torch.Tensor) -> torch.Tensor:
+        """推理接口：返回 [0, 10] 的排序分数"""
+        return torch.sigmoid(self._fuse(item_vec, user_vec)) * 10.0
+
+    def score_logit(self, item_vec: torch.Tensor, user_vec: torch.Tensor) -> torch.Tensor:
+        """训练接口：返回原始 logit，供 BPR loss 使用"""
+        return self._fuse(item_vec, user_vec).squeeze(-1)
 
     def _print_params(self):
         total = sum(p.numel() for p in self.parameters())
-        print(f"[Model] 参数量: {total:,} ({total/1024:.1f}K)")
+        print(f"[Model] RecoModel 参数量: {total:,} ({total/1024:.1f}K)")
+
+
+# 兼容旧版模型名称
+Model = RecoModel

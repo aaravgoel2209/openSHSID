@@ -16,6 +16,9 @@ import ChatList from './pages/ChatList';
 import ChatDetail from './pages/ChatDetail';
 import UserProfile from './pages/UserProfile';
 import SearchResults from './pages/SearchResults';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
+import AdminContent from './pages/AdminContent';
 
 export default function App() {
   return (
@@ -38,6 +41,9 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/content" element={<AdminContent />} />
             </Route>
           </Routes>
         </AuthProvider>

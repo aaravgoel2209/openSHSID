@@ -1,3 +1,8 @@
+import re
+import threading
+import requests
+import logging
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
@@ -5,8 +10,13 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db import models as django_models
 from django.db.models import Q
+from django.contrib.auth.models import User
+from django.conf import settings as django_settings
+
 from .models import Label, Question, Answer
 from .serializers import LabelSerializer, QuestionListSerializer, QuestionDetailSerializer, AnswerSerializer
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
@@ -72,6 +82,51 @@ def view_question(request, pk):
     return Response({'ok': True})
 
 
+def _get_rei_user():
+    user, created = User.objects.get_or_create(
+        username='Rei',
+        defaults={'is_active': True},
+    )
+    if created:
+        user.set_unusable_password()
+        user.save()
+    return user
+
+
+def _generate_rei_reply(question, trigger_answer):
+    logger.info(f'[Rei] 开始生成回答 (question_id={question.id})')
+    logger.debug(f'[Rei] 问题标题: {question.title}')
+
+    try:
+        resp = requests.post(
+            'http://localhost:5000/rei/reply',
+            json={
+                'question_title': question.title,
+                'question_content': question.content,
+                'trigger_content': trigger_answer.content,
+            },
+            timeout=120,
+        )
+        resp.raise_for_status()
+        reply_text = resp.json()['reply']
+        logger.info(f'[Rei] Flask 返回回答，长度: {len(reply_text)} 字符')
+    except requests.exceptions.RequestException as e:
+        logger.error(f'[Rei] Flask 请求失败: {e}')
+        reply_text = '抱歉，我暂时无法回答这个问题，请稍后再试。'
+    except Exception as e:
+        logger.error(f'[Rei] 处理失败: {e}', exc_info=True)
+        reply_text = '抱歉，我暂时无法回答这个问题，请稍后再试。'
+
+    rei_user = _get_rei_user()
+    Answer.objects.create(
+        question=question,
+        content=reply_text,
+        author=rei_user,
+        parent=trigger_answer,
+    )
+    logger.info(f'[Rei] 回答已保存 (answer_id={trigger_answer.id})')
+
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def answer_list(request, pk):
@@ -85,12 +140,21 @@ def answer_list(request, pk):
         serializer = AnswerSerializer(data=request.data)
         if serializer.is_valid():
             parent_id = request.data.get('parent')
+            parent = None
             if parent_id:
                 parent = get_object_or_404(Answer, pk=parent_id, question=question)
-            serializer.save(
+            answer = serializer.save(
                 question=question,
                 author=request.user if request.user.is_authenticated else None,
-                parent=parent if parent_id else None,
+                parent=parent,
             )
+            if re.search(r'@Rei\b', request.data.get('content', ''), re.IGNORECASE):
+                logger.info(f'[Rei] 检测到 @Rei 提及，启动后台线程')
+                thread = threading.Thread(
+                    target=_generate_rei_reply,
+                    args=(question, answer),
+                    daemon=True,
+                )
+                thread.start()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

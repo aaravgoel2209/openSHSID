@@ -29,27 +29,57 @@ export default function Login() {
   };
 
   return (
-    <div className="flex justify-center">
-      <div className="w-full max-w-sm bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-xl p-6 shadow-sm">
-        <h1 className="text-xl font-bold text-center mb-6">登录</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <TextField>
-            <Label>用户名</Label>
-            <Input value={username} onChange={(e) => setUsername(e.target.value)} />
-          </TextField>
-          <TextField>
-            <Label>密码</Label>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </TextField>
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">{error}</div>
-          )}
-          <Button type="submit" color="primary" fullWidth isLoading={submitting}>
-            {submitting ? '登录中...' : '登录'}
-          </Button>
-        </form>
-        <p className="text-sm text-center mt-4 text-gray-500 dark:text-gray-400">
-          还没有账号？<Link to="/register" className="text-primary-600 underline">注册</Link>
+    <div className="flex justify-center items-center min-h-[70vh] animate-fade-in">
+      <div className="w-full max-w-sm">
+        {/* Decorative header */}
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <span className="text-white text-2xl font-bold">S</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">欢迎回来</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">登录你的 SHSID 校园账号</p>
+        </div>
+
+        {/* Form Card */}
+        <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <TextField>
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">用户名</Label>
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="输入用户名"
+                className="mt-1"
+              />
+            </TextField>
+            <TextField>
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">密码</Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="输入密码"
+                className="mt-1"
+              />
+            </TextField>
+            {error && (
+              <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-xl p-3 text-sm text-red-600 dark:text-red-400">
+                <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
+            <Button type="submit" color="primary" fullWidth isLoading={submitting} className="font-medium h-11">
+              {submitting ? '登录中...' : '登录'}
+            </Button>
+          </form>
+        </div>
+
+        {/* Footer link */}
+        <p className="text-sm text-center mt-5 text-gray-500 dark:text-gray-400">
+          还没有账号？
+          <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline ml-1">注册</Link>
         </p>
       </div>
     </div>
