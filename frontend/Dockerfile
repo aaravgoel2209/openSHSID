@@ -1,13 +1,14 @@
-# Frontend Dockerfile — multi-stage build
 FROM node:24-alpine AS build
+ARG VITE_API_URL=http://backend:8000/api
 WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ .
-RUN npm run build
+RUN VITE_API_URL=$VITE_API_URL npm run build
 
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+FROM node:24-alpine
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+RUN npm install -g serve
+EXPOSE 5173
+CMD ["serve", "-s", "dist", "-l", "5173", "--no-clipboard"]
