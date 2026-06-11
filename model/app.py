@@ -34,59 +34,63 @@ def get_optimizer():
 
 def _get_rei_model():
     if 'model' not in _rei_model_cache:
-        from transformers import AutoTokenizer, AutoModelForCausalLM
-        logger.info('[Rei] 加载模型: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B')
+        from pathlib import Path
+        from llama_cpp import Llama
+        gguf_path = Path(__file__).parent / 'model.gguf'
+        logger.info(f'[Rei] 加载 GGUF 模型: {gguf_path}')
         try:
-            model_name = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
-            logger.info(f'[Rei] 使用默认 HuggingFace 缓存目录: ~/.cache/huggingface/hub/')
-            tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-            rei_model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                trust_remote_code=True,
-                torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-                device_map='auto' if torch.cuda.is_available() else None,
+            if not gguf_path.exists():
+                logger.error(f'[Rei] 模型文件不存在: {gguf_path}')
+                raise FileNotFoundError(f'模型文件不存在: {gguf_path}')
+            rei_model = Llama(
+                model_path=str(gguf_path),
+                n_ctx=262144,
+                n_threads=4,
+                verbose=False,
             )
-            rei_model.eval()
-            _rei_model_cache['tokenizer'] = tokenizer
             _rei_model_cache['model'] = rei_model
-            logger.info('[Rei] 模型加载成功，已缓存到内存')
+            logger.info('[Rei] GGUF 模型加载成功，已缓存到内存')
         except Exception as e:
-            logger.error(f'[Rei] 模型加载失败: {e}')
+            logger.error(f'[Rei] 模型加载失败: {e}', exc_info=True)
             raise
-    return _rei_model_cache['tokenizer'], _rei_model_cache['model']
+    return _rei_model_cache['model']
 
 
 def _generate_rei_reply(question_title, question_content, trigger_content):
     logger.info('[Rei] 开始生成回答')
-    logger.debug(f'[Rei] 问题: {question_title}')
-    logger.debug(f'[Rei] 触发内容: {trigger_content[:100]}...')
 
     try:
-        tokenizer, rei_model = _get_rei_model()
+        logger.info('[Rei] 加载模型...')
+        rei_model = _get_rei_model()
+        logger.info('[Rei] 模型加载完成')
 
-        messages = [
-            {'role': 'user', 'content': f'问题标题：{question_title}\n问题内容：{question_content}\n\n用户的追问/评论：{trigger_content}\n\n请给出简洁有用的回答。'},
-        ]
-        input_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = tokenizer(input_text, return_tensors='pt')
+        prompt = (
+            f'问题标题：{question_title}\n'
+            f'问题内容：{question_content}\n\n'
+            f'用户的追问/评论：{trigger_content}\n\n'
+            f'请给出简洁有用的回答。思考的时间短一点'
+        )
 
-        if torch.cuda.is_available():
-            inputs = {k: v.cuda() for k, v in inputs.items()}
-            logger.info('[Rei] 使用 GPU 推理')
-        else:
-            logger.info('[Rei] 使用 CPU 推理')
+        logger.info('[Rei] 开始生成...')
+        output = rei_model(
+            prompt,
+            max_tokens=262144,
+            temperature=0.7,
+            top_p=0.9,
+            stop=['</s>', '\n\n\n'],
+            echo=False,
+        )
+        reply_text = output['choices'][0]['text'].strip()
 
-        with torch.no_grad():
-            outputs = rei_model.generate(
-                **inputs,
-                max_new_tokens=512,
-                do_sample=True,
-                temperature=0.7,
-                top_p=0.9,
-            )
+        # 折叠 <think> 推理过程
+        import re
+        reply_text = re.sub(
+            r'<think>(.*?)</think>',
+            r'<details><summary>推理过程</summary>\1</details>',
+            reply_text,
+            flags=re.DOTALL,
+        )
 
-        generated = outputs[0][inputs['input_ids'].shape[1]:]
-        reply_text = tokenizer.decode(generated, skip_special_tokens=True).strip()
         logger.info(f'[Rei] 生成成功，长度: {len(reply_text)} 字符')
         logger.debug(f'[Rei] 回答内容: {reply_text[:100]}...')
         return reply_text
@@ -137,18 +141,23 @@ def click_endpoint():
 
 @app.route("/rei/reply", methods=["POST"])
 def rei_reply_endpoint():
-    data = request.get_json()
-    question_title = data.get("question_title", "")
-    question_content = data.get("question_content", "")
-    trigger_content = data.get("trigger_content", "")
+    try:
+        data = request.get_json()
+        question_title = data.get("question_title", "")
+        question_content = data.get("question_content", "")
+        trigger_content = data.get("trigger_content", "")
 
-    logger.info('[Rei] 接收生成请求')
-    reply = _generate_rei_reply(question_title, question_content, trigger_content)
-    logger.info('[Rei] 返回回答')
-    return jsonify({"reply": reply})
+        logger.info('[Rei] 接收生成请求')
+        logger.debug(f'[Rei] 问题标题: {question_title}')
+        reply = _generate_rei_reply(question_title, question_content, trigger_content)
+        logger.info('[Rei] 返回回答')
+        return jsonify({"reply": reply})
+    except Exception as e:
+        logger.error(f'[Rei] 端点处理失败: {e}', exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
     from config import PUSH_MODE
     logger.info(f'[Flask] 模型服务启动于 :5000  mode={PUSH_MODE}')
-    app.run(port=5000, debug=False)
+    app.run(port=5000, debug=True)

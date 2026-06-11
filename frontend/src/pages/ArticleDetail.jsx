@@ -97,7 +97,7 @@ export default function ArticleDetail() {
         <p className="mt-1 mb-4 text-xs text-gray-400">热度: {article.heat}</p>
       )}
       <hr className="border-gray-200 mb-6" />
-      <p className="text-gray-700 whitespace-pre-wrap">{article.content}</p>
+      <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: article.content }} />
       <hr className="border-gray-200 my-6" />
       <div className="flex items-center gap-2">
         <Button variant="light" onPress={() => navigate(-1)}>返回</Button>

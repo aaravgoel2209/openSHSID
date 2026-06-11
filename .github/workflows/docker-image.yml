@@ -49,6 +49,9 @@ jobs:
         docker build . --file frontend/Dockerfile --tag shsid-frontend:${{ env.TIMESTAMP }}
         docker tag shsid-frontend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-frontend:${{ env.TIMESTAMP }}
         docker tag shsid-frontend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-frontend:latest
+        docker build . --file model/Dockerfile --tag shsid-model:${{ env.TIMESTAMP }}
+        docker tag shsid-model:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-model:${{ env.TIMESTAMP }}
+        docker tag shsid-model:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-model:latest
 
     - name: Push Docker images to GitHub Packages
       run: |
@@ -56,3 +59,5 @@ jobs:
         docker push ghcr.io/${{ github.repository_owner }}/shsid-backend:latest
         docker push ghcr.io/${{ github.repository_owner }}/shsid-frontend:${{ env.TIMESTAMP }}
         docker push ghcr.io/${{ github.repository_owner }}/shsid-frontend:latest
+        docker push ghcr.io/${{ github.repository_owner }}/shsid-model:${{ env.TIMESTAMP }}
+        docker push ghcr.io/${{ github.repository_owner }}/shsid-model:latest

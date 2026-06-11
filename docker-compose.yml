@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build: .
@@ -11,6 +9,17 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DJANGO_SETTINGS_MODULE=OpenSHSID_backend.settings
+    restart: unless-stopped
+
+  model:
+    build:
+      context: .
+      dockerfile: model/Dockerfile
+    container_name: shsid-model
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./model/data:/app/model/data
     restart: unless-stopped
 
   frontend:

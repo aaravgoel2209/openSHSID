@@ -44,7 +44,7 @@ class QuestionListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'title', 'author', 'author_name', 'answer_count', 'views', 'like_count', 'labels', 'created_at']
+        fields = ['id', 'title', 'content', 'author', 'author_name', 'answer_count', 'views', 'like_count', 'labels', 'created_at']
 
     def get_like_count(self, obj):
         return obj.likes.count()
