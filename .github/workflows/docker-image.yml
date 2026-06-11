@@ -2,62 +2,74 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "alpha" ]
+    branches: ["alpha"]
   pull_request:
-    branches: [ "alpha" ]
+    branches: ["alpha"]
 
 permissions:
   contents: read
   packages: write
 
+env:
+  REGISTRY: ghcr.io
+  OWNER: ${{ github.repository_owner }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 24
-        cache: npm
-        cache-dependency-path: frontend/package-lock.json
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-    - name: Build frontend
-      working-directory: frontend
-      run: |
-        npm ci
-        npm run build
+      - name: Build frontend
+        working-directory: frontend
+        run: npm ci && npm run build
 
-    - name: Generate timestamp
-      run: echo "TIMESTAMP=$(date +%s)" >> $GITHUB_ENV
+      - name: Generate timestamp
+        run: echo "TIMESTAMP=$(date +%s)" >> $GITHUB_ENV
 
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and tag Docker images
-      run: |
-        docker build . --file Dockerfile --tag shsid-backend:${{ env.TIMESTAMP }}
-        docker tag shsid-backend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-backend:${{ env.TIMESTAMP }}
-        docker tag shsid-backend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-backend:latest
-        docker build . --file frontend/Dockerfile --tag shsid-frontend:${{ env.TIMESTAMP }}
-        docker tag shsid-frontend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-frontend:${{ env.TIMESTAMP }}
-        docker tag shsid-frontend:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-frontend:latest
-        docker build . --file model/Dockerfile --tag shsid-model:${{ env.TIMESTAMP }}
-        docker tag shsid-model:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-model:${{ env.TIMESTAMP }}
-        docker tag shsid-model:${{ env.TIMESTAMP }} ghcr.io/${{ github.repository_owner }}/shsid-model:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Push Docker images to GitHub Packages
-      run: |
-        docker push ghcr.io/${{ github.repository_owner }}/shsid-backend:${{ env.TIMESTAMP }}
-        docker push ghcr.io/${{ github.repository_owner }}/shsid-backend:latest
-        docker push ghcr.io/${{ github.repository_owner }}/shsid-frontend:${{ env.TIMESTAMP }}
-        docker push ghcr.io/${{ github.repository_owner }}/shsid-frontend:latest
-        docker push ghcr.io/${{ github.repository_owner }}/shsid-model:${{ env.TIMESTAMP }}
-        docker push ghcr.io/${{ github.repository_owner }}/shsid-model:latest
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/shsid-backend:${{ env.TIMESTAMP }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/shsid-backend:latest
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/shsid-frontend:${{ env.TIMESTAMP }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/shsid-frontend:latest
+
+      - name: Build and push model
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: model/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/shsid-model:${{ env.TIMESTAMP }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/shsid-model:latest
