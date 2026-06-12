@@ -44,8 +44,9 @@ def _get_rei_model():
                 raise FileNotFoundError(f'模型文件不存在: {gguf_path}')
             rei_model = Llama(
                 model_path=str(gguf_path),
-                n_ctx=262144,
-                n_threads=4,
+                n_ctx=32768,
+                n_threads=48,
+                n_batch=512,
                 verbose=False,
             )
             _rei_model_cache['model'] = rei_model
@@ -72,15 +73,22 @@ def _generate_rei_reply(question_title, question_content, trigger_content):
         )
 
         logger.info('[Rei] 开始生成...')
+        import time
+        t0 = time.perf_counter()
         output = rei_model(
             prompt,
-            max_tokens=262144,
+            max_tokens=512,
             temperature=0.7,
             top_p=0.9,
             stop=['</s>', '\n\n\n'],
             echo=False,
         )
+        elapsed = time.perf_counter() - t0
         reply_text = output['choices'][0]['text'].strip()
+        usage = output.get('usage', {})
+        token_count = usage.get('completion_tokens', 0) or len(reply_text.split())
+        tps = token_count / elapsed if elapsed > 0 else 0
+        logger.info(f'[Rei] 生成完成: {token_count} tokens, {elapsed:.1f}s, {tps:.1f} t/s')
 
         # 折叠 <think> 推理过程
         import re

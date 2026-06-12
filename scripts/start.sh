@@ -20,7 +20,7 @@ sleep 2
 # 2. Django API (port 8000)
 echo "[Django] Starting..."
 cd "$ROOT"
-python manage.py runserver 19424 &
+python manage.py runserver 0.0.0.0:19424 &
 DJANGO_PID=$!
 echo "[Django] PID=$DJANGO_PID"
 

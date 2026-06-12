@@ -127,10 +127,21 @@ def _generate_rei_reply(question, trigger_answer):
     logger.info(f'[Rei] 回答已保存 (answer_id={trigger_answer.id})')
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET', 'POST', 'DELETE'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def answer_list(request, pk):
     question = get_object_or_404(Question, pk=pk)
+
+    if request.method == 'DELETE':
+        answer_id = request.data.get('answer_id') or request.query_params.get('answer_id')
+        if not answer_id:
+            return Response({'error': 'answer_id required'}, status=400)
+        if not request.user.is_staff:
+            return Response({'error': '仅管理员可删除'}, status=403)
+        answer = get_object_or_404(Answer, pk=answer_id, question=question)
+        answer.delete()
+        return Response({'ok': True}, status=200)
+
     if request.method == 'GET':
         answers = question.answers.filter(parent=None)
         serializer = AnswerSerializer(answers, many=True, context={'request': request})
@@ -140,21 +151,12 @@ def answer_list(request, pk):
         serializer = AnswerSerializer(data=request.data)
         if serializer.is_valid():
             parent_id = request.data.get('parent')
-            parent = None
             if parent_id:
                 parent = get_object_or_404(Answer, pk=parent_id, question=question)
-            answer = serializer.save(
+            serializer.save(
                 question=question,
                 author=request.user if request.user.is_authenticated else None,
-                parent=parent,
+                parent=parent if parent_id else None,
             )
-            if re.search(r'@Rei\b', request.data.get('content', ''), re.IGNORECASE):
-                logger.info(f'[Rei] 检测到 @Rei 提及，启动后台线程')
-                thread = threading.Thread(
-                    target=_generate_rei_reply,
-                    args=(question, answer),
-                    daemon=True,
-                )
-                thread.start()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

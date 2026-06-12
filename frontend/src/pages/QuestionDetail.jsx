@@ -274,6 +274,22 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
         >
           回复
         </button>
+        {user?.is_staff && (
+          <button
+            onClick={async () => {
+              if (!window.confirm('确认删除这条回答？')) return;
+              try {
+                await client.delete(`/qa/questions/${question.id}/answers/`, {
+                  data: { answer_id: answer.id },
+                });
+                onReply();
+              } catch {}
+            }}
+            className="hover:text-rose-500 transition-colors font-medium ml-auto"
+          >
+            删除
+          </button>
+        )}
       </div>
 
       {/* Reply Form */}

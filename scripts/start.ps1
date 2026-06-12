@@ -15,7 +15,7 @@ Write-Host "[Flask]  starting..." -ForegroundColor Green
 # 2. Django (port 8000)
 $DjangoJob = Start-Job -Name django -ScriptBlock {
   Set-Location $using:Root
-  python manage.py runserver 19424
+  python manage.py runserver 0.0.0.0:19424
 }
 Write-Host "[Django] starting..." -ForegroundColor Green
 
