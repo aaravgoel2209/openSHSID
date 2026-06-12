@@ -153,10 +153,18 @@ def answer_list(request, pk):
             parent_id = request.data.get('parent')
             if parent_id:
                 parent = get_object_or_404(Answer, pk=parent_id, question=question)
-            serializer.save(
+            answer = serializer.save(
                 question=question,
                 author=request.user if request.user.is_authenticated else None,
                 parent=parent if parent_id else None,
             )
+            if re.search(r'@Rei\b', request.data.get('content', ''), re.IGNORECASE):
+                logger.info(f'[Rei] 检测到 @Rei 提及，启动后台线程')
+                thread = threading.Thread(
+                    target=_generate_rei_reply,
+                    args=(question, answer),
+                    daemon=True,
+                )
+                thread.start()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
