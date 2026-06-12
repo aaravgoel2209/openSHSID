@@ -20,7 +20,7 @@ sleep 2
 # 2. Django API (port 8000)
 echo "[Django] Starting..."
 cd "$ROOT"
-python manage.py runserver 8000 &
+python manage.py runserver 19424 &
 DJANGO_PID=$!
 echo "[Django] PID=$DJANGO_PID"
 
@@ -34,7 +34,7 @@ REACT_PID=$!
 echo "[React]  PID=$REACT_PID"
 
 echo ""
-echo "Django  http://localhost:8000"
+echo "Django  http://localhost:19424"
 echo "Flask   http://localhost:5000"
 echo "React   http://localhost:5173"
 echo ""

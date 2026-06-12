@@ -15,7 +15,7 @@ Write-Host "[Flask]  starting..." -ForegroundColor Green
 # 2. Django (port 8000)
 $DjangoJob = Start-Job -Name django -ScriptBlock {
   Set-Location $using:Root
-  python manage.py runserver 8000
+  python manage.py runserver 19424
 }
 Write-Host "[Django] starting..." -ForegroundColor Green
 
@@ -29,7 +29,7 @@ $ReactJob = Start-Job -Name react -ScriptBlock {
 Write-Host "[React]  starting..." -ForegroundColor Green
 
 Write-Host ""
-Write-Host "Django http://localhost:8000" -ForegroundColor Yellow
+Write-Host "Django http://localhost:19424" -ForegroundColor Yellow
 Write-Host "Flask  http://localhost:5000" -ForegroundColor Yellow
 Write-Host "React  http://localhost:5173" -ForegroundColor Yellow
 Write-Host ""

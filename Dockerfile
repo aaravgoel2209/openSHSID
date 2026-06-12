@@ -22,7 +22,7 @@ COPY . .
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 
-EXPOSE 8000
+EXPOSE 19424
 
 # Run with gunicorn for production
-CMD ["gunicorn", "OpenSHSID_backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "OpenSHSID_backend.wsgi:application", "--bind", "[::]:19424", "--workers", "3"]

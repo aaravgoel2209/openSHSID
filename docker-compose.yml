@@ -1,9 +1,9 @@
 services:
   backend:
     build: .
-    container_name: ghcr.io/aaravgoel2209/shsid-backend:latest
+    container_name: shsid-backend
     ports:
-      - "8000:8000"
+      - "19424:19424"
     volumes:
       - ./db.sqlite3:/app/db.sqlite3
     environment:
@@ -15,7 +15,7 @@ services:
     build:
       context: .
       dockerfile: model/Dockerfile
-    container_name: ghcr.io/aaravgoel2209/shsid-model:latest
+    container_name: shsid-model
     ports:
       - "5000:5000"
     volumes:
