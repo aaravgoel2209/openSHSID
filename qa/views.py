@@ -112,10 +112,10 @@ def _generate_rei_reply(question, trigger_answer):
         logger.info(f'[Rei] Flask 返回回答，长度: {len(reply_text)} 字符')
     except requests.exceptions.RequestException as e:
         logger.error(f'[Rei] Flask 请求失败: {e}')
-        reply_text = '抱歉，我暂时无法回答这个问题，请稍后再试。'
+        reply_text = 'Rei 出故障啦，请反馈给zyx_2012@outlook.com'
     except Exception as e:
         logger.error(f'[Rei] 处理失败: {e}', exc_info=True)
-        reply_text = '抱歉，我暂时无法回答这个问题，请稍后再试。'
+        reply_text = 'Rei 出故障啦，请反馈给zyx_2012@outlook.com'
 
     rei_user = _get_rei_user()
     Answer.objects.create(

@@ -45,7 +45,7 @@ def _get_rei_model():
             rei_model = Llama(
                 model_path=str(gguf_path),
                 n_ctx=32768,
-                n_threads=48,
+                n_threads=96,
                 n_batch=512,
                 verbose=False,
             )
