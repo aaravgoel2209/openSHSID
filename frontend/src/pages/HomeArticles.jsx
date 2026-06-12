@@ -8,7 +8,7 @@ import { getArticles } from '../api/knowledge';
 import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 
-const FLASK_URL = 'http://localhost:5000';
+const FLASK_URL = '';
 
 export default function HomeArticles() {
   const navigate = useNavigate();
