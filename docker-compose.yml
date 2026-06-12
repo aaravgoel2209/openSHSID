@@ -23,8 +23,11 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
-    container_name: ghcr.io/aaravgoel2209/shsid-frontend:latest
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000/api
     ports:
       - "80:5173"
     depends_on:
