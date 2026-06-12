@@ -105,7 +105,7 @@ def _generate_rei_reply(question, trigger_answer):
                 'question_content': question.content,
                 'trigger_content': trigger_answer.content,
             },
-            timeout=120,
+            timeout=240,
         )
         resp.raise_for_status()
         reply_text = resp.json()['reply']
