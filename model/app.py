@@ -68,13 +68,19 @@ def _generate_rei_reply(question_title, question_content, trigger_content):
                     f'用户的追问/评论：{trigger_content}'
                 )},
             ],
-            max_tokens=512,
+            max_tokens=1024,
             temperature=0.7,
         )
         elapsed = time.perf_counter() - t0
         choice = resp.choices[0]
+        reply_text = ''
         if hasattr(choice, 'message') and choice.message:
-            reply_text = choice.message.content or ''
+            msg = choice.message
+            reply_text = msg.content or ''
+            if not reply_text.strip():
+                reasoning = getattr(msg, 'reasoning_content', None) or ''
+                if reasoning:
+                    reply_text = reasoning
         elif hasattr(choice, 'text'):
             reply_text = choice.text or ''
         else:
