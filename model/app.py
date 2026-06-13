@@ -76,33 +76,25 @@ def _generate_rei_reply(question_title, question_content, trigger_content):
         reply_text = ''
         if hasattr(choice, 'message') and choice.message:
             msg = choice.message
-            reply_text = msg.content or ''
-            if not reply_text.strip():
-                reasoning = getattr(msg, 'reasoning_content', None) or ''
-                if reasoning:
-                    reply_text = reasoning
+            content = (msg.content or '').strip()
+            reasoning = (getattr(msg, 'reasoning_content', None) or '').strip()
+            if reasoning:
+                reply_text = f'<details><summary>推理过程</summary>{reasoning}</details>'
+                if content:
+                    reply_text += '\n\n' + content
+            else:
+                reply_text = content if content else '（模型未返回有效回答）'
         elif hasattr(choice, 'text'):
-            reply_text = choice.text or ''
+            reply_text = (choice.text or '').strip()
         else:
             reply_text = str(choice)
-        reply_text = reply_text.strip()
         if not reply_text:
-            logger.warning(f'[Rei] 响应内容为空，尝试解析原始响应: type={type(resp).__name__}')
-            logger.warning(f'[Rei] choices[0] 字段: {dir(choice)}')
+            logger.warning(f'[Rei] 响应内容为空')
             reply_text = '（模型未返回有效回答）'
         usage = resp.usage or {}
         token_count = getattr(usage, 'completion_tokens', 0) or len(reply_text.split()) if reply_text else 0
         tps = token_count / elapsed if elapsed > 0 else 0
         logger.info(f'[Rei] 生成完成: {token_count} tokens, {elapsed:.1f}s, {tps:.1f} t/s')
-
-        # 折叠 <think> 推理过程
-        import re
-        reply_text = re.sub(
-            r'<think>(.*?)</think>',
-            r'<details><summary>推理过程</summary>\1</details>',
-            reply_text,
-            flags=re.DOTALL,
-        )
 
         logger.info(f'[Rei] 生成成功，长度: {len(reply_text)} 字符')
         logger.debug(f'[Rei] 回答内容: {reply_text[:100]}...')
