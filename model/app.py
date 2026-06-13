@@ -61,14 +61,14 @@ def _generate_rei_reply(question_title, question_content, trigger_content):
         resp = client.chat.completions.create(
             model=model_name,
             messages=[
-                {'role': 'system', 'content': '你是一个的校园助手，用用户对应的语言回复。'},
+                {'role': 'system', 'content': '你是一个名字叫Rei的校园助手，底层是qwen3.6，用户对应的语言回复。'},
                 {'role': 'user', 'content': (
                     f'问题标题：{question_title}\n'
                     f'问题内容：{question_content}\n\n'
                     f'用户的追问/评论：{trigger_content}'
                 )},
             ],
-            max_tokens=1024,
+            max_tokens=262144,
             temperature=0.7,
         )
         elapsed = time.perf_counter() - t0
