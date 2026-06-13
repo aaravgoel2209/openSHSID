@@ -72,9 +72,20 @@ def _generate_rei_reply(question_title, question_content, trigger_content):
             temperature=0.7,
         )
         elapsed = time.perf_counter() - t0
-        reply_text = resp.choices[0].message.content.strip()
+        choice = resp.choices[0]
+        if hasattr(choice, 'message') and choice.message:
+            reply_text = choice.message.content or ''
+        elif hasattr(choice, 'text'):
+            reply_text = choice.text or ''
+        else:
+            reply_text = str(choice)
+        reply_text = reply_text.strip()
+        if not reply_text:
+            logger.warning(f'[Rei] 响应内容为空，尝试解析原始响应: type={type(resp).__name__}')
+            logger.warning(f'[Rei] choices[0] 字段: {dir(choice)}')
+            reply_text = '（模型未返回有效回答）'
         usage = resp.usage or {}
-        token_count = getattr(usage, 'completion_tokens', 0) or len(reply_text.split())
+        token_count = getattr(usage, 'completion_tokens', 0) or len(reply_text.split()) if reply_text else 0
         tps = token_count / elapsed if elapsed > 0 else 0
         logger.info(f'[Rei] 生成完成: {token_count} tokens, {elapsed:.1f}s, {tps:.1f} t/s')
 
