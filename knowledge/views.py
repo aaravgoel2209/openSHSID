@@ -34,10 +34,13 @@ def article_list(request):
         grade = request.query_params.get('grade')
         subject = request.query_params.get('subject')
         search = request.query_params.get('search')
+        label_id = request.query_params.get('label')
         if grade:
             articles = articles.filter(grade_id=grade)
         if subject:
             articles = articles.filter(subject_id=subject)
+        if label_id:
+            articles = articles.filter(labels__id=label_id)
         if search:
             articles = articles.filter(Q(title__icontains=search) | Q(content__icontains=search))
         serializer = ArticleListSerializer(articles, many=True)
