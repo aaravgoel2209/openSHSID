@@ -29,8 +29,8 @@ class Subject(models.Model):
 class Article(models.Model):
     title = models.CharField(max_length=200, verbose_name="标题")
     content = models.TextField(verbose_name="内容")
-    grade = models.ForeignKey(Grade, on_delete=models.CASCADE, verbose_name="年级")
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name="学科")
+    grade = models.ForeignKey(Grade, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="年级")
+    subject = models.ForeignKey(Subject, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="学科")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="作者")
     author_name = models.CharField(max_length=100, blank=True, verbose_name="作者名")
     views = models.PositiveIntegerField(default=0, verbose_name="浏览量")

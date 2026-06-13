@@ -5,17 +5,12 @@ import { TextField } from '@heroui/react/textfield';
 import { Label } from '@heroui/react/label';
 import { Input } from '@heroui/react/input';
 import { TextArea } from '@heroui/react/textarea';
-import { getGrades, getSubjects, createArticle } from '../api/knowledge';
 import { getLabels } from '../api/labels';
 import client from '../api/client';
 
 export default function CreateArticle() {
   const navigate = useNavigate();
-  const [grades, setGrades] = useState([]);
-  const [subjects, setSubjects] = useState([]);
   const [title, setTitle] = useState('');
-  const [grade, setGrade] = useState('');
-  const [subject, setSubject] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [content, setContent] = useState('');
   const [allLabels, setAllLabels] = useState([]);
@@ -23,8 +18,6 @@ export default function CreateArticle() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    getGrades().then(setGrades);
-    getSubjects().then(setSubjects);
     getLabels().then(setAllLabels).catch(() => {});
   }, []);
 
@@ -36,14 +29,12 @@ export default function CreateArticle() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || !grade || !subject) return;
+    if (!title.trim() || !content.trim()) return;
     setSubmitting(true);
     try {
       const a = await client.post('/knowledge/articles/', {
         title,
         content,
-        grade: parseInt(grade),
-        subject: parseInt(subject),
         author_name: authorName,
         labels: selectedLabels,
       }).then((r) => r.data);
@@ -61,36 +52,6 @@ export default function CreateArticle() {
           <Label>标题</Label>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
         </TextField>
-        <div className="flex gap-4">
-          <div className="flex flex-col gap-1.5 w-full">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">年级</label>
-            <select
-              className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-900 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
-              value={grade}
-              onChange={(e) => setGrade(e.target.value)}
-              required
-            >
-              <option value="">选择年级</option>
-              {grades.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5 w-full">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">学科</label>
-            <select
-              className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-900 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30 w-full"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-            >
-              <option value="">选择学科</option>
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
         <TextField>
           <Label>作者（选填）</Label>
           <Input placeholder="你的名字或昵称" value={authorName} onChange={(e) => setAuthorName(e.target.value)} maxLength={100} />

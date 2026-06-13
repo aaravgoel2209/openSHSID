@@ -16,8 +16,8 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class ArticleListSerializer(serializers.ModelSerializer):
-    grade_name = serializers.CharField(source='grade.name', read_only=True)
-    subject_name = serializers.CharField(source='subject.name', read_only=True)
+    grade_name = serializers.SerializerMethodField()
+    subject_name = serializers.SerializerMethodField()
     author_name_display = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     labels = LabelSerializer(many=True, read_only=True)
@@ -26,6 +26,12 @@ class ArticleListSerializer(serializers.ModelSerializer):
         model = Article
         fields = ['id', 'title', 'grade', 'grade_name', 'subject', 'subject_name',
                   'author_name_display', 'views', 'like_count', 'labels', 'embedding', 'created_at']
+
+    def get_grade_name(self, obj):
+        return obj.grade.name if obj.grade else None
+
+    def get_subject_name(self, obj):
+        return obj.subject.name if obj.subject else None
 
     def get_author_name_display(self, obj):
         if obj.author:
@@ -37,8 +43,8 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
 
 class ArticleDetailSerializer(serializers.ModelSerializer):
-    grade_name = serializers.CharField(source='grade.name', read_only=True)
-    subject_name = serializers.CharField(source='subject.name', read_only=True)
+    grade_name = serializers.SerializerMethodField()
+    subject_name = serializers.SerializerMethodField()
     author_name_display = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
@@ -51,6 +57,12 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
                   'author', 'author_name', 'author_name_display', 'views', 'like_count', 'is_liked',
                   'heat', 'labels', 'embedding', 'created_at']
         read_only_fields = ['author', 'created_at']
+
+    def get_grade_name(self, obj):
+        return obj.grade.name if obj.grade else None
+
+    def get_subject_name(self, obj):
+        return obj.subject.name if obj.subject else None
 
     def get_author_name_display(self, obj):
         if obj.author:
