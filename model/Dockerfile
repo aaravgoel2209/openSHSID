@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc g++ cmake &
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir flask flask-cors torch llama-cpp-python
+RUN pip install --no-cache-dir flask flask-cors openai
 
 COPY model/ ./model/
 

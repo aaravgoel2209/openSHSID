@@ -2,6 +2,7 @@
 Flask 服务 — 排序 + 强化学习训练 + AI 回答生成
 """
 import json
+import os
 import torch
 import logging
 from datetime import datetime
@@ -32,61 +33,48 @@ def get_optimizer():
     return optimizer
 
 
-def _get_rei_model():
-    if 'model' not in _rei_model_cache:
-        from pathlib import Path
-        from llama_cpp import Llama
-        gguf_path = Path(__file__).parent / 'model.gguf'
-        logger.info(f'[Rei] 加载 GGUF 模型: {gguf_path}')
-        try:
-            if not gguf_path.exists():
-                logger.error(f'[Rei] 模型文件不存在: {gguf_path}')
-                raise FileNotFoundError(f'模型文件不存在: {gguf_path}')
-            rei_model = Llama(
-                model_path=str(gguf_path),
-                n_ctx=32768,
-                n_threads=48,
-                n_batch=512,
-                verbose=False,
-            )
-            _rei_model_cache['model'] = rei_model
-            logger.info('[Rei] GGUF 模型加载成功，已缓存到内存')
-        except Exception as e:
-            logger.error(f'[Rei] 模型加载失败: {e}', exc_info=True)
-            raise
-    return _rei_model_cache['model']
+def _get_rei_client():
+    if 'client' not in _rei_model_cache:
+        from openai import OpenAI
+        api_base = os.environ.get('REI_API_BASE', 'http://192.168.2.103:8033/v1')
+        api_key = os.environ.get('REI_API_KEY', '114514')
+        model_name = os.environ.get('REI_MODEL', 'Qwen3.6-35B-A3B-MXFP4_MOE.gguf')
+        logger.info(f'[Rei] OpenAI 兼容 API: {api_base} model={model_name}')
+        client = OpenAI(base_url=api_base, api_key=api_key)
+        _rei_model_cache['client'] = client
+        _rei_model_cache['model_name'] = model_name
+        logger.info('[Rei] 客户端已创建')
+    return _rei_model_cache['client'], _rei_model_cache['model_name']
 
 
 def _generate_rei_reply(question_title, question_content, trigger_content):
     logger.info('[Rei] 开始生成回答')
 
     try:
-        logger.info('[Rei] 加载模型...')
-        rei_model = _get_rei_model()
-        logger.info('[Rei] 模型加载完成')
-
-        prompt = (
-            f'问题标题：{question_title}\n'
-            f'问题内容：{question_content}\n\n'
-            f'用户的追问/评论：{trigger_content}\n\n'
-            f'请给出简洁有用的回答。思考的时间短一点'
-        )
+        logger.info('[Rei] 创建 API 客户端...')
+        client, model_name = _get_rei_client()
+        logger.info(f'[Rei] 使用模型: {model_name}')
 
         logger.info('[Rei] 开始生成...')
         import time
         t0 = time.perf_counter()
-        output = rei_model(
-            prompt,
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {'role': 'system', 'content': '你是一个的校园助手，用用户对应的语言回复。'},
+                {'role': 'user', 'content': (
+                    f'问题标题：{question_title}\n'
+                    f'问题内容：{question_content}\n\n'
+                    f'用户的追问/评论：{trigger_content}'
+                )},
+            ],
             max_tokens=512,
             temperature=0.7,
-            top_p=0.9,
-            stop=['</s>', '\n\n\n'],
-            echo=False,
         )
         elapsed = time.perf_counter() - t0
-        reply_text = output['choices'][0]['text'].strip()
-        usage = output.get('usage', {})
-        token_count = usage.get('completion_tokens', 0) or len(reply_text.split())
+        reply_text = resp.choices[0].message.content.strip()
+        usage = resp.usage or {}
+        token_count = getattr(usage, 'completion_tokens', 0) or len(reply_text.split())
         tps = token_count / elapsed if elapsed > 0 else 0
         logger.info(f'[Rei] 生成完成: {token_count} tokens, {elapsed:.1f}s, {tps:.1f} t/s')
 
