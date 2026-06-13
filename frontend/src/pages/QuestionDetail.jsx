@@ -7,6 +7,7 @@ import { ArrowLeftIcon, EyeIcon, HandThumbUpIcon } from '@heroicons/react/24/out
 import { getQuestion, createAnswer, toggleQuestionLike, toggleAnswerLike } from '../api/qa';
 import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
+import { renderMarkdown } from '../utils/markdown';
 
 export default function QuestionDetail() {
   const { id } = useParams();
@@ -136,7 +137,7 @@ export default function QuestionDetail() {
         </div>
 
         {/* Content */}
-        <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: question.content }} />
+        <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(question.content) }} />
 
         {/* Debug info (embedding/heat) */}
         {question.embedding && (
@@ -248,7 +249,7 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
   return (
     <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-5 transition-all duration-200 hover:border-gray-300 dark:hover:border-slate-700">
       {/* Content */}
-      <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: answer.content }} />
+      <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.content) }} />
 
       {/* Footer */}
       <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">

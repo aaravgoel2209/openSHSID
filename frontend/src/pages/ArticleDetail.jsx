@@ -6,6 +6,7 @@ import { Chip } from '@heroui/react/chip';
 import { getArticle, toggleArticleLike } from '../api/knowledge';
 import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
+import { renderMarkdown } from '../utils/markdown';
 
 const FLASK_URL = '';
 
@@ -97,7 +98,7 @@ export default function ArticleDetail() {
         <p className="mt-1 mb-4 text-xs text-gray-400">热度: {article.heat}</p>
       )}
       <hr className="border-gray-200 mb-6" />
-      <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: article.content }} />
+      <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderMarkdown(article.content) }} />
       <hr className="border-gray-200 my-6" />
       <div className="flex items-center gap-2">
         <Button variant="light" onPress={() => navigate(-1)}>返回</Button>

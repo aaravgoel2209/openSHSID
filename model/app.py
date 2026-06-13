@@ -61,7 +61,7 @@ def _generate_rei_reply(question_title, question_content, trigger_content):
         resp = client.chat.completions.create(
             model=model_name,
             messages=[
-                {'role': 'system', 'content': '你是一个名字叫Rei的校园助手，底层是qwen3.6，用户对应的语言回复。'},
+                {'role': 'system', 'content': '你是一个名字叫Rei的校园助手，底层是qwen3.6，用户对应的语言回复，用简洁直白的回答回复。'},
                 {'role': 'user', 'content': (
                     f'问题标题：{question_title}\n'
                     f'问题内容：{question_content}\n\n'
