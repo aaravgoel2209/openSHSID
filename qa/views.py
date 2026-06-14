@@ -25,6 +25,30 @@ def label_list(request):
     return Response(LabelSerializer(labels, many=True).data)
 
 
+def _rank_questions(data, user_emb):
+    """用算法对问题排序: avg(max(item * heat - user, 0)) * 10"""
+    try:
+        from knowledge.ranking import score_item_algorithm, PUSH_MODE, HEAT_INIT, HEAT_CLICK, HEAT_LIKE
+        for a in data:
+            heat = HEAT_INIT + (a.get('views', 0) or 0) * HEAT_CLICK + (a.get('like_count', 0) or 0) * HEAT_LIKE
+            a['_heat'] = heat
+        import torch
+        scored = []
+        for a in data:
+            emb = a.get('embedding', [])
+            if not emb or not user_emb:
+                scored.append((0, a))
+            elif len(emb) != 32:
+                scored.append((0, a))
+            else:
+                s = score_item_algorithm(emb, user_emb, a['_heat'])
+                scored.append((s, a))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [a for _, a in scored]
+    except Exception:
+        return data
+
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def question_list(request):
@@ -34,7 +58,18 @@ def question_list(request):
         if q:
             questions = questions.filter(Q(title__icontains=q) | Q(content__icontains=q))
         serializer = QuestionListSerializer(questions, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+
+        # 内联排序（登录用户 + 无搜索时）
+        if request.user and request.user.is_authenticated and not q:
+            try:
+                user_emb = getattr(getattr(request.user, 'profile', None), 'embedding', None)
+                if user_emb:
+                    data = _rank_questions(data, user_emb)
+            except Exception:
+                pass
+
+        return Response(data)
 
     if request.method == 'POST':
         serializer = QuestionListSerializer(data=request.data)
@@ -79,6 +114,13 @@ def like_answer(request, pk):
 @api_view(['POST'])
 def view_question(request, pk):
     Question.objects.filter(pk=pk).update(views=django_models.F('views') + 1)
+    return Response({'ok': True})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def skip_question(request, pk):
+    Question.objects.filter(pk=pk).update(skips=django_models.F('skips') + 1)
     return Response({'ok': True})
 
 

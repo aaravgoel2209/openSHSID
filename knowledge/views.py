@@ -91,6 +91,13 @@ def view_article(request, pk):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def skip_article(request, pk):
+    Article.objects.filter(pk=pk).update(skips=django_models.F('skips') + 1)
+    return Response({'ok': True})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def like_article(request, pk):
     article = get_object_or_404(Article, pk=pk)
     if article.likes.filter(id=request.user.id).exists():

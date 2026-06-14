@@ -45,7 +45,19 @@ def rank_articles(articles_data, user_emb, user_id=None, show_score=False):
 
     scored = []
     for a in articles_data:
-        heat = HEAT_INIT + (a.get('views', 0) or 0) * HEAT_CLICK + (a.get('like_count', 0) or 0) * HEAT_LIKE
+        created = a.get('created_at', '')
+      if created:
+          try:
+              from datetime import datetime, timezone
+              dt = datetime.fromisoformat(created)
+              if dt.tzinfo is None:
+                  dt = dt.replace(tzinfo=timezone.utc)
+              days = (datetime.now(timezone.utc) - dt).days
+          except Exception:
+              days = 0
+      else:
+          days = 0
+      heat = HEAT_INIT + (a.get('views', 0) or 0) * HEAT_CLICK + (a.get('like_count', 0) or 0) * HEAT_LIKE - days * 0.1
         if PUSH_MODE == "algorithm":
             score = score_item_algorithm(a['embedding'], user_emb, heat)
         else:

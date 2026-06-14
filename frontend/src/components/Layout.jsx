@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
@@ -26,6 +26,26 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [now, setNow] = useState(new Date());
+  const [hotItems, setHotItems] = useState([]);
+  const [weeklyTop, setWeeklyTop] = useState([]);
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    fetch('/api/auth/weekly-top/').then(r => r.json()).then(setWeeklyTop).catch(() => {});
+  }, []);
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/qa/questions/').then(r => r.json()).catch(() => []),
+      fetch('/api/knowledge/articles/').then(r => r.json()).catch(() => []),
+    ]).then(([qs, as]) => {
+      const daysAgo = (d) => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : 0;
+      const scored = [
+        ...qs.map(q => ({ ...q, _heat: 2 + (q.views || 0) * 0.1 + (q.like_count || 0) * 0.3 + (q.answer_count || 0) * 0.2 - daysAgo(q.created_at) * 0.1, _type: '问答' })),
+        ...as.map(a => ({ ...a, _heat: 2 + (a.views || 0) * 0.1 + (a.like_count || 0) * 0.3 - daysAgo(a.created_at) * 0.1, _type: '文章' })),
+      ].sort((a, b) => b._heat - a._heat).slice(0, 5);
+      setHotItems(scored);
+    });
+  }, []);
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -147,6 +167,63 @@ export default function Layout() {
             <Outlet />
           </div>
         </main>
+
+        {/* Right Sidebar */}
+        <aside className="w-60 shrink-0 border-l border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] hidden lg:block p-3">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              {now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {now.getFullYear()}年{now.getMonth() + 1}月{now.getDate()}日 周{['日','一','二','三','四','五','六'][now.getDay()]}
+            </div>
+          </div>
+
+          {/* Weekly Top Users */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 mt-3">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">本周活跃</h3>
+            {weeklyTop.length === 0 ? (
+              <p className="text-xs text-gray-400">加载中...</p>
+            ) : (
+              <div className="space-y-2">
+                {weeklyTop.map((u, i) => (
+                  <div key={u.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg p-1.5 -mx-1.5 transition-colors"
+                    onClick={() => navigate(`/profile/${u.id}`)}>
+                    <span className="text-xs font-bold text-gray-400 w-4 shrink-0 text-center">{i + 1}</span>
+                    <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-medium text-blue-700 dark:text-blue-300 shrink-0">
+                      {u.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">{u.username}</p>
+                      <p className="text-[10px] text-gray-400">热度 {u.total_heat}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Hot Items */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 mt-3">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">热门</h3>
+            {hotItems.length === 0 ? (
+              <p className="text-xs text-gray-400">加载中...</p>
+            ) : (
+              <div className="space-y-2">
+                {hotItems.map((item, i) => (
+                  <div key={`${item._type}-${item.id}`} className="flex items-start gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg p-1.5 -mx-1.5 transition-colors"
+                    onClick={() => navigate(item._type === '问答' ? `/qa/questions/${item.id}` : `/knowledge/${item.id}`)}>
+                    <span className="text-xs font-bold text-gray-400 w-4 shrink-0 mt-0.5">{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-gray-700 dark:text-gray-300 truncate">{item.title}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{item._type} · {item.views} 次浏览</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );

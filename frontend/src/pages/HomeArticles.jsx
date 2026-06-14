@@ -98,6 +98,9 @@ export default function HomeArticles() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <Chip size="sm" color="primary" variant="flat" className="text-xs">{a.grade_name}</Chip>
                     <Chip size="sm" color="success" variant="flat" className="text-xs">{a.subject_name}</Chip>
+                    {a.labels?.map(l => (
+                      <Chip key={l.id} size="sm" variant="flat" className="text-xs">{l.name}</Chip>
+                    ))}
                     <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                       <EyeIcon className="w-3.5 h-3.5" />
                       {a.views}

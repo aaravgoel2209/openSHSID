@@ -78,6 +78,10 @@ export default function Profile() {
                 <CalendarIcon className="w-3.5 h-3.5" />
                 <span>加入于 {user.date_joined?.slice(0, 10)}</span>
               </div>
+              <div className="flex items-center gap-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <span>文章 <strong>{user.article_count || 0}</strong></span>
+                <span>回答 <strong>{user.answer_count || 0}</strong></span>
+              </div>
             </div>
           </div>
 
