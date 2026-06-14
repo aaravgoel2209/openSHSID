@@ -8,7 +8,7 @@ urlpatterns = [
     path('articles/', views.article_list, name='article_list'),
     path('articles/<int:pk>/', views.article_detail, name='article_detail'),
     path('articles/<int:pk>/view/', views.view_article, name='view_article'),
-    path('articles/<int:pk>/skip/', views.skip_article, name='skip_article'),
+
     path('articles/<int:pk>/like/', views.like_article, name='like_article'),
     path('memory/', memory_api.memory_list, name='memory_list'),
 ]

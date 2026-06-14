@@ -117,13 +117,6 @@ def view_question(request, pk):
     return Response({'ok': True})
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def skip_question(request, pk):
-    Question.objects.filter(pk=pk).update(skips=django_models.F('skips') + 1)
-    return Response({'ok': True})
-
-
 def _get_rei_user():
     user, created = User.objects.get_or_create(
         username='Rei',

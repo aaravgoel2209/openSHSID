@@ -5,7 +5,6 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth.models import User
-from django.db.models import Count, Q
 from django.utils import timezone
 from .serializers import RegisterSerializer, UserSerializer
 from qa.models import Question, Answer

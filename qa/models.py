@@ -20,7 +20,6 @@ class Question(models.Model):
     content = models.TextField(verbose_name="内容")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="作者")
     views = models.PositiveIntegerField(default=0, verbose_name="浏览量")
-    skips = models.PositiveIntegerField(default=0, verbose_name="跳过次数")
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='liked_questions', verbose_name="点赞")
     labels = models.ManyToManyField('Label', blank=True, related_name='questions', verbose_name="标签")
     embedding = models.JSONField(null=True, blank=True, verbose_name="向量 (32维)")
