@@ -41,7 +41,19 @@ export default function Layout() {
             {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
           </button>
           <Link to="/" className="font-bold text-sm text-gray-900 dark:text-white no-underline shrink-0">shsid</Link>
-          <div className="flex-1" />
+          <div className="flex-1 max-w-md mx-auto">
+            <input
+              type="text"
+              placeholder="搜索..."
+              className="w-full h-8 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 text-xs dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:bg-white dark:focus:bg-gray-800 transition-colors"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.target.value.trim()) {
+                  navigate(`/search?q=${encodeURIComponent(e.target.value.trim())}`);
+                  e.target.value = '';
+                }
+              }}
+            />
+          </div>
           <button onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? '浅色' : '深色'}>
             {isDark ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
           </button>
@@ -99,21 +111,6 @@ export default function Layout() {
                 </Link>
               ))}
             </nav>
-
-            {/* Search */}
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
-              <input
-                type="text"
-                placeholder="搜索..."
-                className="w-full h-8 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-xs dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.target.value.trim()) {
-                    navigate(`/search?q=${encodeURIComponent(e.target.value.trim())}`);
-                    e.target.value = '';
-                  }
-                }}
-              />
-            </div>
 
             {/* User info */}
             {user && (

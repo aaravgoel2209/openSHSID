@@ -153,6 +153,39 @@ export default function QuestionDetail() {
         )}
       </div>
 
+      {/* Submit Answer — moved above answers */}
+      <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm mb-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">写回答</h3>
+        <form onSubmit={handleSubmit}>
+          <textarea
+            placeholder={user ? '写下你的回答... 输入 @Rei 可以召唤AI助手回答' : '登录后可回答'}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+            disabled={!user}
+            className="w-full mb-4 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-y"
+            rows={3}
+          />
+          <div className="flex items-center gap-3">
+            <Button type="submit" color="primary" isLoading={submitting} isDisabled={submitting || !user} className="font-medium">
+              {submitting ? '提交中...' : '提交回答'}
+            </Button>
+            {waitingRei && (
+              <span className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">
+                <Spinner size="sm" />
+                Rei 正在思考中...
+              </span>
+            )}
+            {!user && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                <Link to="/login" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">登录</Link>
+                后可以回答
+              </p>
+            )}
+          </div>
+        </form>
+      </div>
+
       {/* Answers Section */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
@@ -185,40 +218,6 @@ export default function QuestionDetail() {
             />
           ))}
         </div>
-      </div>
-
-      {/* Submit Answer */}
-      <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">写回答</h3>
-        <form onSubmit={handleSubmit}>
-          <TextArea
-            placeholder={user ? '写下你的回答... 输入 @Rei 可以召唤AI助手回答' : '登录后可回答'}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            isRequired
-            isDisabled={!user}
-            className="mb-4"
-            minRows={3}
-            labelPlacement="outside"
-          />
-          <div className="flex items-center gap-3">
-            <Button type="submit" color="primary" isLoading={submitting} isDisabled={submitting || !user} className="font-medium">
-              {submitting ? '提交中...' : '提交回答'}
-            </Button>
-            {waitingRei && (
-              <span className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">
-                <Spinner size="sm" />
-                Rei 正在思考中...
-              </span>
-            )}
-            {!user && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                <Link to="/login" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">登录</Link>
-                后可以回答
-              </p>
-            )}
-          </div>
-        </form>
       </div>
     </div>
   );
