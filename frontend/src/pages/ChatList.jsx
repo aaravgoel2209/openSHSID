@@ -133,6 +133,20 @@ export default function ChatList() {
         </div>
       )}
 
+      {/* AI Chat Entry */}
+      <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200/60 dark:border-indigo-800/40 cursor-pointer hover:shadow-sm transition-all" onClick={() => navigate('/chat/ai')}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+            R
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Rei AI 助手</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">点击开始与 AI 对话</p>
+          </div>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-semibold">AI</span>
+        </div>
+      </div>
+
       {/* Conversations List */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-10 gap-3">

@@ -16,6 +16,8 @@ import ChatList from './pages/ChatList';
 import ChatDetail from './pages/ChatDetail';
 import UserProfile from './pages/UserProfile';
 import SearchResults from './pages/SearchResults';
+import AiChat from './pages/AiChat';
+import MemoryView from './pages/MemoryView';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminContent from './pages/AdminContent';
@@ -36,6 +38,8 @@ export default function App() {
               <Route path="/knowledge/:id" element={<ArticleDetail />} />
               <Route path="/chat" element={<ChatList />} />
               <Route path="/chat/:userId" element={<ChatDetail />} />
+              <Route path="/chat/ai" element={<AiChat />} />
+              <Route path="/admin/memory" element={<MemoryView />} />
               <Route path="/user/:userId" element={<UserProfile />} />
               <Route path="/search" element={<SearchResults />} />
               <Route path="/login" element={<Login />} />

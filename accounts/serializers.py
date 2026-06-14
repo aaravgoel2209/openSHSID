@@ -26,7 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_embedding(self, obj):
         request = self.context.get('request')
-        if request and (request.user.is_staff or request.user == obj):
+        if request and getattr(request, 'user', None) and (request.user.is_staff or request.user == obj):
             profile = getattr(obj, 'profile', None)
             if profile and profile.embedding:
                 return {'vector': profile.embedding, 'dim': len(profile.embedding)}

@@ -74,12 +74,12 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
 
     def get_is_liked(self, obj):
         request = self.context.get('request')
-        if request and request.user.is_authenticated:
+        if request and getattr(request, 'user', None) and request.user.is_authenticated:
             return obj.likes.filter(id=request.user.id).exists()
         return False
 
     def get_heat(self, obj):
         request = self.context.get('request')
-        if request and request.user.is_staff:
+        if request and getattr(request, 'user', None) and request.user.is_staff:
             return obj.heat
         return None
