@@ -85,6 +85,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            # 锁等待 20s（配合 signals.py 的 WAL/busy_timeout），缓解流式写入并发下的锁冲突
+            'timeout': 20,
+        },
     }
 }
 

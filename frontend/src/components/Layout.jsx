@@ -156,7 +156,7 @@ export default function Layout() {
 
             {/* Footer */}
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 px-3">
-              <p className="text-[10px] text-gray-400 dark:text-gray-600">shsid &copy; 2025</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-600">In develop, not final version, preparing for ICP</p>
             </div>
           </aside>
         )}

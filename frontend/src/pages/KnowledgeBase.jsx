@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
-import { Chip } from '@heroui/react/chip';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { getArticles } from '../api/knowledge';
 import { getLabels } from '../api/labels';
@@ -47,16 +46,16 @@ export default function KnowledgeBase() {
           onClick={() => setSelectedLabel('')}
           className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
             !selectedLabel
-              ? 'bg-primary text-white border-primary'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary'
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-indigo-400'
           }`}
         >全部</button>
         {allLabels.map((l) => (
           <button key={l.id} onClick={() => setSelectedLabel(String(l.id))}
             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
               selectedLabel === String(l.id)
-                ? 'bg-primary text-white border-primary'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary'
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-indigo-400'
             }`}
           >{l.name}</button>
         ))}
@@ -65,29 +64,39 @@ export default function KnowledgeBase() {
       {loading ? (
         <div className="flex justify-center py-10"><Spinner size="lg" /></div>
       ) : articles.length === 0 ? (
-        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-blue-700 dark:text-blue-300">
-          还没有经验分享，<button className="text-blue-700 underline font-medium" onClick={() => navigate('/knowledge/create')}>来写第一篇吧</button>。
+        <div className="text-center py-16 animate-fade-in">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center">
+            <PlusIcon className="w-8 h-8 text-indigo-400" />
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mb-3">还没有经验分享</p>
+          <Button color="primary" variant="flat" size="sm" onPress={() => navigate('/knowledge/create')}>
+            来写第一篇吧
+          </Button>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {articles.map((a) => (
             <div
               key={a.id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-900 rounded-lg p-4 cursor-pointer hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-sm transition-all"
+              className="group bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-5 cursor-pointer hover-lift hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200"
               onClick={() => navigate(`/knowledge/${a.id}`)}
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h2 className="text-lg font-semibold">{a.title}</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{a.title}</h2>
                   {a.labels?.map((l) => (
-                    <span key={l.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{l.name}</span>
+                    <span key={l.id} className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-medium">{l.name}</span>
                   ))}
                 </div>
                 <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-2">{a.created_at?.slice(0, 10)} · {a.views} 次浏览</span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Chip size="sm" color="primary">{a.grade_name}</Chip>
-                <Chip size="sm" color="success">{a.subject_name}</Chip>
+                {a.grade_name && (
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-medium">{a.grade_name}</span>
+                )}
+                {a.subject_name && (
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 font-medium">{a.subject_name}</span>
+                )}
               </div>
             </div>
           ))}
