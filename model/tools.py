@@ -100,11 +100,11 @@ MEMORY_SEARCH_DEF = {
     "type": "function",
     "function": {
         "name": "memory_search",
-        "description": "在本地数据库中按标题模糊搜索条目，返回匹配的条目 ID 和标题",
+        "description": "在本地记忆库中按语义检索相关条目（RAG），返回最相关的条目 ID、相关度和标题。用自然语言描述要找的内容即可，不必精确匹配关键词。",
         "parameters": {
             "type": "object",
             "properties": {
-                "keyword": {"type": "string", "description": "搜索关键词"}
+                "keyword": {"type": "string", "description": "要检索的内容描述或关键词"}
             },
             "required": ["keyword"]
         }
@@ -161,19 +161,61 @@ MEMORY_UPDATE_DEF = {
 
 # ── 数据库工具实现 ──────────────────────────────────
 
-def memory_search(keyword):
+def _embed_item(item_id, title, content):
+    """为记忆条目生成并保存语义向量（best-effort，失败不影响写入）"""
+    try:
+        import rag
+        from database import save_item_embedding
+        emb = rag.compute_item_embedding(title, content)
+        if emb:
+            save_item_embedding(item_id, emb)
+    except Exception as e:
+        logger.error(f'[Memory] 生成向量失败 id={item_id}: {e}')
+
+
+def _memory_search_fallback(keyword):
+    """字符模糊匹配：关键词中至少 2 个字符出现在标题中（向量不可用时回退）"""
     from database import get_conn
     conn = get_conn()
     rows = conn.execute('SELECT id, title FROM items').fetchall()
     conn.close()
-
-    # 模糊匹配：关键词中至少 2 个字符出现在标题中
     chars = set(keyword)
     matched = [r for r in rows if sum(1 for c in chars if c in r['title']) >= 2]
-
     if not matched:
         return '未找到匹配的条目。'
     return '\n'.join(f'ID={r["id"]} 标题={r["title"]}' for r in matched)
+
+
+def memory_search(keyword):
+    # 仅在记忆库内语义检索（RAG）；失败或无结果时回退字符模糊匹配
+    try:
+        import rag
+        hits = rag.retrieve(keyword, top_k=5, min_score=0.0, sources=('memory',))
+        if hits:
+            return '\n'.join(
+                f'ID={it["id"]} 相关度={s:.2f} 标题={it["title"]}' for it, s in hits
+            )
+    except Exception as e:
+        logger.error(f'[Memory] 语义检索失败，回退字符匹配: {e}')
+    return _memory_search_fallback(keyword)
+
+
+def rag_search(query, top_k=6):
+    """在知识库 + 记忆库中做语义检索（RAG），返回带来源/ID/相关度/标题的排序结果"""
+    try:
+        import rag
+        hits = rag.retrieve(query, top_k=top_k, min_score=0.0)
+    except Exception as e:
+        logger.error(f'[RAG] rag_search 失败: {e}')
+        return f'检索失败: {e}'
+    if not hits:
+        return '未检索到相关内容。'
+    label = {'kb': '知识库', 'qa': '问答', 'memory': '记忆'}
+    lines = ['语义检索结果（用 kb_read / qa_read / memory_read 读取对应条目全文）：']
+    for it, s in hits:
+        src = label.get(it.get('source'), it.get('source', ''))
+        lines.append(f'[{src}] ID={it["id"]} 相关度={s:.2f} 标题={it["title"]}')
+    return '\n'.join(lines)
 
 
 def memory_read(item_id):
@@ -193,6 +235,7 @@ def memory_create(title, content):
     conn.commit()
     new_id = cur.lastrowid
     conn.close()
+    _embed_item(new_id, title, content)
     return f'已创建条目 ID={new_id} title="{title}"'
 
 
@@ -202,10 +245,31 @@ def memory_update(item_id, content):
     cur = conn.execute('UPDATE items SET content=? WHERE id=?', (content, item_id))
     conn.commit()
     affected = cur.rowcount
+    row = conn.execute('SELECT title FROM items WHERE id=?', (item_id,)).fetchone()
     conn.close()
     if affected == 0:
         return f'未找到 ID={item_id} 的条目。'
+    # 内容变了，重算向量
+    _embed_item(item_id, row['title'] if row else '', content)
     return f'已更新 ID={item_id} 的内容。'
+
+
+# ── RAG 语义检索工具定义 ──────────────────────────────
+
+RAG_SEARCH_DEF = {
+    "type": "function",
+    "function": {
+        "name": "rag_search",
+        "description": "在知识库、问答区和记忆库中做语义检索（RAG），用自然语言描述要找的内容即可，返回最相关条目的来源、ID、相关度和标题。需要查资料或回忆信息时优先用它；拿到结果后再用 kb_read（知识库）/ qa_read（问答）/ memory_read（记忆）读取全文。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "要检索的问题或内容描述"}
+            },
+            "required": ["query"]
+        }
+    }
+}
 
 
 # ── 知识库工具定义 ────────────────────────────────────
@@ -243,12 +307,22 @@ KB_READ_DEF = {
 
 # ── 知识库工具实现 ──────────────────────────────────
 
+DJANGO_API = 'http://localhost:19424/api'
+
+
+def _api_get(url):
+    """GET Django 接口并解析 JSON，绕过系统代理（localhost 直连）"""
+    import urllib.request, json
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with opener.open(url, timeout=8) as r:
+        return json.loads(r.read())
+
+
 def kb_search(keyword):
-    import urllib.request, urllib.parse, json
-    url = f'http://localhost:19424/api/knowledge/articles/?search={urllib.parse.quote(keyword)}'
+    import urllib.parse
+    url = f'{DJANGO_API}/knowledge/articles/?search={urllib.parse.quote(keyword)}'
     try:
-        with urllib.request.urlopen(url, timeout=5) as r:
-            data = json.loads(r.read())
+        data = _api_get(url)
     except Exception as e:
         logger.error(f'[KB] 搜索失败: {e}')
         return f'搜索失败: {e}'
@@ -258,15 +332,94 @@ def kb_search(keyword):
 
 
 def kb_read(article_id):
-    import urllib.request, json
-    url = f'http://localhost:19424/api/knowledge/articles/{article_id}/'
+    url = f'{DJANGO_API}/knowledge/articles/{article_id}/'
     try:
-        with urllib.request.urlopen(url, timeout=5) as r:
-            a = json.loads(r.read())
+        a = _api_get(url)
     except Exception as e:
         logger.error(f'[KB] 读取失败: {e}')
         return f'读取失败: {e}'
     return f'ID={a["id"]}\n标题={a["title"]}\n内容={a["content"]}'
+
+
+# ── 问答（Q&A）工具定义 ────────────────────────────────
+
+QA_SEARCH_DEF = {
+    "type": "function",
+    "function": {
+        "name": "qa_search",
+        "description": "在问答区按关键词搜索问题标题/内容，返回匹配的问题 ID 和标题",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "keyword": {"type": "string", "description": "搜索关键词"}
+            },
+            "required": ["keyword"]
+        }
+    }
+}
+
+QA_READ_DEF = {
+    "type": "function",
+    "function": {
+        "name": "qa_read",
+        "description": "根据问题 ID 读取问答帖的完整内容，包括问题正文和全部回答（含嵌套回复）",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "question_id": {"type": "integer", "description": "问题 ID"}
+            },
+            "required": ["question_id"]
+        }
+    }
+}
+
+
+# ── 问答（Q&A）工具实现 ──────────────────────────────
+
+def qa_search(keyword):
+    import urllib.parse
+    url = f'{DJANGO_API}/qa/questions/?search={urllib.parse.quote(keyword)}'
+    try:
+        data = _api_get(url)
+    except Exception as e:
+        logger.error(f'[QA] 搜索失败: {e}')
+        return f'搜索失败: {e}'
+    if not data:
+        return '未找到匹配的问题。'
+    return '\n'.join(f'ID={q["id"]} 标题={q["title"]}' for q in data)
+
+
+def _format_answers(answers, depth=0):
+    lines = []
+    for ans in answers:
+        indent = '  ' * depth
+        author = ans.get('author_name') or '匿名'
+        lines.append(f'{indent}- [{author}] {ans.get("content", "")}')
+        replies = ans.get('replies') or []
+        if replies:
+            lines.extend(_format_answers(replies, depth + 1))
+    return lines
+
+
+def qa_read(question_id):
+    url = f'{DJANGO_API}/qa/questions/{question_id}/'
+    try:
+        q = _api_get(url)
+    except Exception as e:
+        logger.error(f'[QA] 读取失败: {e}')
+        return f'读取失败: {e}'
+    lines = [
+        f'问题 ID={q["id"]}',
+        f'标题：{q.get("title", "")}',
+        f'内容：{q.get("content", "")}',
+    ]
+    answers = q.get('answers') or []
+    if answers:
+        lines.append(f'\n回答（{len(answers)} 条）：')
+        lines.extend(_format_answers(answers))
+    else:
+        lines.append('\n（暂无回答）')
+    return '\n'.join(lines)
 
 
 # ── 天气工具 ───────────────────────────────────────────
@@ -310,12 +463,15 @@ def get_current_weather(location):
 
 TOOLS = [
     # BING_SEARCH_DEF,
+    RAG_SEARCH_DEF,
     MEMORY_SEARCH_DEF,
     MEMORY_READ_DEF,
     MEMORY_CREATE_DEF,
     MEMORY_UPDATE_DEF,
     KB_SEARCH_DEF,
     KB_READ_DEF,
+    QA_SEARCH_DEF,
+    QA_READ_DEF,
     WEATHER_DEF,
 ]
 
@@ -326,6 +482,11 @@ def handle_tool_call(name, arguments):
         count = arguments.get('count', 5)
         logger.info(f'[Tool] Bing 搜索: query="{query}" count={count}')
         return bing_search(query, count)
+
+    if name == 'rag_search':
+        query = arguments.get('query', '')
+        logger.info(f'[Tool] RAG 语义检索: query="{query}"')
+        return rag_search(query)
 
     if name == 'memory_search':
         kw = arguments.get('keyword', '')
@@ -358,6 +519,16 @@ def handle_tool_call(name, arguments):
         aid = arguments.get('article_id', 0)
         logger.info(f'[Tool] KB 读取: id={aid}')
         return kb_read(aid)
+
+    if name == 'qa_search':
+        kw = arguments.get('keyword', '')
+        logger.info(f'[Tool] QA 搜索: keyword="{kw}"')
+        return qa_search(kw)
+
+    if name == 'qa_read':
+        qid = arguments.get('question_id', 0)
+        logger.info(f'[Tool] QA 读取: id={qid}')
+        return qa_read(qid)
 
     if name == 'get_current_weather':
         loc = arguments.get('location', '')

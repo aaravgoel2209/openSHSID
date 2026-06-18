@@ -41,22 +41,28 @@ export default function QuestionDetail() {
     try {
       await createAnswer(id, content);
       setContent('');
-      fetchData();
+      // 刷新一次（不触发整页 loading），随后进入流式轮询
+      setQuestion(await getQuestion(id));
       if (mentionedRei) {
         setWaitingRei(true);
         let attempts = 0;
-        const findRei = (answers) => answers?.some(a =>
-          a.author_name === 'Rei' || findRei(a.replies)
+        const hasRei = (answers) => answers?.some(a =>
+          a.author_name === 'Rei' || hasRei(a.replies)
+        );
+        const isStreaming = (answers) => answers?.some(a =>
+          a.is_streaming || isStreaming(a.replies)
         );
         const poll = setInterval(async () => {
           attempts++;
           const data = await getQuestion(id);
-          if (findRei(data.answers) || attempts >= 30) {
+          setQuestion(data);  // 实时更新 → Rei 回答逐字增长可见
+          const streaming = isStreaming(data.answers);
+          // Rei 回答已出现且不再流式（完成），或超时（~2 分钟）则停止
+          if ((hasRei(data.answers) && !streaming) || attempts >= 120) {
             clearInterval(poll);
             setWaitingRei(false);
-            setQuestion(data);
           }
-        }, 2000);
+        }, 1000);
       }
     } finally {
       setSubmitting(false);
@@ -248,7 +254,19 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
   return (
     <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-5 transition-all duration-200 hover:border-gray-300 dark:hover:border-slate-700">
       {/* Content */}
-      <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.content) }} />
+      {answer.is_streaming && !answer.content ? (
+        <div className="flex items-center gap-2 text-sm text-indigo-500 dark:text-indigo-400">
+          <Spinner size="sm" />
+          Rei 正在思考…
+        </div>
+      ) : (
+        <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
+          <span dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.content) }} />
+          {answer.is_streaming && (
+            <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 bg-indigo-500 animate-pulse" aria-hidden="true" />
+          )}
+        </div>
+      )}
 
       {/* Footer */}
       <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">

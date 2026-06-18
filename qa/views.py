@@ -1,4 +1,6 @@
 import re
+import json
+import time
 import threading
 import requests
 import logging
@@ -129,37 +131,75 @@ def _get_rei_user():
 
 
 def _generate_rei_reply(question, trigger_answer):
-    logger.info(f'[Rei] 开始生成回答 (question_id={question.id})')
-    logger.debug(f'[Rei] 问题标题: {question.title}')
+    """后台流式生成 Rei 回答：先建一条空回答（is_streaming=True），
+    再消费模型服务的 SSE，边到边写入 content，让前端轮询时看到逐字增长。"""
+    logger.info(f'[Rei] 开始流式生成回答 (question_id={question.id})')
+
+    rei_user = _get_rei_user()
+    answer = Answer.objects.create(
+        question=question,
+        content='',
+        author=rei_user,
+        parent=trigger_answer,
+        is_streaming=True,
+    )
+    logger.info(f'[Rei] 已创建占位回答 (answer_id={answer.id})')
+
+    buf = []
+    final_text = ''
+    last_save = time.monotonic()
+    SAVE_INTERVAL = 0.4  # DB 写入节流，避免每个 token 都落库
 
     try:
-        resp = requests.post(
-            'http://localhost:5000/rei/reply',
+        with requests.post(
+            'http://localhost:5000/rei/stream',
             json={
+                'question_id': question.id,
+                'session_id': f'qa-{question.id}',  # 按问答帖隔离对话上下文
                 'question_title': question.title,
                 'question_content': question.content,
                 'trigger_content': trigger_answer.content,
             },
-            timeout=240,
-        )
-        resp.raise_for_status()
-        reply_text = resp.json()['reply']
-        logger.info(f'[Rei] Flask 返回回答，长度: {len(reply_text)} 字符')
+            stream=True,
+            timeout=300,
+            proxies={'http': None, 'https': None},  # 直连本地模型服务，绕过系统代理
+        ) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines(decode_unicode=True):
+                if not line or not line.startswith('data:'):
+                    continue
+                payload = line[5:].strip()
+                if payload == '[DONE]':
+                    break
+                try:
+                    ev = json.loads(payload)
+                except json.JSONDecodeError:
+                    continue
+                etype = ev.get('type')
+                if etype == 'content':
+                    buf.append(ev.get('text', ''))
+                    now = time.monotonic()
+                    if now - last_save >= SAVE_INTERVAL:
+                        answer.content = ''.join(buf)
+                        answer.save(update_fields=['content'])
+                        last_save = now
+                elif etype == 'done':
+                    final_text = ev.get('text') or ''.join(buf)
+                elif etype == 'error':
+                    logger.error(f'[Rei] 模型流式错误: {ev.get("text")}')
+                    final_text = ''.join(buf) or 'Rei 出故障啦，请反馈给zyx_2012@outlook.com'
+        final_text = final_text or ''.join(buf) or '（模型未返回有效回答）'
     except requests.exceptions.RequestException as e:
-        logger.error(f'[Rei] Flask 请求失败: {e}')
-        reply_text = 'Rei 出故障啦，请反馈给zyx_2012@outlook.com'
+        logger.error(f'[Rei] 模型服务请求失败: {e}')
+        final_text = ''.join(buf) or 'Rei 出故障啦，请反馈给zyx_2012@outlook.com'
     except Exception as e:
         logger.error(f'[Rei] 处理失败: {e}', exc_info=True)
-        reply_text = 'Rei 出故障啦，请反馈给zyx_2012@outlook.com'
+        final_text = ''.join(buf) or 'Rei 出故障啦，请反馈给zyx_2012@outlook.com'
 
-    rei_user = _get_rei_user()
-    Answer.objects.create(
-        question=question,
-        content=reply_text,
-        author=rei_user,
-        parent=trigger_answer,
-    )
-    logger.info(f'[Rei] 回答已保存 (answer_id={trigger_answer.id})')
+    answer.content = final_text
+    answer.is_streaming = False
+    answer.save(update_fields=['content', 'is_streaming'])
+    logger.info(f'[Rei] 回答完成 (answer_id={answer.id}, {len(final_text)} 字符)')
 
 
 @api_view(['GET', 'POST', 'DELETE'])

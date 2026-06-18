@@ -16,7 +16,7 @@ class AnswerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Answer
-        fields = ['id', 'parent', 'content', 'author', 'author_name', 'like_count', 'is_liked', 'replies', 'created_at']
+        fields = ['id', 'parent', 'content', 'author', 'author_name', 'like_count', 'is_liked', 'is_streaming', 'replies', 'created_at']
         read_only_fields = ['author', 'created_at']
 
     def get_author_name(self, obj):
