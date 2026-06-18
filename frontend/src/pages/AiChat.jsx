@@ -13,11 +13,27 @@ export default function AiChat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
-  const sessionRef = useRef('chat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+  // 每个用户固定一个会话，AI 聊天记录得以持久化与恢复
+  const sessionRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // 用户就绪后：绑定固定会话并恢复历史记录
+  useEffect(() => {
+    if (!user) return;
+    sessionRef.current = `chat-user-${user.id}`;
+    fetch(`/rei/history?session_id=${encodeURIComponent(sessionRef.current)}`)
+      .then((r) => (r.ok ? r.json() : { messages: [] }))
+      .then((d) => {
+        const msgs = (d.messages || [])
+          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .map((m) => ({ role: m.role, content: m.content }));
+        if (msgs.length) setMessages(msgs);
+      })
+      .catch(() => {});
+  }, [user]);
 
   // 更新最后一条（助手）消息
   const patchLast = (patch) =>
@@ -49,6 +65,7 @@ export default function AiChat() {
       const decoder = new TextDecoder();
       let buffer = '';
       let acc = '';
+      let reasoningAcc = '';
       let done = false;
       while (!done) {
         const { value, done: streamDone } = await reader.read();
@@ -68,6 +85,9 @@ export default function AiChat() {
             if (ev.type === 'content') {
               acc += ev.text;
               patchLast({ content: acc });
+            } else if (ev.type === 'reasoning') {
+              reasoningAcc += ev.text;
+              patchLast({ reasoning: reasoningAcc });
             } else if (ev.type === 'error') {
               acc += `\n\n[出错：${ev.text}]`;
               patchLast({ content: acc });
@@ -113,7 +133,13 @@ export default function AiChat() {
                 ? 'bg-indigo-500 text-white rounded-br-sm'
                 : 'bg-gray-100 dark:bg-slate-800/50 text-gray-800 dark:text-gray-200 rounded-bl-sm border border-gray-200/60 dark:border-slate-700/60'
             }`}>
-              {m.streaming && !m.content ? (
+              {m.role === 'assistant' && m.reasoning && (
+                <details open={m.streaming} className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                  <summary className="cursor-pointer select-none">💭 思考过程</summary>
+                  <div className="mt-1 whitespace-pre-wrap border-l-2 border-gray-300 dark:border-slate-600 pl-2 opacity-80">{m.reasoning}</div>
+                </details>
+              )}
+              {m.streaming && !m.content && !m.reasoning ? (
                 <Spinner size="sm" />
               ) : (
                 <div className="text-sm whitespace-pre-wrap leading-relaxed">

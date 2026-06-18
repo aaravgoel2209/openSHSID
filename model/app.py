@@ -70,12 +70,16 @@ def _build_rei_messages(question_title, question_content, trigger_content, sessi
     """构建发给模型的消息列表（system + RAG + 当前问答帖 + 历史），并记录本轮用户消息。"""
     from database import save_message, load_recent_messages
 
-    user_content = (
-        f'问题标题：{question_title}\n'
-        f'问题内容：{question_content}\n\n'
-        f'用户的追问/评论：{trigger_content}'
-    )
-    # 记录上下文：本轮用户消息入库（按 session_id 隔离，每个问答帖独立记忆）
+    # 问答场景带题目上下文；纯聊天（无题目）直接存用户消息，历史更干净
+    if question_title or question_content:
+        user_content = (
+            f'问题标题：{question_title}\n'
+            f'问题内容：{question_content}\n\n'
+            f'用户的追问/评论：{trigger_content}'
+        )
+    else:
+        user_content = trigger_content
+    # 记录上下文：本轮用户消息入库（按 session_id 隔离，每个会话独立记忆）
     save_message(session_id, 'user', user_content)
 
     history = load_recent_messages(session_id, limit=20)
@@ -297,6 +301,17 @@ def rei_reply_endpoint():
     except Exception as e:
         logger.error(f'[Rei] 端点处理失败: {e}', exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/rei/history", methods=["GET"])
+def rei_history_endpoint():
+    """返回某会话已存储的对话历史（用于前端恢复用户的 AI 聊天记录）。"""
+    session_id = request.args.get("session_id", "")
+    if not session_id:
+        return jsonify({"messages": []})
+    from database import load_recent_messages
+    msgs = load_recent_messages(session_id, limit=200)
+    return jsonify({"messages": msgs})
 
 
 @app.route("/rei/stream", methods=["POST"])

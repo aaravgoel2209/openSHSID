@@ -289,6 +289,15 @@ KB_SEARCH_DEF = {
     }
 }
 
+KB_LIST_DEF = {
+    "type": "function",
+    "function": {
+        "name": "kb_list",
+        "description": "列出知识库中的全部文章（返回每篇的 ID 和标题），用于浏览有哪些文章；之后可用 kb_read 读取某篇全文",
+        "parameters": {"type": "object", "properties": {}},
+    }
+}
+
 KB_READ_DEF = {
     "type": "function",
     "function": {
@@ -329,6 +338,20 @@ def kb_search(keyword):
     if not data:
         return '未找到匹配的文章。'
     return '\n'.join(f'ID={a["id"]} 标题={a["title"]}' for a in data)
+
+
+def kb_list():
+    url = f'{DJANGO_API}/knowledge/articles/'
+    try:
+        data = _api_get(url)
+    except Exception as e:
+        logger.error(f'[KB] 列表失败: {e}')
+        return f'获取失败: {e}'
+    if not data:
+        return '知识库暂无文章。'
+    lines = [f'知识库共 {len(data)} 篇文章：']
+    lines.extend(f'ID={a["id"]} 标题={a["title"]}' for a in data)
+    return '\n'.join(lines)
 
 
 def kb_read(article_id):
@@ -468,6 +491,7 @@ TOOLS = [
     MEMORY_READ_DEF,
     MEMORY_CREATE_DEF,
     MEMORY_UPDATE_DEF,
+    KB_LIST_DEF,
     KB_SEARCH_DEF,
     KB_READ_DEF,
     QA_SEARCH_DEF,
@@ -509,6 +533,10 @@ def handle_tool_call(name, arguments):
         content = arguments.get('content', '')
         logger.info(f'[Tool] DB 更新: id={item_id}')
         return memory_update(item_id, content)
+
+    if name == 'kb_list':
+        logger.info('[Tool] KB 列表')
+        return kb_list()
 
     if name == 'kb_search':
         kw = arguments.get('keyword', '')
