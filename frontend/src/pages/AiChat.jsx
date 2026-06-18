@@ -19,22 +19,65 @@ export default function AiChat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // 更新最后一条（助手）消息
+  const patchLast = (patch) =>
+    setMessages((m) => {
+      const c = [...m];
+      c[c.length - 1] = { ...c[c.length - 1], ...patch };
+      return c;
+    });
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     const userMsg = input.trim();
     setInput('');
-    setMessages((m) => [...m, { role: 'user', content: userMsg }]);
+    // 追加用户消息 + 一个空的流式助手气泡
+    setMessages((m) => [...m,
+      { role: 'user', content: userMsg },
+      { role: 'assistant', content: '', streaming: true },
+    ]);
     setLoading(true);
     try {
-      const res = await fetch('/rei/reply', {
+      const res = await fetch('/rei/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question_title: '', question_content: '', trigger_content: userMsg, session_id: sessionRef.current }),
       });
-      const data = await res.json();
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply || '（模型未返回有效回答）' }]);
+      if (!res.ok || !res.body) throw new Error('stream failed');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let acc = '';
+      let done = false;
+      while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        if (streamDone) break;
+        buffer += decoder.decode(value, { stream: true });
+        // SSE 事件以空行分隔
+        let sep;
+        while ((sep = buffer.indexOf('\n\n')) !== -1) {
+          const chunk = buffer.slice(0, sep);
+          buffer = buffer.slice(sep + 2);
+          for (const line of chunk.split('\n')) {
+            if (!line.startsWith('data:')) continue;
+            const payload = line.slice(5).trim();
+            if (payload === '[DONE]') { done = true; continue; }
+            let ev;
+            try { ev = JSON.parse(payload); } catch { continue; }
+            if (ev.type === 'content') {
+              acc += ev.text;
+              patchLast({ content: acc });
+            } else if (ev.type === 'error') {
+              acc += `\n\n[出错：${ev.text}]`;
+              patchLast({ content: acc });
+            }
+          }
+        }
+      }
+      patchLast({ content: acc || '（模型未返回有效回答）', streaming: false });
     } catch {
-      setMessages((m) => [...m, { role: 'assistant', content: '请求失败，请检查模型服务是否运行。' }]);
+      patchLast({ content: '请求失败，请检查模型服务是否运行。', streaming: false });
     } finally {
       setLoading(false);
     }
@@ -70,17 +113,19 @@ export default function AiChat() {
                 ? 'bg-indigo-500 text-white rounded-br-sm'
                 : 'bg-gray-100 dark:bg-slate-800/50 text-gray-800 dark:text-gray-200 rounded-bl-sm border border-gray-200/60 dark:border-slate-700/60'
             }`}>
-              <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
+              {m.streaming && !m.content ? (
+                <Spinner size="sm" />
+              ) : (
+                <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                  <span dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
+                  {m.streaming && (
+                    <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 align-middle bg-indigo-500 animate-pulse" aria-hidden="true" />
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 dark:bg-slate-800/50 rounded-2xl rounded-bl-sm px-4 py-3 border border-gray-200/60 dark:border-slate-700/60">
-              <Spinner size="sm" />
-            </div>
-          </div>
-        )}
         <div ref={bottomRef} />
       </div>
 
