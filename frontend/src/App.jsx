@@ -12,6 +12,7 @@ import CreateArticle from './pages/CreateArticle';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 import ChatList from './pages/ChatList';
 import ChatDetail from './pages/ChatDetail';
 import SearchResults from './pages/SearchResults';
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/content" element={<AdminContent />} />

@@ -15,6 +15,11 @@ export default defineConfig({
         target: 'http://localhost:19424',
         changeOrigin: true,
       },
+      // Django admin 的静态资源（CSS/JS），否则后台页面会渲染成无样式的裸 HTML
+      '/static': {
+        target: 'http://localhost:19424',
+        changeOrigin: true,
+      },
       '/rei': {
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,

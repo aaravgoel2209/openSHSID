@@ -135,6 +135,20 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 CORS_ALLOW_ALL_ORIGINS = True  # Dev / Docker only
 CORS_ALLOW_CREDENTIALS = True
 
+# CSRF - 信任的来源（POST/PUT/DELETE 等不安全请求会校验 Origin）
+# 开发：Vite 5173 与 Django 19424；生产域名用环境变量 CSRF_TRUSTED_ORIGINS 追加（逗号分隔）
+import os as _os
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:19424',
+    'http://127.0.0.1:19424',
+]
+CSRF_TRUSTED_ORIGINS += [
+    o.strip() for o in _os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+]
+
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
