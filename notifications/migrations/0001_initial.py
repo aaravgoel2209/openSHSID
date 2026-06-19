@@ -33,6 +33,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='notification',
-            index=models.Index(fields=['recipient', 'is_read'], name='notificatio_recipie_3d4f8e_idx'),
+            index=models.Index(fields=['recipient', 'is_read'], name='notificatio_recipie_4e3567_idx'),
         ),
     ]
