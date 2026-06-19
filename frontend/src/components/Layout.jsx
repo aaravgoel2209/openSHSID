@@ -5,12 +5,14 @@ import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem 
 import { SunIcon, MoonIcon, PlusIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
+import NotificationBell from './NotificationBell';
 
 const NAV_LINKS = [
   { to: '/', label: '首页', icon: '🏠' },
   { to: '/qa', label: '问答', icon: '💬' },
   { to: '/knowledge', label: '知识库', icon: '📚' },
   { to: '/chat', label: '聊天', icon: '💭' },
+  { to: '/mailbox', label: '信箱', icon: '📬' },
 ];
 
 const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
@@ -77,6 +79,7 @@ export default function Layout() {
           <button onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? '浅色' : '深色'}>
             {isDark ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
           </button>
+          <NotificationBell />
           {user ? (
             <Dropdown>
               <DropdownTrigger>
