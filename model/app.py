@@ -66,8 +66,9 @@ def _load_system_prompt():
         return '你是一个名字叫Rei的校园助手，用简洁直白的回答回复。'
 
 
-def _build_rei_messages(question_title, question_content, trigger_content, session_id, question_id):
-    """构建发给模型的消息列表（system + RAG + 当前问答帖 + 历史），并记录本轮用户消息。"""
+def _build_rei_messages(question_title, question_content, trigger_content, session_id, question_id, image=None):
+    """构建发给模型的消息列表（system + RAG + 当前问答帖 + 历史），并记录本轮用户消息。
+    image 为 base64 data URL 时，把本轮用户消息转成多模态（文本+图片）内容。"""
     from database import save_message, load_recent_messages
 
     # 问答场景带题目上下文；纯聊天（无题目）直接存用户消息，历史更干净
@@ -79,8 +80,8 @@ def _build_rei_messages(question_title, question_content, trigger_content, sessi
         )
     else:
         user_content = trigger_content
-    # 记录上下文：本轮用户消息入库（按 session_id 隔离，每个会话独立记忆）
-    save_message(session_id, 'user', user_content)
+    # 记录上下文：本轮用户消息入库（只存文本，图片不落库以免历史膨胀）
+    save_message(session_id, 'user', user_content + ('\n[图片]' if image else ''))
 
     history = load_recent_messages(session_id, limit=20)
     system_prompt = _load_system_prompt()
@@ -114,10 +115,20 @@ def _build_rei_messages(question_title, question_content, trigger_content, sessi
         except Exception as e:
             logger.error(f'[Rei] 注入问答帖失败: {e}')
 
+    # 多模态：把图片附到本轮用户消息（OpenAI vision 格式，llama.cpp + mmproj 支持）
+    if image:
+        for m in reversed(messages):
+            if m.get('role') == 'user':
+                m['content'] = [
+                    {'type': 'text', 'text': user_content},
+                    {'type': 'image_url', 'image_url': {'url': image}},
+                ]
+                break
+
     return messages, len(history)
 
 
-def _rei_stream_core(question_title, question_content, trigger_content, session_id='default', question_id=None):
+def _rei_stream_core(question_title, question_content, trigger_content, session_id='default', question_id=None, image=None):
     """生成 Rei 回答的流式核心。逐步 yield 事件 dict：
         {'type': 'reasoning'|'content'|'tool', 'text': ...}  → 增量
         {'type': 'done', 'text': <完整回答>}                 → 结束（已存入历史）
@@ -130,7 +141,7 @@ def _rei_stream_core(question_title, question_content, trigger_content, session_
     try:
         client, model_name = _get_rei_client()
         messages, hist_n = _build_rei_messages(
-            question_title, question_content, trigger_content, session_id, question_id
+            question_title, question_content, trigger_content, session_id, question_id, image
         )
         logger.info(f'[Rei] 开始流式生成... (session={session_id}, history={hist_n}条)')
 
@@ -325,11 +336,12 @@ def rei_stream_endpoint():
     trigger_content = data.get("trigger_content", "")
     session_id = data.get("session_id", request.remote_addr or 'default')
     question_id = data.get("question_id")
-    logger.info(f'[Rei] 接收流式请求 (session={session_id}, question_id={question_id})')
+    image = data.get("image")  # base64 data URL（可选）
+    logger.info(f'[Rei] 接收流式请求 (session={session_id}, question_id={question_id}, image={bool(image)})')
 
     def sse():
         try:
-            for ev in _rei_stream_core(question_title, question_content, trigger_content, session_id, question_id):
+            for ev in _rei_stream_core(question_title, question_content, trigger_content, session_id, question_id, image):
                 yield f'data: {json.dumps(ev, ensure_ascii=False)}\n\n'
         except Exception as e:
             logger.error(f'[Rei] 流式端点异常: {e}', exc_info=True)

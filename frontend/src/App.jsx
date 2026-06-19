@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { UIProvider } from './context/UIContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import HomeArticles from './pages/HomeArticles';
@@ -28,6 +29,7 @@ export default function App() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
+          <UIProvider>
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<HomeArticles />} />
@@ -54,6 +56,7 @@ export default function App() {
               <Route path="/admin/content" element={<AdminContent />} />
             </Route>
           </Routes>
+          </UIProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

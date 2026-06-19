@@ -2,9 +2,36 @@ import { useState, useRef, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
-import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { PaperAirplaneIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { renderMarkdown } from '../utils/markdown';
+
+// 读取图片并按最长边缩放，导出 JPEG base64 data URL（控制体积与 token）
+function fileToDataURL(file, maxDim = 1024) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const s = maxDim / Math.max(width, height);
+          width = Math.round(width * s);
+          height = Math.round(height * s);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function AiChat() {
   const navigate = useNavigate();
@@ -12,7 +39,9 @@ export default function AiChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);  // 待发送图片（base64 data URL）
   const bottomRef = useRef(null);
+  const fileRef = useRef(null);
   // 每个用户固定一个会话，AI 聊天记录得以持久化与恢复
   const sessionRef = useRef(null);
 
@@ -43,13 +72,22 @@ export default function AiChat() {
       return c;
     });
 
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try { setImage(await fileToDataURL(file)); } catch { /* 忽略读取失败 */ }
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && !image) || loading) return;
     const userMsg = input.trim();
+    const img = image;
     setInput('');
-    // 追加用户消息 + 一个空的流式助手气泡
+    setImage(null);
+    // 追加用户消息（含图片）+ 一个空的流式助手气泡
     setMessages((m) => [...m,
-      { role: 'user', content: userMsg },
+      { role: 'user', content: userMsg, image: img },
       { role: 'assistant', content: '', streaming: true },
     ]);
     setLoading(true);
@@ -57,7 +95,7 @@ export default function AiChat() {
       const res = await fetch('/rei/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question_title: '', question_content: '', trigger_content: userMsg, session_id: sessionRef.current }),
+        body: JSON.stringify({ question_title: '', question_content: '', trigger_content: userMsg, session_id: sessionRef.current, image: img }),
       });
       if (!res.ok || !res.body) throw new Error('stream failed');
 
@@ -133,6 +171,9 @@ export default function AiChat() {
                 ? 'bg-indigo-500 text-white rounded-br-sm'
                 : 'bg-gray-100 dark:bg-slate-800/50 text-gray-800 dark:text-gray-200 rounded-bl-sm border border-gray-200/60 dark:border-slate-700/60'
             }`}>
+              {m.image && (
+                <img src={m.image} alt="附图" className="rounded-lg max-h-60 mb-2 block" />
+              )}
               {m.role === 'assistant' && m.reasoning && (
                 <details open={m.streaming} className="mb-2 text-xs text-gray-500 dark:text-gray-400">
                   <summary className="cursor-pointer select-none">💭 思考过程</summary>
@@ -155,18 +196,36 @@ export default function AiChat() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex gap-2 items-end">
-        <textarea
-          className="flex-1 min-h-[44px] max-h-32 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-sm dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
-          placeholder="输入消息..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-          disabled={loading}
-        />
-        <Button onPress={handleSend} color="primary" isIconOnly isLoading={loading} isDisabled={!input.trim() || loading}>
-          <PaperAirplaneIcon className="w-5 h-5" />
-        </Button>
+      <div>
+        {image && (
+          <div className="mb-2 relative inline-block">
+            <img src={image} alt="预览" className="h-20 rounded-lg border border-gray-200 dark:border-slate-700" />
+            <button
+              onClick={() => setImage(null)}
+              className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-800"
+              title="移除图片"
+            >
+              <XMarkIcon className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2 items-end">
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          <Button onPress={() => fileRef.current?.click()} variant="flat" isIconOnly isDisabled={loading} title="添加图片">
+            <PhotoIcon className="w-5 h-5" />
+          </Button>
+          <textarea
+            className="flex-1 min-h-[44px] max-h-32 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-sm dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
+            placeholder="输入消息..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            disabled={loading}
+          />
+          <Button onPress={handleSend} color="primary" isIconOnly isLoading={loading} isDisabled={(!input.trim() && !image) || loading}>
+            <PaperAirplaneIcon className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
     </div>
   );

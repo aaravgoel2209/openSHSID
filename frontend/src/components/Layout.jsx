@@ -5,7 +5,9 @@ import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem 
 import { SunIcon, MoonIcon, PlusIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
+import { useUI } from '../context/UIContext';
 import NotificationBell from './NotificationBell';
+import GlassPanel from './GlassPanel';
 
 const NAV_LINKS = [
   { to: '/', label: '首页', icon: '🏠' },
@@ -25,6 +27,9 @@ function getAvatarColor(username) {
 export default function Layout() {
   const { user, logout } = useContext(AuthContext);
   const { isDark, toggle } = useContext(ThemeContext);
+  const { complexity } = useUI();
+  // 普通及以上：顶栏加毛玻璃模糊（兼容模式保持纯色）
+  const topbarBlur = complexity !== 'simple';
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -57,7 +62,9 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       {/* Top Bar */}
-      <header className="sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
+      <header className={`sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
+        topbarBlur ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
+      }`}>
         <div className="flex items-center h-12 px-3 gap-2 max-w-[1600px] mx-auto">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500">
             {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
@@ -174,17 +181,26 @@ export default function Layout() {
 
         {/* Right Sidebar */}
         <aside className="w-60 shrink-0 border-l border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] hidden lg:block p-3">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-center">
+          <GlassPanel
+            plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-center"
+            glassContentClass="p-3 text-center"
+            cornerRadius={12}
+          >
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               {now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {now.getFullYear()}年{now.getMonth() + 1}月{now.getDate()}日 周{['日','一','二','三','四','五','六'][now.getDay()]}
             </div>
-          </div>
+          </GlassPanel>
 
           {/* Weekly Top Users */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 mt-3">
+          <GlassPanel
+            className="mt-3"
+            plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3"
+            glassContentClass="p-3"
+            cornerRadius={12}
+          >
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">本周活跃</h3>
             {weeklyTop.length === 0 ? (
               <p className="text-xs text-gray-400">加载中...</p>
@@ -205,10 +221,15 @@ export default function Layout() {
                 ))}
               </div>
             )}
-          </div>
+          </GlassPanel>
 
           {/* Hot Items */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 mt-3">
+          <GlassPanel
+            className="mt-3"
+            plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3"
+            glassContentClass="p-3"
+            cornerRadius={12}
+          >
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">热门</h3>
             {hotItems.length === 0 ? (
               <p className="text-xs text-gray-400">加载中...</p>
@@ -226,7 +247,7 @@ export default function Layout() {
                 ))}
               </div>
             )}
-          </div>
+          </GlassPanel>
         </aside>
       </div>
     </div>
