@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { TextField } from '@heroui/react/textfield';
 import { Label } from '@heroui/react/label';
@@ -7,16 +7,19 @@ import { Input } from '@heroui/react/input';
 import { TextArea } from '@heroui/react/textarea';
 import { createQuestion } from '../api/qa';
 import { getLabels } from '../api/labels';
+import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
 
 
 export default function AskQuestion() {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [allLabels, setAllLabels] = useState([]);
   const [selectedLabels, setSelectedLabels] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => { getLabels().then(setAllLabels).catch(() => {}); }, []);
 
@@ -28,11 +31,16 @@ export default function AskQuestion() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) { setError('请先登录后再发布问题'); return; }
     if (!title.trim() || !content.trim()) return;
+    setError('');
     setSubmitting(true);
     try {
       const q = await client.post('/qa/questions/', { title, content, labels: selectedLabels }).then((r) => r.data);
       navigate(`/qa/questions/${q.id}`);
+    } catch (err) {
+      if (err?.response?.status === 401) setError('请先登录后再发布问题');
+      else setError(err?.response?.data?.error || '发布失败，请稍后重试');
     } finally {
       setSubmitting(false);
     }
@@ -41,6 +49,11 @@ export default function AskQuestion() {
   return (
     <div className="max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">提问</h1>
+      {!user && (
+        <div className="mb-4 rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/30 p-4 text-sm text-yellow-700 dark:text-yellow-300">
+          请先<Link to="/login" className="font-semibold underline">登录</Link>后再发布问题。
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <TextField>
           <Label>标题</Label>
@@ -76,8 +89,9 @@ export default function AskQuestion() {
             </div>
           </div>
         )}
+        {error && <p className="text-sm text-rose-500">{error}</p>}
         <div className="flex gap-2 pt-2">
-          <Button type="submit" color="primary" isLoading={submitting}>
+          <Button type="submit" color="primary" isLoading={submitting} isDisabled={submitting || !user}>
             {submitting ? '发布中...' : '发布问题'}
           </Button>
           <Button variant="light" onPress={() => navigate('/qa')}>取消</Button>

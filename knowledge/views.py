@@ -60,6 +60,10 @@ def article_list(request):
         return Response(data)
 
     if request.method == 'POST':
+        from OpenSHSID_backend.moderation import blocked_words_error
+        err = blocked_words_error(request.data.get('title', ''), request.data.get('content', ''))
+        if err:
+            return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
         serializer = ArticleDetailSerializer(data=request.data)
         if serializer.is_valid():
             label_ids = request.data.get('labels', [])
