@@ -83,7 +83,7 @@ export default function HomeArticles() {
           {articles.map((a, index) => (
             <div
               key={a.id}
-              className="group bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-5 cursor-pointer hover-lift hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200"
+              className="group bg-white dark:bg-slate-900/50 border border-gray-200/60 dark:border-slate-800/60 rounded-xl p-5 cursor-pointer hover-lift hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200"
               style={{ animationDelay: `${index * 50}ms` }}
               onClick={() => handleClick(a)}
             >

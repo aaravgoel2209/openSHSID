@@ -125,7 +125,7 @@ export default function ArticleDetail() {
       {/* Actions */}
       <hr className="border-gray-200 dark:border-gray-800 my-6" />
       <div className="flex items-center gap-2">
-        <Button variant="light" onPress={() => navigate(-1)}>返回</Button>
+        <Button className="inline bg-slate-800/50 transition-colors" variant="light" onPress={() => navigate(-1)}>返回</Button>
         {user?.is_staff && (
           <Button
             className="bg-red-500 text-white hover:bg-red-600"

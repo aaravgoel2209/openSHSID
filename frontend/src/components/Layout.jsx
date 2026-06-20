@@ -1,4 +1,10 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
+
+// Pick one background image per page load (module-level = runs once, stable across re-renders).
+// Drop images into frontend/src/assets/background/ and they're picked up automatically.
+const _bgGlob = import.meta.glob('../assets/background/*.{jpg,jpeg,png,webp,avif,gif}', { eager: true });
+const _bgUrls = Object.values(_bgGlob).map(m => m.default);
+const RANDOM_BG = _bgUrls.length > 0 ? _bgUrls[Math.floor(Math.random() * _bgUrls.length)] : null;
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
@@ -36,6 +42,20 @@ export default function Layout() {
   const [now, setNow] = useState(new Date());
   const [hotItems, setHotItems] = useState([]);
   const [weeklyTop, setWeeklyTop] = useState([]);
+  useEffect(() => {
+    if (!RANDOM_BG) return;
+    const html = document.documentElement;
+    html.style.backgroundImage = `url(${RANDOM_BG})`;
+    html.style.backgroundSize = 'cover';
+    html.style.backgroundAttachment = 'fixed';
+    html.style.backgroundPosition = 'center';
+    return () => {
+      html.style.backgroundImage = '';
+      html.style.backgroundSize = '';
+      html.style.backgroundAttachment = '';
+      html.style.backgroundPosition = '';
+    };
+  }, []);
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
   useEffect(() => {
     fetch('/api/auth/weekly-top/').then(r => r.json()).then(setWeeklyTop).catch(() => {});
@@ -60,7 +80,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="min-h-screen">
       {/* Top Bar */}
       <header className={`sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
         topbarBlur ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
@@ -120,7 +140,9 @@ export default function Layout() {
       <div className="flex max-w-[1600px] mx-auto">
         {/* Left Sidebar */}
         {sidebarOpen && (
-          <aside className="w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-48px)] p-2">
+          <aside className={`w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] p-2 ${
+            topbarBlur ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
+          }`}>
             {/* Create Post */}
             <button onClick={() => navigate('/qa/ask')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-3 transition-colors">
               <PlusIcon className="w-4 h-4" />
@@ -180,7 +202,9 @@ export default function Layout() {
         </main>
 
         {/* Right Sidebar */}
-        <aside className="w-60 shrink-0 border-l border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] hidden lg:block p-3">
+        <aside className={`w-60 shrink-0 border-l border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] hidden lg:block p-3 ${
+          topbarBlur ? ' backdrop-blur-md' : ''
+        }`}>
           <GlassPanel
             plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-center"
             glassContentClass="p-3 text-center"

@@ -49,7 +49,7 @@ export default function Settings() {
         </p>
         {(complexity === 'complex' || complexity === 'extreme') && (
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
-            液态玻璃特效在 Chromium 内核浏览器中效果最佳（Safari/Firefox 仅部分支持）。
+            液态玻璃特效在 Chromium 内核浏览器中效果最佳（Safari/Firefox 仅部分支持）。目前正在开发中
           </p>
         )}
       </GlassPanel>
