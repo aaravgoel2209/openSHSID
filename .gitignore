@@ -1,0 +1,7 @@
+/db.sqlite3
+/flask_err.txt
+/flask_out.txt
+/model/*.pt
+/model/*.gguf
+/model/data/local.db
+/model/data/log.jsonl
