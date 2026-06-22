@@ -14,7 +14,7 @@ timeout /t 2 /nobreak >nul
 
 :: Start Django (port 8000)
 echo [Django] Starting...
-start "Django" /B python manage.py runserver 8000
+start "Django" /B python manage.py runserver 19424
 
 :: Wait a moment
 timeout /t 2 /nobreak >nul

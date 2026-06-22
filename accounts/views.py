@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,6 +12,12 @@ from knowledge.models import Article
 
 
 class LoginView(ObtainAuthToken):
+    # DRF 3.17+ removed authentication_classes=() from ObtainAuthToken, so
+    # SessionAuthentication is now inherited from defaults. When a Django admin
+    # session cookie exists, it calls enforce_csrf() and rejects the login POST.
+    # Login/register don't need any pre-existing auth — clear it explicitly.
+    authentication_classes = []
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
@@ -25,6 +31,7 @@ class LoginView(ObtainAuthToken):
 
 
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def register(request):
     serializer = RegisterSerializer(data=request.data)

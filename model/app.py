@@ -38,7 +38,7 @@ def get_optimizer():
 def _get_rei_client():
     if 'client' not in _rei_model_cache:
         from openai import OpenAI
-        api_base = os.environ.get('REI_API_BASE', 'http://192.168.2.103:8033/v1')
+        api_base = os.environ.get('REI_API_BASE', 'http://factory.zengyuxiang.cn/v1')
         api_key = os.environ.get('REI_API_KEY', '114514')
         model_name = os.environ.get('REI_MODEL', 'Qwen3.6-35B-A3B-MXFP4_MOE.gguf')
         logger.info(f'[Rei] OpenAI 兼容 API: {api_base} model={model_name}')
