@@ -1,10 +1,4 @@
-import { useContext, useState, useEffect, useRef } from 'react';
-
-// Pick one background image per page load (module-level = runs once, stable across re-renders).
-// Drop images into frontend/src/assets/background/ and they're picked up automatically.
-const _bgGlob = import.meta.glob('../assets/background/*.{jpg,jpeg,png,webp,avif,gif}', { eager: true });
-const _bgUrls = Object.values(_bgGlob).map(m => m.default);
-const RANDOM_BG = _bgUrls.length > 0 ? _bgUrls[Math.floor(Math.random() * _bgUrls.length)] : null;
+import { useContext, useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
@@ -14,6 +8,12 @@ import { ThemeContext } from '../context/ThemeContext';
 import { useUI } from '../context/UIContext';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
+
+// Pick one background image per page load (module-level = runs once, stable across re-renders).
+// Drop images into frontend/src/assets/background/ and they're picked up automatically.
+const _bgGlob = import.meta.glob('../assets/background/*.{jpg,jpeg,png,webp,avif,gif}', { eager: true });
+const _bgUrls = Object.values(_bgGlob).map(m => m.default);
+const RANDOM_BG = _bgUrls.length > 0 ? _bgUrls[Math.floor(Math.random() * _bgUrls.length)] : null;
 
 const NAV_LINKS = [
   { to: '/', label: '首页', icon: '🏠' },
@@ -36,26 +36,13 @@ export default function Layout() {
   const { complexity } = useUI();
   // 普通及以上：顶栏加毛玻璃模糊（兼容模式保持纯色）
   const topbarBlur = complexity !== 'simple';
+  const bgBlur = complexity === 'extreme' ? 28 : complexity === 'complex' ? 22 : 18;
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [now, setNow] = useState(new Date());
   const [hotItems, setHotItems] = useState([]);
   const [weeklyTop, setWeeklyTop] = useState([]);
-  useEffect(() => {
-    if (!RANDOM_BG) return;
-    const html = document.documentElement;
-    html.style.backgroundImage = `url(${RANDOM_BG})`;
-    html.style.backgroundSize = 'cover';
-    html.style.backgroundAttachment = 'fixed';
-    html.style.backgroundPosition = 'center';
-    return () => {
-      html.style.backgroundImage = '';
-      html.style.backgroundSize = '';
-      html.style.backgroundAttachment = '';
-      html.style.backgroundPosition = '';
-    };
-  }, []);
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
   useEffect(() => {
     fetch('/api/auth/weekly-top/').then(r => r.json()).then(setWeeklyTop).catch(() => {});
@@ -81,6 +68,21 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen">
+      {/* Single fixed blur layer — replaces per-card backdrop-filter (1 GPU layer vs 20+) */}
+      {complexity !== 'simple' && RANDOM_BG && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            top: '-60px', right: '-60px', bottom: '-60px', left: '-60px',
+            zIndex: -1,
+            backgroundImage: `url(${RANDOM_BG})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: `blur(${bgBlur}px)`,
+          }}
+        />
+      )}
       {/* Top Bar */}
       <header className={`sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
         topbarBlur ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'

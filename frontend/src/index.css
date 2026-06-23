@@ -116,33 +116,25 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== 普通 / 复杂 / 极致：全站卡片玻璃化（让复杂度作用于所有页面，极致更强）=====
-   目标：带 border + 圆角的卡片（QA / 知识库 / 个人主页 / 信箱 等）。
-   用 :where() 保持低特异性，再加 !important 覆盖 Tailwind 背景工具类。 */
+/* ===== 普通 / 复杂 / 极致：全站卡片玻璃化 =====
+   No per-card backdrop-filter — a single fixed blur layer in Layout handles the effect.
+   Each backdrop-filter creates a compositor layer; 20 cards = 20 GPU layers.
+   Instead: 1 fixed <div filter:blur> behind everything, cards are semi-transparent over it. */
 [data-ui-complexity="normal"] :where(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border,
 [data-ui-complexity="complex"] :where(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border,
 [data-ui-complexity="extreme"] :where(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border {
-  background-color: rgba(255, 255, 255, 0.55) !important;
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-  backdrop-filter: blur(10px) saturate(150%);
-  border-color: rgba(255, 255, 255, 0.45) !important;
-  box-shadow: 0 8px 30px rgba(31, 38, 135, 0.12);
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(255, 255, 255, 0.52) !important;
+  box-shadow: 0 4px 20px rgba(31, 38, 135, 0.10);
 }
-/* 复杂：稍强一些 */
-[data-ui-complexity="complex"] :where(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border {
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  backdrop-filter: blur(12px) saturate(160%);
-}
-/* 极致：最强模糊与高光 */
 [data-ui-complexity="extreme"] :where(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border {
-  -webkit-backdrop-filter: blur(16px) saturate(175%);
-  backdrop-filter: blur(16px) saturate(175%);
-  box-shadow: 0 10px 36px rgba(31, 38, 135, 0.18);
+  background-color: rgba(255, 255, 255, 0.58) !important;
+  box-shadow: 0 8px 28px rgba(31, 38, 135, 0.14);
 }
 .dark[data-ui-complexity="normal"] :where(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border,
 .dark[data-ui-complexity="complex"] :where(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border,
 .dark[data-ui-complexity="extreme"] :where(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl).border {
-  background-color: rgba(17, 24, 39, 0.5) !important;
-  border-color: rgba(148, 163, 184, 0.2) !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  background-color: rgba(17, 24, 39, 0.68) !important;
+  border-color: rgba(148, 163, 184, 0.20) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.30);
 }
