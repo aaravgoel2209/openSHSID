@@ -21,16 +21,24 @@ class UserSerializer(serializers.ModelSerializer):
     embedding = serializers.SerializerMethodField()
     article_count = serializers.SerializerMethodField()
     answer_count = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'date_joined', 'is_staff', 'embedding', 'article_count', 'answer_count']
+        fields = ['id', 'username', 'date_joined', 'is_staff', 'embedding', 'article_count', 'answer_count', 'avatar']
 
     def get_article_count(self, obj):
         return obj.article_set.count()
 
     def get_answer_count(self, obj):
         return obj.answer_set.count()
+
+    def get_avatar(self, obj):
+        request = self.context.get('request')
+        profile = getattr(obj, 'profile', None)
+        if profile and profile.avatar:
+            return request.build_absolute_uri(profile.avatar.url) if request else profile.avatar.url
+        return None
 
     def get_embedding(self, obj):
         request = self.context.get('request')

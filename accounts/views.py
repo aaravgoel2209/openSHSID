@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth.models import User
 from django.utils import timezone
+from .models import UserProfile
 from .serializers import RegisterSerializer, UserSerializer
 from qa.models import Question, Answer
 from knowledge.models import Article
@@ -43,6 +44,24 @@ def register(request):
             'user': UserSerializer(user).data,
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_avatar(request):
+    file = request.FILES.get('avatar')
+    if not file:
+        return Response({'error': '未提供文件'}, status=status.HTTP_400_BAD_REQUEST)
+    if file.content_type not in ('image/jpeg', 'image/png', 'image/gif', 'image/webp'):
+        return Response({'error': '仅支持 JPG、PNG、GIF、WebP 格式'}, status=status.HTTP_400_BAD_REQUEST)
+    if file.size > 5 * 1024 * 1024:
+        return Response({'error': '文件大小不能超过 5MB'}, status=status.HTTP_400_BAD_REQUEST)
+    profile_obj, _ = UserProfile.objects.get_or_create(user=request.user)
+    if profile_obj.avatar:
+        profile_obj.avatar.delete(save=False)
+    profile_obj.avatar = file
+    profile_obj.save(update_fields=['avatar'])
+    return Response(UserSerializer(request.user, context={'request': request}).data)
 
 
 @api_view(['GET'])

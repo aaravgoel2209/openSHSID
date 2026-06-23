@@ -11,4 +11,5 @@ urlpatterns = [
     path('admin/users/<int:user_id>/', admin_views.admin_user_detail, name='admin_user_detail'),
     path('admin/content/', admin_views.admin_content, name='admin_content'),
     path('weekly-top/', views.weekly_top_users, name='weekly_top_users'),
+    path('avatar/upload/', views.upload_avatar, name='upload_avatar'),
 ]

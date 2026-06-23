@@ -113,7 +113,7 @@ export default function Layout() {
             <Dropdown>
               <DropdownTrigger>
                 <Avatar as="button" className="cursor-pointer w-7 h-7" size="sm" color="primary">
-                  <AvatarImage src={`/images/${getAvatarColor(user.username)}.jpg`} />
+                  <AvatarImage src={user.avatar || `/images/${getAvatarColor(user.username)}.jpg`} />
                   <AvatarFallback className="text-[10px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </DropdownTrigger>
@@ -181,7 +181,7 @@ export default function Layout() {
               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
                 <div className="flex items-center gap-2 px-3 py-2">
                   <Avatar size="sm" className="w-6 h-6">
-                    <AvatarImage src={`/images/${getAvatarColor(user.username)}.jpg`} />
+                    <AvatarImage src={user.avatar || `/images/${getAvatarColor(user.username)}.jpg`} />
                     <AvatarFallback className="text-[9px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{user.username}</span>

@@ -104,7 +104,7 @@ export default function Profile() {
           <div className="flex items-end gap-4 -mt-10">
             <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-900 overflow-hidden shadow-lg">
               <img
-                src={`/images/${getAvatarColor(profile.username)}.jpg`}
+                src={profile.avatar || `/images/${getAvatarColor(profile.username)}.jpg`}
                 alt={profile.username}
                 className="w-full h-full object-cover"
               />
