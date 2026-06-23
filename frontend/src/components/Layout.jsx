@@ -188,6 +188,11 @@ export default function Layout() {
   const [announcements, setAnnouncements] = useState(null);
   const [annLoading, setAnnLoading] = useState(false);
 
+  // 屏幕尺寸状态
+  const [isLargeScreen, setIsLargeScreen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+  );
+
   useEffect(() => {
     if (!RANDOM_BG) return;
     const html = document.documentElement;
@@ -208,6 +213,21 @@ export default function Layout() {
     return () => clearInterval(t);
   }, []);
 
+  // 监听窗口大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      const large = window.innerWidth >= 1024;
+      setIsLargeScreen(large);
+      if (!large) {
+        // 小屏时自动关闭侧边栏（浮动也关闭）
+        setSidebarOpen(false);
+      }
+    };
+    handleResize(); // 初始执行一次
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // ========== 贡献数据 & 智能分析 ==========
   useEffect(() => {
     if (!user) {
@@ -216,7 +236,7 @@ export default function Layout() {
       setMyArticleCount(0);
       setTrendMessage('');
       setBadges([]);
-      setContribLoading(false);  // ← 修复：未登录时停止 loading
+      setContribLoading(false);
       return;
     }
     setContribLoading(true);
@@ -232,12 +252,10 @@ export default function Layout() {
         setMyArticleCount(myArt);
 
         const total = myQ + myAns + myArt;
-        // 保存快照 & 计算趋势
         saveSnapshot(total);
         const trend = calcTrend(total, 'total');
         setTrendMessage(trend.message);
 
-        // 成就徽章
         setBadges(computeAchievements(myQ, myAns, myArt));
       } catch {
         // fallback
@@ -260,7 +278,6 @@ export default function Layout() {
         const top = scored.slice(0, 3);
         setRecommendArticles(top);
 
-        // 生成推荐理由
         if (top.length > 0 && userTags.length > 0) {
           const tagsInTop = [];
           top.forEach(a => {
@@ -299,7 +316,6 @@ export default function Layout() {
         setAnnouncements(smart);
       })
       .catch(() => {
-        // 降级为本地模拟公告（含 tags）
         const fallback = [
           { title: '欢迎使用校园平台！', content: '更多功能即将上线。', tags: ['general'] },
           { title: '加入问答社区，分享知识', content: '你能帮助同学解答问题。', tags: ['qa'] },
@@ -316,6 +332,60 @@ export default function Layout() {
     return location.pathname.startsWith(path);
   };
 
+  // 侧边栏内容（可复用）
+  const sidebarContent = (
+    <>
+      {/* Create Post */}
+      <button onClick={() => navigate('/qa/ask')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-3 transition-colors">
+        <PlusIcon className="w-4 h-4" />
+        发布
+      </button>
+
+      {/* Navigation */}
+      <nav className="space-y-0.5">
+        {NAV_LINKS.map(({ to, label, icon }) => (
+          <Link key={to} to={to}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-colors ${
+              isActive(to)
+                ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900'
+            }`}
+          >
+            <span className="text-base">{icon}</span>
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* User info */}
+      {user?.is_staff && (
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+          <Link to="/admin/memory"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 no-underline transition-colors"
+          >
+            🧠 模型记忆
+          </Link>
+        </div>
+      )}
+      {user && (
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2 px-3 py-2">
+            <Avatar size="sm" className="w-6 h-6">
+              <AvatarImage src={`/images/${getAvatarColor(user.username)}.jpg`} />
+              <AvatarFallback className="text-[9px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{user.username}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 px-3">
+        <p className="text-[10px] text-gray-400 dark:text-gray-600">In develop, not final version, preparing for ICP</p>
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen overflow-x-hidden">
       {/* Top Bar */}
@@ -327,7 +397,7 @@ export default function Layout() {
             {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
           </button>
           <Link to="/" className="font-bold text-sm text-gray-900 dark:text-white no-underline shrink-0">shsid</Link>
-          <div className="flex-1 max-w-md mx-auto">
+          <div className="flex-1 max-w-md mx-auto min-w-0">
             <input
               type="text"
               placeholder="搜索..."
@@ -375,60 +445,30 @@ export default function Layout() {
       </header>
 
       <div className="flex w-full max-w-[1600px] mx-auto overflow-hidden">
-        {/* Left Sidebar */}
-        {sidebarOpen && (
+        {/* 左侧边栏：大屏静态布局 */}
+        {isLargeScreen && sidebarOpen && (
           <aside className={`w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] p-2 ${
             topbarBlur ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
           }`}>
-            {/* Create Post */}
-            <button onClick={() => navigate('/qa/ask')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-3 transition-colors">
-              <PlusIcon className="w-4 h-4" />
-              发布
-            </button>
-
-            {/* Navigation */}
-            <nav className="space-y-0.5">
-              {NAV_LINKS.map(({ to, label, icon }) => (
-                <Link key={to} to={to}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-colors ${
-                    isActive(to)
-                      ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900'
-                  }`}
-                >
-                  <span className="text-base">{icon}</span>
-                  {label}
-                </Link>
-              ))}
-            </nav>
-
-            {/* User info */}
-            {user?.is_staff && (
-              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
-                <Link to="/admin/memory"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 no-underline transition-colors"
-                >
-                  🧠 模型记忆
-                </Link>
-              </div>
-            )}
-            {user && (
-              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
-                <div className="flex items-center gap-2 px-3 py-2">
-                  <Avatar size="sm" className="w-6 h-6">
-                    <AvatarImage src={`/images/${getAvatarColor(user.username)}.jpg`} />
-                    <AvatarFallback className="text-[9px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{user.username}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 px-3">
-              <p className="text-[10px] text-gray-400 dark:text-gray-600">In develop, not final version, preparing for ICP</p>
-            </div>
+            {sidebarContent}
           </aside>
+        )}
+
+        {/* 左侧边栏：小屏浮动 overlay */}
+        {!isLargeScreen && sidebarOpen && (
+          <>
+            {/* 遮罩层 */}
+            <div
+              className="fixed inset-0 z-40 bg-black/30"
+              onClick={() => setSidebarOpen(false)}
+            />
+            {/* 侧边栏主体 */}
+            <aside className={`fixed left-0 top-12 z-50 w-56 h-[calc(100vh-48px)] border-r border-gray-200 dark:border-gray-800 p-2 ${
+              topbarBlur ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
+            }`}>
+              {sidebarContent}
+            </aside>
+          </>
         )}
 
         {/* Main Content */}
