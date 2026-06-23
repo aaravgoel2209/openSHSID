@@ -5,3 +5,5 @@
 /model/*.gguf
 /model/data/local.db
 /model/data/log.jsonl
+**/__pycache__/
+*.pyc
