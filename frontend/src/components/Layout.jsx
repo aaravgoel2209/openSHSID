@@ -8,12 +8,16 @@ const RANDOM_BG = _bgUrls.length > 0 ? _bgUrls[Math.floor(Math.random() * _bgUrl
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
+import { Spinner } from '@heroui/react/spinner';
 import { SunIcon, MoonIcon, PlusIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { useUI } from '../context/UIContext';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
+import { getQuestions } from '../api/qa';
+import { getArticles } from '../api/knowledge';
+import client from '../api/client';
 
 const NAV_LINKS = [
   { to: '/', label: '首页', icon: '🏠' },
@@ -40,6 +44,17 @@ export default function Layout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [now, setNow] = useState(new Date());
+
+  // 右侧边栏数据
+  const [myQuestionCount, setMyQuestionCount] = useState(0);
+  const [myAnswerCount, setMyAnswerCount] = useState(0);
+  const [myArticleCount, setMyArticleCount] = useState(0);
+  const [recommendArticles, setRecommendArticles] = useState([]);
+  const [recoLoading, setRecoLoading] = useState(false);
+  const [contribLoading, setContribLoading] = useState(false);
+  const [announcements, setAnnouncements] = useState(null);
+  const [annLoading, setAnnLoading] = useState(false);
+
   useEffect(() => {
     if (!RANDOM_BG) return;
     const html = document.documentElement;
@@ -55,6 +70,57 @@ export default function Layout() {
     };
   }, []);
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
+
+  // 用户贡献数据
+  useEffect(() => {
+    if (!user) {
+      setMyQuestionCount(0);
+      setMyAnswerCount(0);
+      setMyArticleCount(0);
+      return;
+    }
+    setContribLoading(true);
+    getQuestions()
+      .then((qs) => {
+        setMyQuestionCount(qs.filter((q) => q.author === user.id).length);
+      })
+      .catch(() => setMyQuestionCount(0));
+    client
+      .get('/auth/profile/')
+      .then((r) => {
+        setMyAnswerCount(r.data.answer_count || 0);
+        setMyArticleCount(r.data.article_count || 0);
+      })
+      .catch(() => {})
+      .finally(() => setContribLoading(false));
+  }, [user]);
+
+  // 推荐知识库
+  useEffect(() => {
+    setRecoLoading(true);
+    getArticles()
+      .then((articles) => {
+        setRecommendArticles(articles.slice(0, 3));
+      })
+      .catch(() => setRecommendArticles([]))
+      .finally(() => setRecoLoading(false));
+  }, []);
+
+  // 公告板（尚无 API，先占位）
+  useEffect(() => {
+    setAnnLoading(true);
+    client
+      .get('/announcements/')
+      .then((r) => {
+        setAnnouncements(r.data.announcements || []);
+      })
+      .catch(() => {
+        setAnnouncements([
+          { title: '欢迎使用校园平台！', content: '更多功能即将上线。' },
+        ]);
+      })
+      .finally(() => setAnnLoading(false));
+  }, []);
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -209,7 +275,15 @@ export default function Layout() {
             cornerRadius={12}
           >
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">你的贡献</h3>
-            <p className="text-xs text-gray-400">暂无数据</p>
+            {contribLoading ? (
+              <Spinner size="sm" />
+            ) : (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                你提出了 <strong>{myQuestionCount}</strong> 个问题，
+                回答了 <strong>{myAnswerCount}</strong> 个回答，
+                发表了 <strong>{myArticleCount}</strong> 篇文章。
+              </p>
+            )}
           </GlassPanel>
 
           {/* Tile 3: 推荐知识库 */}
@@ -220,7 +294,24 @@ export default function Layout() {
             cornerRadius={12}
           >
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">推荐知识库</h3>
-            <p className="text-xs text-gray-400">暂无推荐</p>
+            {recoLoading ? (
+              <Spinner size="sm" />
+            ) : recommendArticles.length === 0 ? (
+              <p className="text-xs text-gray-400">暂无推荐</p>
+            ) : (
+              <ul className="space-y-1">
+                {recommendArticles.map((a) => (
+                  <li key={a.id}>
+                    <button
+                      className="text-xs text-left text-indigo-600 dark:text-indigo-400 hover:underline truncate w-full"
+                      onClick={() => navigate(`/knowledge/${a.id}`)}
+                    >
+                      {a.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </GlassPanel>
 
           {/* Tile 4: 公告板 */}
@@ -231,7 +322,20 @@ export default function Layout() {
             cornerRadius={12}
           >
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">公告板</h3>
-            <p className="text-xs text-gray-400">暂无公告</p>
+            {annLoading ? (
+              <Spinner size="sm" />
+            ) : announcements && announcements.length > 0 ? (
+              <ul className="space-y-1">
+                {announcements.map((ann, idx) => (
+                  <li key={idx} className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="font-medium">{ann.title}</div>
+                    {ann.content && <div className="text-gray-400">{ann.content}</div>}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-gray-400">暂无公告</p>
+            )}
           </GlassPanel>
         </aside>
       </div>
