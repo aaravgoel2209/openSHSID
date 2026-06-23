@@ -392,7 +392,7 @@ export default function Layout() {
       <header className={`sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
         topbarBlur ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
       }`}>
-        <div className="flex items-center h-12 px-3 gap-2 max-w-[1600px] mx-auto w-full">
+        <div className="flex items-center h-12 px-3 gap-2 w-full">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500">
             {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
           </button>
@@ -444,7 +444,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <div className="flex w-full max-w-[1600px] mx-auto overflow-hidden">
+      <div className="flex w-full overflow-hidden">
         {/* 左侧边栏：大屏静态布局 */}
         {isLargeScreen && sidebarOpen && (
           <aside className={`w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] p-2 ${
