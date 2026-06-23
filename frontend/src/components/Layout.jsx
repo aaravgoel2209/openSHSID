@@ -34,24 +34,157 @@ function getAvatarColor(username) {
   return AVATAR_COLORS[hash % 9];
 }
 
+// ========== 右侧边栏智能逻辑 ==========
+
+/** 计算本周贡献趋势（基于 localStorage 历史快照） */
+function calcTrend(currentTotal, key) {
+  try {
+    const raw = localStorage.getItem(`trend_${key}`);
+    if (!raw) return { direction: 'same', percent: 0, message: '' };
+    const prev = JSON.parse(raw);
+    if (prev.length < 2) return { direction: 'same', percent: 0, message: '' };
+    const recentAvg = prev.slice(-7).reduce((a, b) => a + b, 0) / Math.min(prev.length, 7);
+    if (recentAvg === 0) return { direction: 'same', percent: 0, message: '' };
+    const change = ((currentTotal - recentAvg) / recentAvg) * 100;
+    const direction = change > 3 ? 'up' : change < -3 ? 'down' : 'same';
+    const percent = Math.round(Math.abs(change));
+    let message = '';
+    if (direction === 'up') {
+      message = `📈 较上周增长 ${percent}%`;
+    } else if (direction === 'down') {
+      message = `📉 较上周下降 ${percent}%`;
+    } else {
+      message = '📊 保持稳定';
+    }
+    return { direction, percent, message };
+  } catch {
+    return { direction: 'same', percent: 0, message: '' };
+  }
+}
+
+/** 保存今日贡献快照 */
+function saveSnapshot(total) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = `snapshot_${today}`;
+  const existing = JSON.parse(localStorage.getItem(key) || 'null');
+  if (!existing) {
+    localStorage.setItem(key, JSON.stringify({ date: today, total }));
+  }
+  // 维护滑动窗口（最近30天）
+  const allKeys = Object.keys(localStorage).filter(k => k.startsWith('snapshot_')).sort();
+  const values = allKeys.map(k => {
+    const snap = JSON.parse(localStorage.getItem(k));
+    return snap.total || 0;
+  });
+  localStorage.setItem('trend_total', JSON.stringify(values.slice(-30)));
+}
+
+/** 计算用户成就徽章列表 */
+function computeAchievements(questionCount, answerCount, articleCount) {
+  const badges = [];
+  if (questionCount >= 5) badges.push({ emoji: '🧠', label: '学习先锋' });
+  if (answerCount >= 10) badges.push({ emoji: '💡', label: '解答达人' });
+  if (articleCount >= 3) badges.push({ emoji: '📝', label: '知识贡献者' });
+  if (questionCount + answerCount + articleCount >= 50) badges.push({ emoji: '🏆', label: '社区之星' });
+  return badges;
+}
+
+/** 基于用户行为给文章打分 */
+function scoreArticles(articles, userTags, viewedIds, likedIds) {
+  return articles.map(article => {
+    let score = 0;
+    // 标签重叠
+    if (article.labels && userTags.length) {
+      const artTags = Array.isArray(article.labels)
+        ? article.labels.map(l => (typeof l === 'object' ? l.name : l))
+        : [];
+      const overlap = artTags.filter(t => userTags.includes(t)).length;
+      score += overlap * 3;
+    }
+    // 浏览历史（越近期越高）
+    if (viewedIds.includes(article.id)) {
+      const order = viewedIds.indexOf(article.id);
+      score += Math.max(1, 5 - order * 0.5);
+    }
+    // 点赞
+    if (likedIds.includes(article.id)) score += 5;
+    // 基础分（热度对数）
+    if (article.views) score += Math.log10(article.views + 1) * 0.5;
+    return { ...article, score };
+  }).sort((a, b) => b.score - a.score);
+}
+
+/** 从 localStorage 读取用户偏好标签 */
+function getUserTags() {
+  try {
+    const raw = localStorage.getItem('user_tags');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 从 localStorage 读取浏览历史 */
+function getViewedIds() {
+  try {
+    const raw = localStorage.getItem('viewed_articles');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 从 localStorage 读取点赞历史 */
+function getLikedIds() {
+  try {
+    const raw = localStorage.getItem('liked_articles');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 模拟公告板：根据用户兴趣标签智能排序 */
+function smartAnnouncements(announcements, userTags) {
+  if (!announcements || announcements.length === 0) return [];
+  const tagged = announcements.map(ann => {
+    let score = 0;
+    if (ann.tags && userTags.length) {
+      const overlap = ann.tags.filter(t => userTags.includes(t)).length;
+      score += overlap * 2;
+    }
+    return { ...ann, score };
+  });
+  tagged.sort((a, b) => b.score - a.score);
+  return tagged.slice(0, 5);
+}
+
+// =======================================
+
 export default function Layout() {
   const { user, logout } = useContext(AuthContext);
   const { isDark, toggle } = useContext(ThemeContext);
   const { complexity } = useUI();
-  // 普通及以上：顶栏加毛玻璃模糊（兼容模式保持纯色）
   const topbarBlur = complexity !== 'simple';
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [now, setNow] = useState(new Date());
 
-  // 右侧边栏数据
+  // 用户贡献数据
   const [myQuestionCount, setMyQuestionCount] = useState(0);
   const [myAnswerCount, setMyAnswerCount] = useState(0);
   const [myArticleCount, setMyArticleCount] = useState(0);
+  const [contribLoading, setContribLoading] = useState(false);
+  const [trendMessage, setTrendMessage] = useState('');
+  const [badges, setBadges] = useState([]);
+
+  // 推荐知识库
   const [recommendArticles, setRecommendArticles] = useState([]);
   const [recoLoading, setRecoLoading] = useState(false);
-  const [contribLoading, setContribLoading] = useState(false);
+  const [recoReason, setRecoReason] = useState('');
+
+  // 公告板
   const [announcements, setAnnouncements] = useState(null);
   const [annLoading, setAnnLoading] = useState(false);
 
@@ -69,55 +202,110 @@ export default function Layout() {
       html.style.backgroundPosition = '';
     };
   }, []);
-  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
 
-  // 用户贡献数据
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // ========== 贡献数据 & 智能分析 ==========
   useEffect(() => {
     if (!user) {
       setMyQuestionCount(0);
       setMyAnswerCount(0);
       setMyArticleCount(0);
+      setTrendMessage('');
+      setBadges([]);
       return;
     }
     setContribLoading(true);
-    getQuestions()
-      .then((qs) => {
-        setMyQuestionCount(qs.filter((q) => q.author === user.id).length);
-      })
-      .catch(() => setMyQuestionCount(0));
-    client
-      .get('/auth/profile/')
-      .then((r) => {
-        setMyAnswerCount(r.data.answer_count || 0);
-        setMyArticleCount(r.data.article_count || 0);
-      })
-      .catch(() => {})
-      .finally(() => setContribLoading(false));
+    const fetchData = async () => {
+      try {
+        const qs = await getQuestions();
+        const myQ = qs.filter(q => q.author === user.id).length;
+        setMyQuestionCount(myQ);
+        const profile = await client.get('/auth/profile/');
+        const myAns = profile.data.answer_count || 0;
+        const myArt = profile.data.article_count || 0;
+        setMyAnswerCount(myAns);
+        setMyArticleCount(myArt);
+
+        const total = myQ + myAns + myArt;
+        // 保存快照 & 计算趋势
+        saveSnapshot(total);
+        const trend = calcTrend(total, 'total');
+        setTrendMessage(trend.message);
+
+        // 成就徽章
+        setBadges(computeAchievements(myQ, myAns, myArt));
+      } catch {
+        // fallback
+      } finally {
+        setContribLoading(false);
+      }
+    };
+    fetchData();
   }, [user]);
 
-  // 推荐知识库
+  // ========== 推荐知识库（个性化排序） ==========
   useEffect(() => {
     setRecoLoading(true);
     getArticles()
       .then((articles) => {
-        setRecommendArticles(articles.slice(0, 3));
+        const userTags = getUserTags();
+        const viewedIds = getViewedIds();
+        const likedIds = getLikedIds();
+        const scored = scoreArticles(articles, userTags, viewedIds, likedIds);
+        const top = scored.slice(0, 3);
+        setRecommendArticles(top);
+
+        // 生成推荐理由
+        if (top.length > 0 && userTags.length > 0) {
+          const tagsInTop = [];
+          top.forEach(a => {
+            if (a.labels) {
+              (Array.isArray(a.labels) ? a.labels.map(l => (typeof l === 'object' ? l.name : l)) : []).forEach(t => {
+                if (userTags.includes(t) && !tagsInTop.includes(t)) tagsInTop.push(t);
+              });
+            }
+          });
+          if (tagsInTop.length > 0) {
+            setRecoReason(`根据你对「${tagsInTop.slice(0, 2).join('、')}」的兴趣推荐`);
+          } else if (viewedIds.length > 0) {
+            setRecoReason('基于你的浏览历史推荐');
+          } else {
+            setRecoReason('');
+          }
+        } else if (top.length > 0) {
+          setRecoReason('热门推荐');
+        } else {
+          setRecoReason('');
+        }
       })
       .catch(() => setRecommendArticles([]))
       .finally(() => setRecoLoading(false));
   }, []);
 
-  // 公告板（尚无 API，先占位）
+  // ========== 公告板（智能排序） ==========
   useEffect(() => {
     setAnnLoading(true);
     client
       .get('/announcements/')
       .then((r) => {
-        setAnnouncements(r.data.announcements || []);
+        const raw = r.data.announcements || [];
+        const userTags = getUserTags();
+        const smart = smartAnnouncements(raw, userTags);
+        setAnnouncements(smart);
       })
       .catch(() => {
-        setAnnouncements([
-          { title: '欢迎使用校园平台！', content: '更多功能即将上线。' },
-        ]);
+        // 降级为本地模拟公告（含 tags）
+        const fallback = [
+          { title: '欢迎使用校园平台！', content: '更多功能即将上线。', tags: ['general'] },
+          { title: '加入问答社区，分享知识', content: '你能帮助同学解答问题。', tags: ['qa'] },
+          { title: '知识库新增 AI 推荐功能', content: '智能排序已上线。', tags: ['ai', 'knowledge'] },
+        ];
+        const userTags = getUserTags();
+        setAnnouncements(smartAnnouncements(fallback, userTags));
       })
       .finally(() => setAnnLoading(false));
   }, []);
@@ -249,7 +437,7 @@ export default function Layout() {
           </div>
         </main>
 
-        {/* Right Sidebar – 四个 tile */}
+        {/* Right Sidebar – 四个 tile (含智能逻辑) */}
         <aside className={`w-60 shrink-0 border-l border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] hidden lg:block p-3 ${
           topbarBlur ? ' backdrop-blur-md' : ''
         }`}>
@@ -267,7 +455,7 @@ export default function Layout() {
             </div>
           </GlassPanel>
 
-          {/* Tile 2: 你的贡献 */}
+          {/* Tile 2: 你的贡献 + 智能分析 */}
           <GlassPanel
             className="mt-3"
             plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3"
@@ -278,15 +466,27 @@ export default function Layout() {
             {contribLoading ? (
               <Spinner size="sm" />
             ) : (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                你提出了 <strong>{myQuestionCount}</strong> 个问题，
-                回答了 <strong>{myAnswerCount}</strong> 个回答，
-                发表了 <strong>{myArticleCount}</strong> 篇文章。
-              </p>
+              <>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  提问 <strong>{myQuestionCount}</strong> · 回答 <strong>{myAnswerCount}</strong> · 文章 <strong>{myArticleCount}</strong>
+                </p>
+                {trendMessage && (
+                  <p className="text-xs mt-1 text-gray-400 dark:text-gray-500">{trendMessage}</p>
+                )}
+                {badges.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {badges.map((b, i) => (
+                      <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 text-[10px] text-blue-600 dark:text-blue-400">
+                        {b.emoji} {b.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </GlassPanel>
 
-          {/* Tile 3: 推荐知识库 */}
+          {/* Tile 3: 推荐知识库 + 个性化理由 */}
           <GlassPanel
             className="mt-3"
             plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3"
@@ -299,22 +499,27 @@ export default function Layout() {
             ) : recommendArticles.length === 0 ? (
               <p className="text-xs text-gray-400">暂无推荐</p>
             ) : (
-              <ul className="space-y-1">
-                {recommendArticles.map((a) => (
-                  <li key={a.id}>
-                    <button
-                      className="text-xs text-left text-indigo-600 dark:text-indigo-400 hover:underline truncate w-full"
-                      onClick={() => navigate(`/knowledge/${a.id}`)}
-                    >
-                      {a.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <>
+                {recoReason && (
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1 italic">{recoReason}</p>
+                )}
+                <ul className="space-y-1">
+                  {recommendArticles.map((a) => (
+                    <li key={a.id}>
+                      <button
+                        className="text-xs text-left text-indigo-600 dark:text-indigo-400 hover:underline truncate w-full"
+                        onClick={() => navigate(`/knowledge/${a.id}`)}
+                      >
+                        {a.title}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </GlassPanel>
 
-          {/* Tile 4: 公告板 */}
+          {/* Tile 4: 公告板 + 智能排序 */}
           <GlassPanel
             className="mt-3"
             plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3"
