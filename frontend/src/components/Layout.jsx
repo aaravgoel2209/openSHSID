@@ -317,12 +317,12 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Top Bar */}
       <header className={`sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
         topbarBlur ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
       }`}>
-        <div className="flex items-center h-12 px-3 gap-2 max-w-[1600px] mx-auto">
+        <div className="flex items-center h-12 px-3 gap-2 max-w-[1600px] mx-auto w-full">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500">
             {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
           </button>
@@ -374,7 +374,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <div className="flex max-w-[1600px] mx-auto">
+      <div className="flex w-full max-w-[1600px] mx-auto overflow-hidden">
         {/* Left Sidebar */}
         {sidebarOpen && (
           <aside className={`w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] p-2 ${
@@ -432,8 +432,8 @@ export default function Layout() {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-h-[calc(100vh-48px)]">
-          <div className="max-w-3xl mx-auto px-4 py-4 dark:text-gray-200">
+        <main className="flex-1 min-h-[calc(100vh-48px)] min-w-0">
+          <div className="w-full max-w-3xl mx-auto px-4 py-4 dark:text-gray-200">
             <Outlet />
           </div>
         </main>
