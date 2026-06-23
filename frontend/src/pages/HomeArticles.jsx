@@ -123,7 +123,7 @@ export default function HomeArticles() {
       />
 
       {/* Main content */}
-      <main className="relative z-10 w-full max-w-5xl mx-auto px-4 py-8">
+      <main className="relative z-10 w-full mx-auto px-4 py-8">
         {/* Page Header */}
         <div className={`flex justify-between items-center mb-6 p-4 rounded-2xl ${glassBackdrop} border border-white/20 dark:border-white/10 shadow-xl transition-colors`}>
           <div>
