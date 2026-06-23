@@ -1,8 +1,15 @@
-/db.sqlite3
-/flask_err.txt
-/flask_out.txt
-/model/*.pt
-/model/*.gguf
-/model/data/local.db
-/model/data/log.jsonl
-.aider*
+@@ -1,14 +1,2 @@                                                                                   
+-/db.sqlite3                                                                                       
+-/flask_err.txt                                                                                    
+-/flask_out.txt                                                                                    
+-/model/*.pt                                                                                       
+-/model/*.gguf                                                                                     
+-/model/data/local.db                                                                              
+-/model/data/log.jsonl                                                                             
+-<<<<<<< HEAD                                                                                      
+-.aider*                                                                                           
+-=======                                                                                           
+-__pycache__/                                                                                      
+-*.pyc                                                                                             
+-*.pyo                                                                                             
+->>>>>>> 8fd71de162f8c0c1450dac6f0fc8eb69ed665e10 

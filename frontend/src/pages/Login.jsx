@@ -1,86 +1,651 @@
-import { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Button } from '@heroui/react/button';
-import { TextField } from '@heroui/react/textfield';
-import { Label } from '@heroui/react/label';
-import { Input } from '@heroui/react/input';
-import { AuthContext } from '../context/AuthContext';
+import { useState, useContext, useMemo, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Button } from "@heroui/react/button";
+import { AuthContext } from "../context/AuthContext";
+
+const bgImages = [
+  new URL("../assets/background/bg-1.png", import.meta.url).href,
+  new URL("../assets/background/bg-2.png", import.meta.url).href,
+  new URL("../assets/background/bg-3.png", import.meta.url).href,
+  new URL("../assets/background/bg-4.png", import.meta.url).href,
+  new URL("../assets/background/bg-5.png", import.meta.url).href,
+  new URL("../assets/background/bg-6.png", import.meta.url).href,
+  new URL("../assets/background/bg-7.png", import.meta.url).href,
+];
+
+const translations = {
+  en: {
+    heading: "Hello, I am Rei",
+    subheading: "Your Intelligent Assistant",
+    title: "Log in",
+    usernameLabel: "Username",
+    usernamePlaceholder: "Please Enter the School ID Number",
+    passwordLabel: "Password",
+    passwordPlaceholder: "Enter the Password",
+    remember: "Remember Username",
+    forgot: "Forgot Password?",
+    loginBtn: "Log in",
+    noAccount: "Don't have an account?",
+    signUp: "Sign Up",
+    logging: "Logging in...",
+    error: "Login failed. Please check your credentials.",
+    emptyUsername: "Username cannot be empty",
+  },
+  zh: {
+    heading: "你好，我是Rei",
+    subheading: "你的智能助手~",
+    title: "登录",
+    usernameLabel: "用户名",
+    usernamePlaceholder: "请输入学号",
+    passwordLabel: "密码",
+    passwordPlaceholder: "输入密码",
+    remember: "记住用户名",
+    forgot: "忘记密码？",
+    loginBtn: "登录",
+    noAccount: "还没有账号？",
+    signUp: "注册",
+    logging: "登录中...",
+    error: "登录失败，请检查您的凭据。",
+    emptyUsername: "用户名不能为空",
+  },
+};
+
+function GlobeIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg
+      className="w-[20px] h-[20px] shrink-0 text-blue-400"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M20 21a8 8 0 0 0-16 0" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg
+      className="w-[20px] h-[20px] shrink-0 text-blue-400"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function AILogo() {
+  return (
+    <div className="relative w-full h-full" style={{ marginTop: -30 }}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full"
+      >
+        <path
+          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+          fill="url(#logoGrad)"
+        />
+        <path
+          d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+          fill="url(#logoGrad)"
+          opacity=".7"
+        />
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6366f1" />
+            <stop offset="100%" stopColor="#a855f7" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function InputField({
+  label,
+  icon,
+  placeholder,
+  value,
+  onChange,
+  type = "text",
+  isError,
+}) {
+  const inputRef = useRef(null);
+  return (
+    <div className="relative" style={{ height: 72 }}>
+      <span className="absolute left-0 top-[-4px] text-sm text-gray-500 leading-none pointer-events-none">
+        {label}
+      </span>
+      <div
+        className="h-[48px] rounded-[10px] absolute left-0 right-0 flex items-center"
+        style={{
+          background: isError ? "#fef2f2" : "#eaf1fd",
+          paddingLeft: 20,
+          paddingRight: 20,
+          top: 24,
+          border: isError ? "2px solid #feabad" : "none",
+          zIndex: 5,
+          cursor: 'text',
+        }}
+        onClick={() => inputRef.current?.focus()}
+      >
+        <span className="shrink-0 mr-3 pointer-events-none" style={{ marginLeft: -7.5 }}>
+          {icon}
+        </span>
+        <input
+          ref={inputRef}
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete="on"
+          className="w-full bg-transparent outline-none text-[14px] text-gray-700 placeholder-[#5b8dd9]"
+          style={{ border: "none", caretColor: '#2563eb' }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function Login() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [lang, setLang] = useState("zh");
+  const t = translations[lang];
+  const bgUrl = useMemo(
+    () => bgImages[Math.floor(Math.random() * bgImages.length)],
+    [],
+  );
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState("");
+  const [isUsernameError, setIsUsernameError] = useState(false);
+  const [isPasswordError, setIsPasswordError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+        setIsUsernameError(false);
+        setIsPasswordError(false);
+      }, 30000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (username || password) {
+      setError("");
+      setIsUsernameError(false);
+      setIsPasswordError(false);
+    }
+  }, [username, password]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
+    setIsUsernameError(false);
+    setIsPasswordError(false);
     setSubmitting(true);
     try {
       await login(username, password);
-      navigate('/');
+      if (remember) localStorage.setItem("shsid_username", username);
+      else localStorage.removeItem("shsid_username");
+      navigate("/");
     } catch (err) {
-      setError(err.response?.data?.non_field_errors?.[0] || '登录失败，请检查用户名和密码。');
+      setError(err.response?.data?.non_field_errors?.[0] || t.error);
+      setIsUsernameError(true);
+      setIsPasswordError(true);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleClear = () => {
+    setError("");
+    setIsUsernameError(false);
+    setIsPasswordError(false);
+  };
+
   return (
-    <div className="flex justify-center items-center min-h-[70vh] animate-fade-in">
-      <div className="w-full max-w-sm">
-        {/* Decorative header */}
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <span className="text-white text-2xl font-bold">S</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">欢迎回来</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">登录你的 SHSID 校园账号</p>
-        </div>
+    <div
+      className="min-h-screen w-full flex items-center justify-center overflow-hidden"
+      style={{
+        backgroundImage: `url(${bgUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/35"></div>
 
-        {/* Form Card */}
-        <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <TextField>
-              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">用户名</Label>
-              <Input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="输入用户名"
-                className="mt-1"
-              />
-            </TextField>
-            <TextField>
-              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">密码</Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="输入密码"
-                className="mt-1"
-              />
-            </TextField>
-            {error && (
-              <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-xl p-3 text-sm text-red-600 dark:text-red-400">
-                <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-                </svg>
+      <div style={{ position: 'relative', zIndex: 10 }}>
+        {/* SHSID logo floating above card */}
+        <img src={new URL('../assets/shsid-logo.png', import.meta.url).href} alt="SHSID" style={{ width: 528, height: 528, position: 'absolute', bottom: 'calc(100% - 200px)', left: '50%', transform: 'translateX(-50%)', zIndex: 30, objectFit: 'contain' }} />
+
+        {/* === Card 870×430 (−20%) === */}
+        <div
+          className="w-[870px] h-[430px] rounded-[16px] overflow-hidden relative flex"
+          style={{ boxShadow: "0 12px 40px rgba(0,0,0,.12)" }}
+        >
+          {/* Vertical separator */}
+          <div
+            className="absolute left-[39%] top-0 bottom-0 z-20 pointer-events-none w-[1px]"
+            style={{ background: "rgba(255,255,255,.35)" }}
+          ></div>
+
+          {/* ===== LEFT PANEL 39% — premium acrylic plaque === */}
+          <div
+            className="w-[39%] relative"
+            style={{
+              background:
+                "linear-gradient(165deg, rgba(240,244,250,.88) 0%, rgba(228,234,246,.82) 20%, rgba(218,224,238,.78) 40%, rgba(208,216,232,.75) 60%, rgba(198,210,228,.72) 80%, rgba(190,204,222,.70) 100%)",
+              backdropFilter: "blur(80px) saturate(1.6) brightness(1.03)",
+            }}
+          >
+            {/* Micro grid texture — 2×2px repeating pattern */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage: `repeating-linear-gradient(90deg, rgba(180,195,215,.03) 0px, rgba(180,195,215,.03) 1px, transparent 1px, transparent 2px), repeating-linear-gradient(0deg, rgba(180,195,215,.03) 0px, rgba(180,195,215,.03) 1px, transparent 1px, transparent 2px)`,
+              }}
+            ></div>
+
+            {/* Fine noise grain — matte surface */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                opacity: 0.02,
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
+              }}
+            ></div>
+
+            {/* Top bevel — light catching edge */}
+            <div
+              className="absolute inset-x-0 top-0 h-[1px]"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(255,255,255,.35), rgba(255,255,255,.6) 50%, rgba(255,255,255,.35))",
+              }}
+            ></div>
+            <div
+              className="absolute inset-x-0 top-[1px] h-[2px]"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(255,255,255,.15), rgba(255,255,255,.3) 50%, rgba(255,255,255,.15))",
+              }}
+            ></div>
+
+            {/* Bottom bevel — shadow edge */}
+            <div
+              className="absolute inset-x-0 bottom-0 h-[1px]"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(80,100,130,.08), rgba(80,100,130,.15) 50%, rgba(80,100,130,.08))",
+              }}
+            ></div>
+            <div
+              className="absolute inset-x-0 bottom-[1px] h-[2px]"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(60,80,110,.04), rgba(60,80,110,.08) 50%, rgba(60,80,110,.04))",
+              }}
+            ></div>
+
+            {/* Left bevel */}
+            <div
+              className="absolute inset-y-0 left-0 w-[1px]"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.35) 40%, rgba(255,255,255,.2))",
+              }}
+            ></div>
+
+            {/* Right bevel */}
+            <div
+              className="absolute inset-y-0 right-0 w-[1px]"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(60,80,110,.04), rgba(60,80,110,.08) 50%, rgba(60,80,110,.04))",
+              }}
+            ></div>
+
+            {/* Inner shadow depth — bottom-right */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                boxShadow:
+                  "inset -2px -2px 8px rgba(60,80,110,.03), inset 2px 2px 4px rgba(255,255,255,.1)",
+              }}
+            ></div>
+
+            {/* Diagonal light caustic — soft wash */}
+            <div
+              className="absolute top-[-60px] left-[40%] w-[200px] h-[500px]"
+              style={{
+                transform: "rotate(18deg)",
+                background: `linear-gradient(90deg, transparent 30%, rgba(255,255,255,.06) 45%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.06) 55%, transparent 70%)`,
+                pointerEvents: "none",
+              }}
+            ></div>
+
+            {/* Secondary caustic — smaller */}
+            <div
+              className="absolute top-[30%] left-[10%] w-[120px] h-[350px]"
+              style={{
+                transform: "rotate(-8deg)",
+                background: `linear-gradient(90deg, transparent 40%, rgba(255,255,255,.03) 50%, transparent 60%)`,
+                pointerEvents: "none",
+              }}
+            ></div>
+
+            {/* Edge vignette — subtle fade at corners */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse at 30% 50%, transparent 40%, rgba(180,200,225,.04) 100%)`,
+              }}
+            ></div>
+
+            {/* Error speech bubble — emerges from AI with bounce animation */}
+            <div
+              className="absolute z-30 flex items-start gap-[5px] px-4 py-2.5 rounded-xl cursor-pointer group mx-auto"
+              onClick={handleClear}
+              style={{
+                left: 0,
+                right: 0,
+                width: 180,
+                justifyContent: "center",
+                top: 28,
+                background: error ? "#ffffff" : "transparent",
+                border: error ? "2.5px solid #feabad" : "none",
+                boxShadow: error ? "0 8px 24px rgba(254,171,173,.3)" : "none",
+                opacity: error ? 1 : 0,
+                transform: `scale(${error ? 1 : 0.7})`,
+                transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
+              {/* Pointer — bottom pointing down to logo */}
+              <div
+                className="absolute -bottom-[8px] left-1/2 -translate-x-1/2"
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderLeft: error
+                    ? "7px solid transparent"
+                    : "7px solid rgba(0,0,0,0)",
+                  borderRight: error
+                    ? "7px solid transparent"
+                    : "7px solid rgba(0,0,0,0)",
+                  borderTop: error
+                    ? "8px solid #feabad"
+                    : "8px solid rgba(254,171,173,0)",
+                }}
+              ></div>
+
+              {/* Warning triangle exclamation */}
+              <svg
+                className={`w-[16px] h-[16px] shrink-0 mt-[2px] transition-all`}
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                style={{
+                  opacity: error ? 1 : 0,
+                  transform: `scale(${error ? 1 : 0.4})`,
+                  color: "#ef4444",
+                  transitionDelay: "50ms",
+                }}
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+
+              {/* Error text */}
+              <span
+                className={`text-[13px] font-medium leading-tight select-none`}
+                style={{
+                  color: error ? "#dc2626" : "transparent",
+                  opacity: error ? 1 : 0,
+                  transform: `translateY(${error ? 0 : -4}px)`,
+                  transition: "all 0.3s ease-out 80ms",
+                }}
+              >
                 {error}
-              </div>
-            )}
-            <Button type="submit" color="primary" fullWidth isLoading={submitting} className="font-medium h-11">
-              {submitting ? '登录中...' : '登录'}
-            </Button>
-          </form>
-        </div>
+              </span>
+            </div>
 
-        {/* Footer link */}
-        <p className="text-sm text-center mt-5 text-gray-500 dark:text-gray-400">
-          还没有账号？
-          <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline ml-1">注册</Link>
-        </p>
+            {/* Logo + text — compact */}
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center z-10"
+              style={{ padding: "32px 24px" }}
+            >
+              <div style={{ width: 130, height: 130, transition: "filter 0s", filter: error ? "hue-rotate(100deg) saturate(1.8) brightness(0.75)" : "none" }}>
+                <AILogo />
+              </div>
+              <div className="text-center" style={{ marginTop: -5 }}>
+                <h2
+                  className="text-white text-[20px] font-semibold leading-tight"
+                  style={{ textShadow: "0 1px 3px rgba(0,0,0,.08)" }}
+                >
+                  {t.heading}
+                </h2>
+                <p className="mt-1.5 text-[17px] font-normal text-white opacity-75">
+                  {t.subheading}
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom-left language switcher */}
+            <button
+              type="button"
+              onClick={() => setLang(lang === "en" ? "zh" : "en")}
+              className="absolute left-5 bottom-[18px] z-[100] flex items-center gap-2 text-white bg-white/10 rounded-full px-3 py-2 hover:bg-white/20 transition-all backdrop-blur-sm cursor-pointer border border-white/20"
+            >
+              <GlobeIcon />
+              <span className="text-xs font-semibold">
+                {lang === "en" ? "EN" : "中文"}
+              </span>
+            </button>
+          </div>
+
+          {/* ===== RIGHT PANEL 61% === */}
+          <div className="w-[61%] relative" style={{ background: "#ffffff" }}>
+            {/* SHSID watermark top-right */}
+            <img
+              src={new URL("../assets/shsid-watermark.png", import.meta.url).href}
+              alt="SHSID"
+              className="absolute pointer-events-none"
+              style={{ width: 155, height: 155, right: -42, top: -32, opacity: 0.75, objectFit: 'contain' }}
+            />
+
+            {/* Form container — centered, fills card */}
+            <div
+              className="relative z-10 flex flex-col items-center"
+              style={{ paddingTop: 32, paddingBottom: 24 }}
+            >
+              <form
+                onSubmit={handleSubmit}
+                style={{
+                  maxWidth: 420,
+                  marginLeft: "auto",
+                  marginRight: "auto",
+                }}
+                className="flex flex-col w-full"
+              >
+                {/* Title — centered */}
+                <h1 className="text-[#344054] text-[26px] font-bold leading-tight tracking-tight mb-1 text-center">
+                  {t.title}
+                </h1>
+                <div
+                  className="mx-auto"
+                  style={{
+                    width: 56,
+                    height: 3.5,
+                    borderRadius: 999,
+                    background: "#2270e3",
+                    marginTop: 4,
+                  }}
+                ></div>
+
+                {/* Username */}
+                <div className="mt-[14px]">
+                  <InputField
+                    label={t.usernameLabel}
+                    icon={<UserIcon />}
+                    placeholder={t.usernamePlaceholder}
+                    value={username}
+                    onChange={setUsername}
+                    isError={isUsernameError && !!error}
+                  />
+                </div>
+
+                {/* Password — 24px below username */}
+                <div className="mt-[24px]">
+                  <InputField
+                    label={t.passwordLabel}
+                    icon={<LockIcon />}
+                    type="password"
+                    placeholder={t.passwordPlaceholder}
+                    value={password}
+                    onChange={setPassword}
+                    isError={isPasswordError && !!error}
+                  />
+                </div>
+
+                {/* Checkbox + Forgot — 16px below password */}
+                <div
+                  className="flex items-center justify-between mt-[16px] w-full"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                    }}
+                    className="gap-2 select-none"
+                    onClick={() => {
+                      if (!username) { setError(t.emptyUsername); setIsUsernameError(true); return; }
+                      setRemember(!remember);
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        flexShrink: 0,
+                        border: remember ? "none" : "1px solid #d1d5db",
+                        borderRadius: 2,
+                        backgroundColor: remember ? "#2563eb" : "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: 4,
+                      }}
+                    >
+                      {remember && (
+                        <svg
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          width={14}
+                          height={14}
+                        >
+                          <path
+                            d="M3 7.5L5.5 10L11 4"
+                            stroke="#fff"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm text-gray-500 select-none">
+                      {t.remember}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    style={{ color: "#2270e3" }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-sm font-medium no-underline transition-colors hover:text-blue-700"
+                  >
+                    {t.forgot}
+                  </button>
+                </div>
+
+                {/* Login button — thicker */}
+                <div className="mt-[20px] w-full">
+                  <Button
+                    type="submit"
+                    fullWidth
+                    color="primary"
+                    isLoading={submitting}
+                    style={{
+                      height: 52,
+                      fontSize: 16,
+                      borderRadius: 10,
+                      background: "#1f6fe5",
+                      fontWeight: "bold",
+                    }}
+                    className="font-bold"
+                  >
+                    {t.loginBtn}
+                  </Button>
+                </div>
+
+                {/* Spacer pushes register link to bottom with extra gap */}
+                <div style={{ minHeight: 21 }}></div>
+
+                {/* Register link — anchored near bottom with gap from button */}
+                <p className="text-sm text-center w-full mb-[15px] px-2 text-gray-400">
+                  {t.noAccount}{" "}
+                  <Link
+                    to="/register"
+                    style={{ color: "#2270e3" }}
+                    className="font-semibold no-underline transition-colors hover:text-blue-700 ml-1"
+                  >
+                    {t.signUp}
+                  </Link>
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
