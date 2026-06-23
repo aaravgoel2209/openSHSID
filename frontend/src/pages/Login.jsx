@@ -266,118 +266,99 @@ export default function Login() {
             style={{ background: "rgba(255,255,255,.35)" }}
           ></div>
 
-          {/* ===== LEFT PANEL 39% — premium acrylic plaque === */}
-          <div
-            className="w-[39%] relative"
-            style={{
-              background:
-                "linear-gradient(165deg, rgba(240,244,250,.88) 0%, rgba(228,234,246,.82) 20%, rgba(218,224,238,.78) 40%, rgba(208,216,232,.75) 60%, rgba(198,210,228,.72) 80%, rgba(190,204,222,.70) 100%)",
-              backdropFilter: "blur(80px) saturate(1.6) brightness(1.03)",
-            }}
-          >
-            {/* Micro grid texture — 2×2px repeating pattern */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage: `repeating-linear-gradient(90deg, rgba(180,195,215,.03) 0px, rgba(180,195,215,.03) 1px, transparent 1px, transparent 2px), repeating-linear-gradient(0deg, rgba(180,195,215,.03) 0px, rgba(180,195,215,.03) 1px, transparent 1px, transparent 2px)`,
-              }}
-            ></div>
+          {/* ===== LEFT PANEL 39% — precision frosted acrylic over glass === */}
+          <div className="w-[39%] relative" style={{
+            background: "radial-gradient(ellipse at 40% 15%, rgba(232,240,252,.93) 0%, rgba(222,230,245,.90) 20%, rgba(212,222,240,.88) 40%, rgba(200,212,234,.86) 60%, rgba(190,204,228,.84) 80%, rgba(182,196,224,.82) 100%)",
+            backdropFilter: "blur(100px) saturate(1.2) brightness(0.98)",
+            boxShadow: "inset 0 0 40px rgba(255,255,255,.04), inset 0 0 80px rgba(180,200,230,.03)",
+          }}>
+            {/* Upper-left light source — soft glow */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: "radial-gradient(ellipse at 20% 10%, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 25%, transparent 55%)",
+            }}></div>
 
-            {/* Fine noise grain — matte surface */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                opacity: 0.02,
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
-              }}
-            ></div>
+            {/* Vertical diffusion streaks — milky light distribution */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              backgroundImage: `
+                repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0px, transparent 1px, transparent 4px, rgba(255,255,255,.008) 4px, transparent 5px, transparent 8px),
+                repeating-linear-gradient(0deg, rgba(255,255,255,.01) 0px, transparent 2px, transparent 6px, rgba(255,255,255,.006) 6px, transparent 7px, transparent 12px)
+              `,
+              backgroundSize: '100% 12px, 100% 20px',
+            }}></div>
 
-            {/* Top bevel — light catching edge */}
-            <div
-              className="absolute inset-x-0 top-0 h-[1px]"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(255,255,255,.35), rgba(255,255,255,.6) 50%, rgba(255,255,255,.35))",
-              }}
-            ></div>
-            <div
-              className="absolute inset-x-0 top-[1px] h-[2px]"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(255,255,255,.15), rgba(255,255,255,.3) 50%, rgba(255,255,255,.15))",
-              }}
-            ></div>
+            {/* Microscopic square mesh — etched into material (3×3px) */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              backgroundImage: `
+                repeating-linear-gradient(90deg, rgba(160,180,210,.018) 0px, rgba(160,180,210,.018) 1px, transparent 1px, transparent 3px),
+                repeating-linear-gradient(0deg, rgba(160,180,210,.018) 0px, rgba(160,180,210,.018) 1px, transparent 1px, transparent 3px)
+              `,
+            }}></div>
 
-            {/* Bottom bevel — shadow edge */}
-            <div
-              className="absolute inset-x-0 bottom-0 h-[1px]"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(80,100,130,.08), rgba(80,100,130,.15) 50%, rgba(80,100,130,.08))",
-              }}
-            ></div>
-            <div
-              className="absolute inset-x-0 bottom-[1px] h-[2px]"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(60,80,110,.04), rgba(60,80,110,.08) 50%, rgba(60,80,110,.04))",
-              }}
-            ></div>
+            {/* Halftone micro-dot texture — fabric-like */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              backgroundImage: `radial-gradient(circle at 0.5px 0.5px, rgba(150,175,210,.012) 0.3px, transparent 0.5px)`,
+              backgroundSize: '2px 2px',
+            }}></div>
 
-            {/* Left bevel */}
-            <div
-              className="absolute inset-y-0 left-0 w-[1px]"
-              style={{
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.35) 40%, rgba(255,255,255,.2))",
-              }}
-            ></div>
+            {/* Low-contrast noise — grain */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              opacity: 0.008,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
+            }}></div>
 
-            {/* Right bevel */}
-            <div
-              className="absolute inset-y-0 right-0 w-[1px]"
-              style={{
-                background:
-                  "linear-gradient(180deg, rgba(60,80,110,.04), rgba(60,80,110,.08) 50%, rgba(60,80,110,.04))",
-              }}
-            ></div>
+            {/* Edge density — darker borders (material thickness) */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: `
+                radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(140,160,190,.04) 75%, rgba(130,150,180,.06) 95%),
+                linear-gradient(0deg, rgba(120,145,175,.03) 0%, transparent 15%),
+                linear-gradient(180deg, rgba(120,145,175,.02) 0%, transparent 15%),
+                linear-gradient(90deg, rgba(120,145,175,.02) 0%, transparent 10%),
+                linear-gradient(-90deg, rgba(120,145,175,.02) 0%, transparent 10%)
+              `,
+            }}></div>
 
-            {/* Inner shadow depth — bottom-right */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                boxShadow:
-                  "inset -2px -2px 8px rgba(60,80,110,.03), inset 2px 2px 4px rgba(255,255,255,.1)",
-              }}
-            ></div>
+            {/* Cloudy center diffusion — slight milky opacity */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: "radial-gradient(ellipse at 45% 40%, rgba(255,255,255,.05) 0%, rgba(200,215,238,.02) 40%, transparent 70%)",
+            }}></div>
 
-            {/* Diagonal light caustic — soft wash */}
-            <div
-              className="absolute top-[-60px] left-[40%] w-[200px] h-[500px]"
+            {/* Ghosted watermark — bottom-right corner, half covered */}
+            <img
+              src={new URL("../assets/shsid-logo.png", import.meta.url).href}
+              alt=""
+              className="absolute pointer-events-none"
               style={{
-                transform: "rotate(18deg)",
-                background: `linear-gradient(90deg, transparent 30%, rgba(255,255,255,.06) 45%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.06) 55%, transparent 70%)`,
-                pointerEvents: "none",
+                width: 120,
+                height: 120,
+                right: -30,
+                bottom: -30,
+                opacity: 0.035,
+                objectFit: 'contain',
+                filter: 'blur(2px)',
               }}
-            ></div>
+            />
 
-            {/* Secondary caustic — smaller */}
-            <div
-              className="absolute top-[30%] left-[10%] w-[120px] h-[350px]"
-              style={{
-                transform: "rotate(-8deg)",
-                background: `linear-gradient(90deg, transparent 40%, rgba(255,255,255,.03) 50%, transparent 60%)`,
-                pointerEvents: "none",
-              }}
-            ></div>
+            {/* Top edge — thin light capture */}
+            <div className="absolute inset-x-0 top-0 h-[1px]" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,.06) 30%, rgba(255,255,255,.1) 50%, rgba(255,255,255,.06) 70%, transparent)" }}></div>
 
-            {/* Edge vignette — subtle fade at corners */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: `radial-gradient(ellipse at 30% 50%, transparent 40%, rgba(180,200,225,.04) 100%)`,
-              }}
-            ></div>
+            {/* Bottom edge — thin shadow */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px]" style={{ background: "linear-gradient(90deg, transparent, rgba(100,125,155,.04) 30%, rgba(100,125,155,.06) 50%, rgba(100,125,155,.04) 70%, transparent)" }}></div>
+
+            {/* Left edge — light piping */}
+            <div className="absolute inset-y-4 left-0 w-[1px]" style={{ background: "linear-gradient(180deg, transparent, rgba(255,255,255,.04) 30%, rgba(255,255,255,.06) 50%, rgba(255,255,255,.04) 70%, transparent)" }}></div>
+
+            {/* Right edge — slight shadow */}
+            <div className="absolute inset-y-4 right-0 w-[1px]" style={{ background: "linear-gradient(180deg, transparent, rgba(100,125,155,.02) 30%, rgba(100,125,155,.04) 50%, rgba(100,125,155,.02) 70%, transparent)" }}></div>
+
+            {/* Bottom-right corner radius transmission — light leak */}
+            <div className="absolute bottom-0 right-0 w-[60px] h-[60px] pointer-events-none" style={{
+              background: "radial-gradient(circle at 100% 100%, rgba(255,255,255,.02) 0%, transparent 70%)",
+            }}></div>
+
+            {/* Top-left corner bright spot */}
+            <div className="absolute top-0 left-0 w-[80px] h-[80px] pointer-events-none" style={{
+              background: "radial-gradient(circle at 0% 0%, rgba(255,255,255,.06) 0%, transparent 70%)",
+            }}></div>
 
             {/* Error speech bubble — emerges from AI with bounce animation */}
             <div
@@ -468,6 +449,14 @@ export default function Login() {
                 </p>
               </div>
             </div>
+
+            {/* SHSID watermark bottom-right — half covered by panel edge */}
+            <img
+              src={new URL("../assets/shsid-watermark.png", import.meta.url).href}
+              alt="SHSID"
+              className="absolute pointer-events-none"
+              style={{ width: 150, height: 150, right: -50, bottom: -40, opacity: 0.8, zIndex: 40, objectFit: 'contain' }}
+            />
 
             {/* Bottom-left language switcher */}
             <button
