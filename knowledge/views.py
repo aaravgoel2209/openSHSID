@@ -71,11 +71,12 @@ def article_list(request):
             if label_ids:
                 from qa.models import Label
                 a.labels.set(Label.objects.filter(id__in=label_ids))
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(ArticleDetailSerializer(a, context={'request': request}).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'DELETE'])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk)
     if request.method == 'DELETE':

@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
+from django.utils import timezone
 from qa.models import Question, Answer
 from knowledge.models import Article
 from .serializers import UserSerializer
@@ -23,7 +24,7 @@ def admin_dashboard(request):
         'total_questions': Question.objects.count(),
         'total_answers': Answer.objects.count(),
         'total_articles': Article.objects.count(),
-        'active_users_today': User.objects.filter(last_login__date=request.user.last_login.date()).count() if request.user.last_login else 0,
+        'active_users_today': User.objects.filter(last_login__date=timezone.now().date()).count(),
     }
     return Response(stats)
 

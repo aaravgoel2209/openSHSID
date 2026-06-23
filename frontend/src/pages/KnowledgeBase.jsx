@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { getArticles } from '../api/knowledge';
 import { getLabels } from '../api/labels';
 import client from '../api/client';
+import { useUI } from '../context/UIContext';
+import Card from '../components/Card';
 
 export default function KnowledgeBase() {
   const navigate = useNavigate();
+  const { hasGlass } = useUI();
   const [allLabels, setAllLabels] = useState([]);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +24,7 @@ export default function KnowledgeBase() {
     if (selectedLabel) params.label = selectedLabel;
     client.get('/knowledge/articles/', { params }).then((r) => r.data)
       .then(setArticles)
+      .catch(() => {})
       .finally(() => setLoading(false));
   };
 
@@ -32,7 +37,10 @@ export default function KnowledgeBase() {
   }, [selectedLabel]);
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">经验知识库</h1>
         <Button color="primary" variant="flat" onPress={() => navigate('/knowledge/create')}>
@@ -64,7 +72,11 @@ export default function KnowledgeBase() {
       {loading ? (
         <div className="flex justify-center py-10"><Spinner size="lg" /></div>
       ) : articles.length === 0 ? (
-        <div className="text-center py-16 animate-fade-in">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-16"
+        >
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center">
             <PlusIcon className="w-8 h-8 text-indigo-400" />
           </div>
@@ -72,13 +84,20 @@ export default function KnowledgeBase() {
           <Button color="primary" variant="flat" size="sm" onPress={() => navigate('/knowledge/create')}>
             来写第一篇吧
           </Button>
-        </div>
+        </motion.div>
       ) : (
         <div className="space-y-3">
-          {articles.map((a) => (
-            <div
+          {articles.map((a, index) => (
+            <Card
               key={a.id}
-              className="group bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-5 cursor-pointer hover-lift hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200"
+              glass={hasGlass}
+              clickable
+              className="group"
+              motionProps={{
+                initial: { opacity: 0, y: 12 },
+                animate: { opacity: 1, y: 0 },
+                transition: { delay: index * 0.03, type: 'spring', stiffness: 300, damping: 30 },
+              }}
               onClick={() => navigate(`/knowledge/${a.id}`)}
             >
               <div className="flex justify-between items-start mb-2">
@@ -98,10 +117,10 @@ export default function KnowledgeBase() {
                   <span className="text-xs px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 font-medium">{a.subject_name}</span>
                 )}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

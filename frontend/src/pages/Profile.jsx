@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Spinner } from '@heroui/react/spinner';
 import { Button } from '@heroui/react/button';
 import { ChatBubbleLeftRightIcon, BookOpenIcon, CalendarIcon } from '@heroicons/react/24/outline';
@@ -7,19 +8,16 @@ import { AuthContext } from '../context/AuthContext';
 import { getQuestions } from '../api/qa';
 import { getArticles } from '../api/knowledge';
 import client from '../api/client';
+import Card from '../components/Card';
+import { useUI } from '../context/UIContext';
 
-const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
-
-function getAvatarColor(username) {
-  const hash = Math.abs((username || '').split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 0));
-  return AVATAR_COLORS[hash % 9];
-}
+import { getAvatarColor } from '../utils/avatar';
 
 export default function Profile() {
   const navigate = useNavigate();
   const { userId } = useParams();
   const { user, loading } = useContext(AuthContext);
-  // 无 userId 或就是自己 → 个人中心；否则 → 查看他人主页
+  const { hasGlass } = useUI();
   const isOwn = !userId || (user && String(user.id) === String(userId));
 
   const [profile, setProfile] = useState(isOwn ? user : null);
@@ -28,7 +26,6 @@ export default function Profile() {
   const [myArticles, setMyArticles] = useState([]);
   const [fetched, setFetched] = useState(false);
 
-  // 目标用户资料：自己用 context，他人则拉取公开资料
   useEffect(() => {
     if (isOwn) { setProfile(user); setProfileLoading(false); return; }
     setProfileLoading(true);
@@ -38,7 +35,6 @@ export default function Profile() {
       .finally(() => setProfileLoading(false));
   }, [userId, isOwn, user]);
 
-  // 目标用户的提问 / 文章
   useEffect(() => {
     const targetId = isOwn ? user?.id : Number(userId);
     if (targetId == null || Number.isNaN(targetId)) return;
@@ -59,7 +55,6 @@ export default function Profile() {
     );
   }
 
-  // 自己的个人中心但未登录 → 登录提示
   if (isOwn && !user) {
     return (
       <div className="text-center py-16 animate-fade-in">
@@ -76,7 +71,6 @@ export default function Profile() {
     );
   }
 
-  // 查看他人但用户不存在
   if (!profile) {
     return (
       <div className="text-center py-16 animate-fade-in">
@@ -92,11 +86,19 @@ export default function Profile() {
   return (
     <div className="animate-fade-in">
       {/* Profile Header Card */}
-      <div className="relative border border-gray-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden mb-8 shadow-sm">
+      <Card
+        glass={hasGlass}
+        padded={false}
+        className="relative overflow-hidden mb-8 shadow-sm"
+        motionProps={{
+          initial: { opacity: 0, y: 10 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.3 },
+        }}
+      >
         {/* Gradient Banner */}
         <div className="absolute inset-0 z-0 bg-gradient-to-r from-indigo-500 to-purple-600" />
 
-        {/* 2. 占位层：因为渐变脱离文档流，必须保留这 24 的高度，防止头像上移 */}
         <div className="h-24 w-full" />
 
         {/* Avatar & Info */}
@@ -124,17 +126,17 @@ export default function Profile() {
 
           {/* Stats */}
           <div className="flex gap-6 mt-5 pt-4 border-t border-gray-100 dark:border-slate-800">
-            <div className="relative h-15 w-15 bg-white dark:bg-slate-900/75 border text-center rounded-2xl overflow-hidden mb-8 shadow-sm">
+            <Card glass={hasGlass} padded={false} className="text-center overflow-hidden shadow-sm w-15 h-15">
               <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{myQuestions.length}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">提问</p>
-            </div>
-            <div className="relative h-15 w-15 bg-white dark:bg-slate-900/75 border text-center rounded-2xl overflow-hidden mb-8 shadow-sm">
+            </Card>
+            <Card glass={hasGlass} padded={false} className="text-center overflow-hidden shadow-sm w-15 h-15">
               <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{myArticles.length}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">文章</p>
-            </div>
+            </Card>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Questions */}
       <section className="mb-8">
@@ -145,27 +147,34 @@ export default function Profile() {
         {!fetched ? (
           <div className="flex justify-center py-6"><Spinner size="sm" /></div>
         ) : myQuestions.length === 0 ? (
-          <div className="bg-gray-50 dark:bg-slate-800/30 rounded-xl p-6 text-center">
+          <Card glass={hasGlass} className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">还没有提问</p>
             {isOwn && (
               <Button color="primary" variant="flat" size="sm" className="mt-3" onPress={() => navigate('/qa/ask')}>
                 去提问
               </Button>
             )}
-          </div>
+          </Card>
         ) : (
           <div className="space-y-2">
-            {myQuestions.map((q) => (
-              <div
+            {myQuestions.map((q, index) => (
+              <Card
                 key={q.id}
-                className="group bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-4 cursor-pointer hover-lift hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200"
+                glass={hasGlass}
+                clickable
+                className="group"
+                motionProps={{
+                  initial: { opacity: 0, y: 8 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { delay: index * 0.03, type: 'spring', stiffness: 300, damping: 30 },
+                }}
                 onClick={() => navigate(`/qa/questions/${q.id}`)}
               >
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{q.title}</span>
                   <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0 ml-3">{q.created_at?.slice(0, 10)}</span>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -180,27 +189,34 @@ export default function Profile() {
         {!fetched ? (
           <div className="flex justify-center py-6"><Spinner size="sm" /></div>
         ) : myArticles.length === 0 ? (
-          <div className="bg-gray-50 dark:bg-slate-800/30 rounded-xl p-6 text-center">
+          <Card glass={hasGlass} className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">还没有发表文章</p>
             {isOwn && (
               <Button color="primary" variant="flat" size="sm" className="mt-3" onPress={() => navigate('/knowledge/create')}>
                 写文章
               </Button>
             )}
-          </div>
+          </Card>
         ) : (
           <div className="space-y-2">
-            {myArticles.map((a) => (
-              <div
+            {myArticles.map((a, index) => (
+              <Card
                 key={a.id}
-                className="group bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-4 cursor-pointer hover-lift hover:border-purple-200 dark:hover:border-purple-800/60 transition-all duration-200"
+                glass={hasGlass}
+                clickable
+                className="group"
+                motionProps={{
+                  initial: { opacity: 0, y: 8 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { delay: index * 0.03, type: 'spring', stiffness: 300, damping: 30 },
+                }}
                 onClick={() => navigate(`/knowledge/${a.id}`)}
               >
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{a.title}</span>
                   <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0 ml-3">{a.created_at?.slice(0, 10)}</span>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}

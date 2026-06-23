@@ -3,13 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
+import { getAvatarUrl } from '../utils/avatar';
 import client from '../api/client';
-
-const colors = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
-const avatarUrl = (name) => {
-  const idx = Math.abs(name.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % colors.length;
-  return `/images/${colors[idx]}.jpg`;
-};
 
 export default function UserProfile() {
   const { userId } = useParams();
@@ -37,7 +32,7 @@ export default function UserProfile() {
     <div className="max-w-md mx-auto">
       <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-900 rounded-xl p-6 shadow-sm text-center">
         <Avatar size="lg" className="mx-auto mb-4">
-          <AvatarImage src={avatarUrl(profile.username)} />
+          <AvatarImage src={getAvatarUrl(profile.username)} />
           <AvatarFallback>{profile.username?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <h1 className="text-2xl font-bold mb-2">{profile.username}</h1>

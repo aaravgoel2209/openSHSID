@@ -1,21 +1,20 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { PlusIcon, ChatBubbleLeftEllipsisIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { getConversations, searchUsers, sendMessage } from '../api/chat';
 import { AuthContext } from '../context/AuthContext';
+import Card from '../components/Card';
+import { useUI } from '../context/UIContext';
 
-const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
-
-function getAvatarColor(username) {
-  const hash = Math.abs(username.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 0));
-  return AVATAR_COLORS[hash % 9];
-}
+import { getAvatarColor } from '../utils/avatar';
 
 export default function ChatList() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { hasGlass } = useUI();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
@@ -35,7 +34,7 @@ export default function ChatList() {
   useEffect(() => {
     if (search.length < 1) { setResults([]); return; }
     const timer = setTimeout(() => {
-      searchUsers(search).then(setResults);
+      searchUsers(search).then(setResults).catch(() => {});
     }, 200);
     return () => clearTimeout(timer);
   }, [search]);
@@ -91,50 +90,70 @@ export default function ChatList() {
       </div>
 
       {/* New Conversation Panel */}
-      {showNew && (
-        <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-5 mb-5 shadow-sm animate-slide-up">
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-sm dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-600 transition-all"
-              placeholder="搜索用户..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          {results.length > 0 && (
-            <div className="mt-3 border border-gray-200/80 dark:border-slate-800/80 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-slate-800">
-              {results.map((u) => (
-                <div key={u.id} className="p-4 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-lg overflow-hidden">
-                      <img src={`/images/${getAvatarColor(u.username)}.jpg`} alt="" className="w-full h-full object-cover" />
+      <AnimatePresence>
+        {showNew && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <Card glass={hasGlass} className="mb-5">
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-sm dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-600 transition-all"
+                  placeholder="搜索用户..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              {results.length > 0 && (
+                <div className="mt-3 border border-gray-200/80 dark:border-slate-800/80 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-slate-800">
+                  {results.map((u) => (
+                    <div key={u.id} className="p-4 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-8 rounded-lg overflow-hidden">
+                          <img src={`/images/${getAvatarColor(u.username)}.jpg`} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{u.username}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          className="flex-1 h-9 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-sm dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                          placeholder="发一条消息..."
+                          value={newContent}
+                          onChange={(e) => setNewContent(e.target.value)}
+                        />
+                        <Button size="sm" color="primary" onPress={() => handleStartChat(u)} isLoading={sending} className="font-medium">
+                          发送
+                        </Button>
+                      </div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{u.username}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      className="flex-1 h-9 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-sm dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                      placeholder="发一条消息..."
-                      value={newContent}
-                      onChange={(e) => setNewContent(e.target.value)}
-                    />
-                    <Button size="sm" color="primary" onPress={() => handleStartChat(u)} isLoading={sending} className="font-medium">
-                      发送
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-          {search && results.length === 0 && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 text-center">未找到用户</p>
-          )}
-        </div>
-      )}
+              )}
+              {search && results.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 text-center">未找到用户</p>
+              )}
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* AI Chat Entry */}
-      <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200/60 dark:border-indigo-800/40 cursor-pointer hover:shadow-sm transition-all" onClick={() => navigate('/chat/ai')}>
+      <Card
+        glass={hasGlass}
+        clickable
+        className="mb-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border-indigo-200/60 dark:border-indigo-800/40 hover:shadow-sm"
+        motionProps={{
+          initial: { opacity: 0, x: -10 },
+          animate: { opacity: 1, x: 0 },
+          transition: { duration: 0.3 },
+        }}
+        onClick={() => navigate('/chat/ai')}
+      >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
             R
@@ -145,7 +164,7 @@ export default function ChatList() {
           </div>
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-semibold">AI</span>
         </div>
-      </div>
+      </Card>
 
       {/* Conversations List */}
       {loading ? (
@@ -163,10 +182,17 @@ export default function ChatList() {
         </div>
       ) : (
         <div className="space-y-2">
-          {conversations.map((c) => (
-            <div
+          {conversations.map((c, index) => (
+            <Card
               key={c.user_id}
-              className="group bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-4 cursor-pointer hover-lift hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200"
+              glass={hasGlass}
+              clickable
+              className="group"
+              motionProps={{
+                initial: { opacity: 0, y: 12 },
+                animate: { opacity: 1, y: 0 },
+                transition: { delay: index * 0.03, type: 'spring', stiffness: 300, damping: 30 },
+              }}
               onClick={() => navigate(`/chat/${c.user_id}`)}
             >
               <div className="flex items-center gap-3">
@@ -188,7 +214,7 @@ export default function ChatList() {
                   <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{c.last_message}</p>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

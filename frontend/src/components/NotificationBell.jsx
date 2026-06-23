@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import {
@@ -54,7 +55,7 @@ export default function NotificationBell() {
     setOpen(next);
     if (next) {
       setLoading(true);
-      getNotifications().then((d) => setItems(d.slice(0, 12))).catch(() => {}).finally(() => setLoading(false));
+      getNotifications().then((d) => setItems(Array.isArray(d) ? d.slice(0, 12) : [])).catch(() => {}).finally(() => setLoading(false));
     }
   };
 
@@ -78,17 +79,24 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={toggle} className="relative p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title="信箱">
+      <motion.button whileTap={{ scale: 0.9 }} onClick={toggle} className="relative p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title="信箱">
         <BellIcon className="w-4 h-4" />
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
-      </button>
+      </motion.button>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg z-50 overflow-hidden">
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg z-50 overflow-hidden"
+          >
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">信箱</span>
             <button onClick={readAll} disabled={unread === 0}
@@ -120,8 +128,9 @@ export default function NotificationBell() {
             className="w-full text-center text-xs text-gray-500 dark:text-gray-400 py-2.5 border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
             查看全部
           </button>
-        </div>
+        </motion.div>
       )}
+    </AnimatePresence>
     </div>
   );
 }

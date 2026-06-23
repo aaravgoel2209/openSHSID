@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
@@ -6,24 +7,21 @@ import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { getMessages, sendMessage } from '../api/chat';
 import { AuthContext } from '../context/AuthContext';
+import { getAvatarUrl } from '../utils/avatar';
+import Card from '../components/Card';
+import { useUI } from '../context/UIContext';
 
 export default function ChatDetail() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { hasGlass } = useUI();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
 
-  const colors = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
-  const avatarUrl = (name) => {
-    const idx = Math.abs(name.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % colors.length;
-    return `/images/${colors[idx]}.jpg`;
-  };
-
-  // 轮询新消息
   const pollRef = useRef(null);
   useEffect(() => {
     const doFetch = () => getMessages(userId).then(setMessages).catch(() => {});
@@ -37,7 +35,7 @@ export default function ChatDetail() {
     if (!content.trim()) return;
     setSending(true);
     try {
-      await sendMessage(parseInt(userId), content);
+      await sendMessage(parseInt(userId, 10), content);
       setContent('');
       const msgs = await getMessages(userId);
       setMessages(msgs);
@@ -61,7 +59,9 @@ export default function ChatDetail() {
   return (
     <div className="flex flex-col h-[calc(100vh-120px)]">
       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-gray-900">
-        <Button variant="light" size="sm" onPress={() => navigate('/chat')}>← 返回</Button>
+        <motion.div whileTap={{ scale: 0.95 }}>
+          <Button variant="light" size="sm" onPress={() => navigate('/chat')}>← 返回</Button>
+        </motion.div>
         <h1 className="text-xl font-bold">{otherName}</h1>
       </div>
 
@@ -75,10 +75,16 @@ export default function ChatDetail() {
             const isMe = m.sender === user.id;
             const name = isMe ? user.username : m.sender_name;
             return (
-              <div key={m.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.25 }}
+                className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}
+              >
                 <button onClick={() => navigate(`/user/${m.sender}`)} className="shrink-0">
                   <Avatar size="sm" className="cursor-pointer hover:opacity-80 transition-opacity">
-                    <AvatarImage src={avatarUrl(name)} />
+                    <AvatarImage src={getAvatarUrl(name)} />
                     <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </button>
@@ -92,24 +98,26 @@ export default function ChatDetail() {
                     {m.created_at?.slice(11, 16)}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             );
           })
         )}
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSend} className="flex gap-2 items-end">
+      <Card as="form" glass={hasGlass} padded={false} onSubmit={handleSend} className="flex gap-2 items-end">
         <input
           className="flex-1 h-10 px-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 text-sm dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
           placeholder="输入消息..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
-        <Button type="submit" color="primary" isIconOnly isLoading={sending} isDisabled={!content.trim()}>
-          <PaperAirplaneIcon className="w-5 h-5" />
-        </Button>
-      </form>
+        <motion.div whileTap={{ scale: 0.95 }}>
+          <Button type="submit" color="primary" isIconOnly isLoading={sending} isDisabled={!content.trim()}>
+            <PaperAirplaneIcon className="w-5 h-5" />
+          </Button>
+        </motion.div>
+      </Card>
     </div>
   );
 }

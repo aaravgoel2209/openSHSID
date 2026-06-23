@@ -1,7 +1,7 @@
-import { useContext, useState, useEffect, useRef } from 'react';
+import { useContext, useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Pick one background image per page load (module-level = runs once, stable across re-renders).
-// Drop images into frontend/src/assets/background/ and they're picked up automatically.
+// Pick one background image per page load (module-level = runs once, stable across re-renders)
 const _bgGlob = import.meta.glob('../assets/background/*.{jpg,jpeg,png,webp,avif,gif}', { eager: true });
 const _bgUrls = Object.values(_bgGlob).map(m => m.default);
 const RANDOM_BG = _bgUrls.length > 0 ? _bgUrls[Math.floor(Math.random() * _bgUrls.length)] : null;
@@ -15,6 +15,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import { useUI } from '../context/UIContext';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
+import Card from './Card';
 import { getQuestions } from '../api/qa';
 import { getArticles } from '../api/knowledge';
 import client from '../api/client';
@@ -27,12 +28,7 @@ const NAV_LINKS = [
   { to: '/mailbox', label: '信箱', icon: '📬' },
 ];
 
-const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
-
-function getAvatarColor(username) {
-  const hash = Math.abs(username.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 0));
-  return AVATAR_COLORS[hash % 9];
-}
+import { getAvatarColor } from '../utils/avatar';
 
 // ========== 右侧边栏智能逻辑 ==========
 
@@ -164,12 +160,17 @@ function smartAnnouncements(announcements, userTags) {
 export default function Layout() {
   const { user, logout } = useContext(AuthContext);
   const { isDark, toggle } = useContext(ThemeContext);
-  const { complexity } = useUI();
-  const topbarBlur = complexity !== 'simple';
+  const { complexity, hasGlass } = useUI();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [now, setNow] = useState(new Date());
+
+  const navIndex = useMemo(() => {
+    const idx = NAV_LINKS.findIndex(l => location.pathname.startsWith(l.to));
+    return idx >= 0 ? idx : 0;
+  }, [location.pathname]);
+  const prevIndex = useRef(navIndex);
 
   // 用户贡献数据
   const [myQuestionCount, setMyQuestionCount] = useState(0);
@@ -336,10 +337,10 @@ export default function Layout() {
   const sidebarContent = (
     <>
       {/* Create Post */}
-      <button onClick={() => navigate('/qa/ask')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-3 transition-colors">
+      <motion.button whileTap={{ scale: 0.95 }} onClick={() => navigate('/qa/ask')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-3 transition-colors">
         <PlusIcon className="w-4 h-4" />
         发布
-      </button>
+      </motion.button>
 
       {/* Navigation */}
       <nav className="space-y-0.5">
@@ -386,16 +387,25 @@ export default function Layout() {
     </>
   );
 
+  const pageDirection = useMemo(() => {
+    const diff = navIndex - (prevIndex.current ?? navIndex);
+    prevIndex.current = navIndex;
+    if (diff > 0) return 1;
+    if (diff < 0) return -1;
+    return 0;
+  }, [navIndex]);
+
   return (
     <div className="min-h-screen overflow-x-hidden">
       {/* Top Bar */}
       <header className={`sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
-        topbarBlur ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
+        hasGlass ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
       }`}>
+        <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
         <div className="flex items-center h-12 px-3 gap-2 w-full">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500">
             {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
-          </button>
+          </motion.button>
           <Link to="/" className="font-bold text-sm text-gray-900 dark:text-white no-underline shrink-0">shsid</Link>
           <div className="flex-1 max-w-md mx-auto min-w-0">
             <input
@@ -410,9 +420,9 @@ export default function Layout() {
               }}
             />
           </div>
-          <button onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? '浅色' : '深色'}>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? '浅色' : '深色'}>
             {isDark ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
-          </button>
+          </motion.button>
           <NotificationBell />
           {user ? (
             <Dropdown>
@@ -437,8 +447,8 @@ export default function Layout() {
             </Dropdown>
           ) : (
             <div className="flex items-center gap-1">
-              <button onClick={() => navigate('/login')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-400">登录</button>
-              <button onClick={() => navigate('/register')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">注册</button>
+              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/login')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-400">登录</motion.button>
+              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/register')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">注册</motion.button>
             </div>
           )}
         </div>
@@ -448,39 +458,60 @@ export default function Layout() {
         {/* 左侧边栏：大屏静态布局 */}
         {isLargeScreen && sidebarOpen && (
           <aside className={`w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] p-2 ${
-            topbarBlur ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
+            hasGlass ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md glass-shimmer' : 'bg-gray-50 dark:bg-gray-950'
           }`}>
             {sidebarContent}
           </aside>
         )}
 
         {/* 左侧边栏：小屏浮动 overlay */}
-        {!isLargeScreen && sidebarOpen && (
-          <>
-            {/* 遮罩层 */}
-            <div
-              className="fixed inset-0 z-40 bg-black/30"
-              onClick={() => setSidebarOpen(false)}
-            />
-            {/* 侧边栏主体 */}
-            <aside className={`fixed left-0 top-12 z-50 w-56 h-[calc(100vh-48px)] border-r border-gray-200 dark:border-gray-800 p-2 ${
-              topbarBlur ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
-            }`}>
-              {sidebarContent}
-            </aside>
-          </>
-        )}
+        <AnimatePresence>
+          {!isLargeScreen && sidebarOpen && (
+            <>
+              <motion.div
+                key="sidebar-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 z-40 bg-black/30"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <motion.aside
+                key="sidebar-panel"
+                initial={{ x: -256 }}
+                animate={{ x: 0 }}
+                exit={{ x: -256 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className={`fixed left-0 top-12 z-50 w-56 h-[calc(100vh-48px)] border-r border-gray-200 dark:border-gray-800 p-2 ${
+                  hasGlass ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
+                }`}
+              >
+                {sidebarContent}
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Main Content */}
         <main className="flex-1 min-h-[calc(100vh-48px)] min-w-0">
           <div className="w-full max-w-3xl mx-auto px-4 py-4 dark:text-gray-200">
-            <Outlet />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, x: pageDirection * 20 }}
+                animate={{ opacity: 1, x: 0, transition: { duration: 0.25 } }}
+                exit={{ opacity: 0, x: pageDirection * -20, transition: { duration: 0.15 } }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
 
-        {/* Right Sidebar – 四个 tile (含智能逻辑) */}
+        {/* Right Sidebar – 四个 tile */}
         <aside className={`w-60 shrink-0 border-l border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] hidden lg:block p-3 ${
-          topbarBlur ? ' backdrop-blur-md' : ''
+          hasGlass ? 'backdrop-blur-md bg-white/30 dark:bg-black/30' : ''
         }`}>
           {/* Tile 1: 实时时钟 */}
           <GlassPanel

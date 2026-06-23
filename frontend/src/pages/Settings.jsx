@@ -3,10 +3,10 @@ import { useUI } from '../context/UIContext';
 import GlassPanel from '../components/GlassPanel';
 
 const LEVELS = [
-  { key: 'simple', label: '兼容', desc: '兼容界面，仅保留核心功能。' },
-  { key: 'normal', label: '普通', desc: '默认界面，特效均衡。' },
-  { key: 'complex', label: '复杂', desc: '启用液态玻璃等更多特效。' },
-  { key: 'extreme', label: '极致', desc: '最强液态玻璃特效，视觉拉满（性能要求更高）。' },
+  { key: 'simple', label: '兼容', desc: '兼容模式，纯色卡片，性能最优。' },
+  { key: 'normal', label: '普通', desc: '默认界面，轻微玻璃效果，兼顾性能与视觉。' },
+  { key: 'complex', label: '复杂', desc: '启用液态玻璃特效，卡片呈现流动质感。' },
+  { key: 'extreme', label: '极致', desc: '最强液态玻璃 + 全站卡片玻璃化，视觉拉满。' },
 ];
 
 export default function Settings() {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { AuthContext } from '../context/AuthContext';
@@ -7,6 +8,8 @@ import {
   getNotifications, markNotificationRead,
   markAllNotificationsRead, clearNotifications,
 } from '../api/notifications';
+import Card from '../components/Card';
+import { useUI } from '../context/UIContext';
 
 const TYPE_META = {
   answer: { icon: '💬', label: '回答' },
@@ -29,6 +32,7 @@ function timeAgo(iso) {
 export default function Mailbox() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { hasGlass } = useUI();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -95,32 +99,37 @@ export default function Mailbox() {
         </div>
       ) : (
         <div className="space-y-2">
-          {items.map((n) => {
+          {items.map((n, index) => {
             const meta = TYPE_META[n.type] || TYPE_META.system;
             return (
-              <div
+              <Card
                 key={n.id}
+                glass={hasGlass}
+                clickable
+                className={`group ${n.is_read ? '' : 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800/60 hover:border-indigo-300'}`}
+                motionProps={{
+                  initial: { opacity: 0, y: 12 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { delay: index * 0.03, type: 'spring', stiffness: 300, damping: 30 },
+                }}
                 onClick={() => openItem(n)}
-                className={`flex gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
-                  n.is_read
-                    ? 'bg-white dark:bg-slate-900/50 border-gray-200/80 dark:border-slate-800/80 hover:border-indigo-200 dark:hover:border-indigo-800/60'
-                    : 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800/60 hover:border-indigo-300'
-                }`}
               >
-                <div className="text-xl shrink-0 mt-0.5">{meta.icon}</div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className={`text-sm truncate ${n.is_read ? 'text-gray-700 dark:text-gray-300' : 'font-semibold text-gray-900 dark:text-gray-100'}`}>
-                      {n.title}
-                    </p>
-                    {!n.is_read && <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />}
+                <div className="flex gap-3">
+                  <div className="text-xl shrink-0 mt-0.5">{meta.icon}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm truncate ${n.is_read ? 'text-gray-700 dark:text-gray-300' : 'font-semibold text-gray-900 dark:text-gray-100'}`}>
+                        {n.title}
+                      </p>
+                      {!n.is_read && <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />}
+                    </div>
+                    {n.message && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{n.message}</p>
+                    )}
+                    <p className="text-[11px] text-gray-400 mt-1">{timeAgo(n.created_at)}</p>
                   </div>
-                  {n.message && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{n.message}</p>
-                  )}
-                  <p className="text-[11px] text-gray-400 mt-1">{timeAgo(n.created_at)}</p>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>

@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { useState, useRef, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
@@ -5,8 +6,9 @@ import { Spinner } from '@heroui/react/spinner';
 import { PaperAirplaneIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { renderMarkdown } from '../utils/markdown';
+import Card from '../components/Card';
+import { useUI } from '../context/UIContext';
 
-// 读取图片并按最长边缩放，导出 JPEG base64 data URL（控制体积与 token）
 function fileToDataURL(file, maxDim = 1024) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -36,20 +38,19 @@ function fileToDataURL(file, maxDim = 1024) {
 export default function AiChat() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { hasGlass } = useUI();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [image, setImage] = useState(null);  // 待发送图片（base64 data URL）
+  const [image, setImage] = useState(null);
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
-  // 每个用户固定一个会话，AI 聊天记录得以持久化与恢复
   const sessionRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 用户就绪后：绑定固定会话并恢复历史记录
   useEffect(() => {
     if (!user) return;
     sessionRef.current = `chat-user-${user.id}`;
@@ -64,7 +65,6 @@ export default function AiChat() {
       .catch(() => {});
   }, [user]);
 
-  // 更新最后一条（助手）消息
   const patchLast = (patch) =>
     setMessages((m) => {
       const c = [...m];
@@ -85,7 +85,6 @@ export default function AiChat() {
     const img = image;
     setInput('');
     setImage(null);
-    // 追加用户消息（含图片）+ 一个空的流式助手气泡
     setMessages((m) => [...m,
       { role: 'user', content: userMsg, image: img },
       { role: 'assistant', content: '', streaming: true },
@@ -109,7 +108,6 @@ export default function AiChat() {
         const { value, done: streamDone } = await reader.read();
         if (streamDone) break;
         buffer += decoder.decode(value, { stream: true });
-        // SSE 事件以空行分隔
         let sep;
         while ((sep = buffer.indexOf('\n\n')) !== -1) {
           const chunk = buffer.slice(0, sep);
@@ -152,20 +150,28 @@ export default function AiChat() {
   return (
     <div className="flex flex-col h-[calc(100vh-120px)]">
       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-gray-800">
-        <Button variant="light" size="sm" onPress={() => navigate('/chat')}>← 返回</Button>
+        <motion.div whileTap={{ scale: 0.95 }}>
+          <Button variant="light" size="sm" onPress={() => navigate('/chat')}>← 返回</Button>
+        </motion.div>
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">R</div>
         <h1 className="text-lg font-bold">Rei AI 助手</h1>
         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-semibold">AI</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-1">
+      <Card glass={hasGlass} padded={false} className="flex-1 overflow-y-auto space-y-4 mb-4 pr-1">
         {messages.length === 0 && (
           <div className="text-center py-10 text-gray-400">
             <p>发送消息开始与 Rei 对话</p>
           </div>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 12, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25 }}
+            className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
             <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
               m.role === 'user'
                 ? 'bg-indigo-500 text-white rounded-br-sm'
@@ -186,19 +192,19 @@ export default function AiChat() {
                 <div className="text-sm whitespace-pre-wrap leading-relaxed">
                   <span dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
                   {m.streaming && (
-                    <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 align-middle bg-indigo-500 animate-pulse" aria-hidden="true" />
+                    <span className="cursor-streaming" aria-hidden="true" />
                   )}
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
         <div ref={bottomRef} />
-      </div>
+      </Card>
 
-      <div>
+      <Card glass={hasGlass} className="flex flex-col gap-2">
         {image && (
-          <div className="mb-2 relative inline-block">
+          <div className="relative inline-block">
             <img src={image} alt="预览" className="h-20 rounded-lg border border-gray-200 dark:border-slate-700" />
             <button
               onClick={() => setImage(null)}
@@ -211,9 +217,11 @@ export default function AiChat() {
         )}
         <div className="flex gap-2 items-end">
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
-          <Button onPress={() => fileRef.current?.click()} variant="flat" isIconOnly isDisabled={loading} title="添加图片">
-            <PhotoIcon className="w-5 h-5" />
-          </Button>
+          <motion.div whileTap={{ scale: 0.95 }}>
+            <Button onPress={() => fileRef.current?.click()} variant="flat" isIconOnly isDisabled={loading} title="添加图片">
+              <PhotoIcon className="w-5 h-5" />
+            </Button>
+          </motion.div>
           <textarea
             className="flex-1 min-h-[44px] max-h-32 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-sm dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
             placeholder="输入消息..."
@@ -222,11 +230,13 @@ export default function AiChat() {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
             disabled={loading}
           />
-          <Button onPress={handleSend} color="primary" isIconOnly isLoading={loading} isDisabled={(!input.trim() && !image) || loading}>
-            <PaperAirplaneIcon className="w-5 h-5" />
-          </Button>
+          <motion.div whileTap={{ scale: 0.95 }}>
+            <Button onPress={handleSend} color="primary" isIconOnly isLoading={loading} isDisabled={(!input.trim() && !image) || loading}>
+              <PaperAirplaneIcon className="w-5 h-5" />
+            </Button>
+          </motion.div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

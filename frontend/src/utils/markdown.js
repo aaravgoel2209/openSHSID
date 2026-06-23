@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -30,8 +31,8 @@ export function renderMarkdown(text) {
         }
       );
     }
-    return marked.parse(text);
+    return DOMPurify.sanitize(marked.parse(text));
   } catch {
-    return text.includes('<details>') ? text : simpleMarkdown(text);
+    return DOMPurify.sanitize(text.includes('<details>') ? text : simpleMarkdown(text));
   }
 }

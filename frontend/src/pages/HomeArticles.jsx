@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Spinner } from '@heroui/react/spinner';
 import { Chip } from '@heroui/react/chip';
 import { Button } from '@heroui/react/button';
@@ -9,23 +10,22 @@ import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { useUI } from '../context/UIContext';
+import Card from '../components/Card';
 
 const FLASK_URL = '';
 
-/** SVG filter ID for liquid glass effect */
 const SVG_FILTER_ID = 'liquid-glass-filter';
 
 export default function HomeArticles() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const { isDark } = useContext(ThemeContext);
-  const { complexity } = useUI();
+  const { complexity, hasGlass } = useUI();
 
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStyle, setFilterStyle] = useState('');
 
-  // Update background filter based on dark/light mode
   useEffect(() => {
     if (isDark) {
       setFilterStyle('brightness(0.5) saturate(0.6) hue-rotate(180deg) contrast(1.4)');
@@ -63,14 +63,12 @@ export default function HomeArticles() {
     navigate(`/knowledge/${article.id}`);
   };
 
-  // Common backdrop blur classes
-  const glassBackdrop = complexity !== 'simple'
-    ? 'backdrop-blur-2xl bg-white/60 dark:bg-black/60'
-    : 'bg-white dark:bg-slate-900';
-
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* SVG filter definition */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="relative min-h-screen overflow-hidden"
+    >
       <svg className="absolute hidden" aria-hidden="true">
         <defs>
           <filter id={SVG_FILTER_ID}>
@@ -95,7 +93,6 @@ export default function HomeArticles() {
         </defs>
       </svg>
 
-      {/* Background layer with image and dynamic filter */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -108,7 +105,6 @@ export default function HomeArticles() {
         }}
       />
 
-      {/* Liquid glass overlay */}
       <div
         className="absolute inset-0 z-1"
         style={{
@@ -122,10 +118,12 @@ export default function HomeArticles() {
         }}
       />
 
-      {/* Main content */}
       <main className="relative z-10 w-full mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className={`flex justify-between items-center mb-6 p-4 rounded-2xl ${glassBackdrop} border border-white/20 dark:border-white/10 shadow-xl transition-colors`}>
+        <Card
+          glass={hasGlass}
+          padded={false}
+          className="flex justify-between items-center mb-6 p-4 shadow-xl"
+        >
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">知识库</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{articles.length} 篇文章</p>
@@ -134,7 +132,7 @@ export default function HomeArticles() {
             <PlusIcon className="w-4 h-4" />
             发布文章
           </Button>
-        </div>
+        </Card>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -142,7 +140,11 @@ export default function HomeArticles() {
             <p className="text-sm text-gray-400">加载中...</p>
           </div>
         ) : articles.length === 0 ? (
-          <div className="text-center py-16 animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-16"
+          >
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center">
               <BookOpenIcon className="w-8 h-8 text-indigo-400" />
             </div>
@@ -150,14 +152,20 @@ export default function HomeArticles() {
             <Button color="primary" variant="flat" size="sm" onPress={() => navigate('/knowledge/create')}>
               发布第一篇文章
             </Button>
-          </div>
+          </motion.div>
         ) : (
           <div className="space-y-3">
             {articles.map((a, index) => (
-              <div
+              <Card
                 key={a.id}
-                className={`group ${glassBackdrop} border border-white/20 dark:border-white/10 rounded-xl p-5 cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200 shadow-lg`}
-                style={{ animationDelay: `${index * 50}ms` }}
+                glass={hasGlass}
+                clickable
+                className="group"
+                motionProps={{
+                  initial: { opacity: 0, y: 12 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { delay: index * 0.03, type: 'spring', stiffness: 300, damping: 30 },
+                }}
                 onClick={() => handleClick(a)}
               >
                 <div className="flex justify-between items-start gap-3">
@@ -190,11 +198,11 @@ export default function HomeArticles() {
 
                   <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0 mt-1">{a.created_at?.slice(0, 10)}</span>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
       </main>
-    </div>
+    </motion.div>
   );
 }

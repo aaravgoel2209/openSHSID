@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
@@ -9,11 +10,14 @@ import { createQuestion } from '../api/qa';
 import { getLabels } from '../api/labels';
 import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
+import Card from '../components/Card';
+import { useUI } from '../context/UIContext';
 
 
 export default function AskQuestion() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { hasGlass } = useUI();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [allLabels, setAllLabels] = useState([]);
@@ -54,49 +58,60 @@ export default function AskQuestion() {
           请先<Link to="/login" className="font-semibold underline">登录</Link>后再发布问题。
         </div>
       )}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <TextField>
-          <Label>标题</Label>
-          <Input
-            placeholder="一句话概括你的问题"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={200}
-          />
-        </TextField>
-        <TextField>
-          <Label>详细内容</Label>
-          <TextArea
-            placeholder="补充问题细节..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            minRows={5}
-          />
-        </TextField>
-        {allLabels.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">标签</p>
-            <div className="flex gap-2 flex-wrap">
-              {allLabels.map((l) => (
-                <button key={l.id} type="button" onClick={() => toggleLabel(l.id)}
-                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                    selectedLabels.includes(l.id)
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-gray-100 dark:bg-slate-950 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-primary'
-                  }`}
-                >{l.name}</button>
-              ))}
+      <motion.form
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        onSubmit={handleSubmit}
+      >
+        <Card glass={hasGlass} className="flex flex-col gap-4">
+          <TextField>
+            <Label>标题</Label>
+            <Input
+              placeholder="一句话概括你的问题"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
+            />
+          </TextField>
+          <TextField>
+            <Label>详细内容</Label>
+            <TextArea
+              placeholder="补充问题细节..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              minRows={5}
+            />
+          </TextField>
+          {allLabels.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">标签</p>
+              <div className="flex gap-2 flex-wrap">
+                {allLabels.map((l) => (
+                  <button key={l.id} type="button" onClick={() => toggleLabel(l.id)}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                      selectedLabels.includes(l.id)
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-gray-100 dark:bg-slate-950 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-primary'
+                    }`}
+                  >{l.name}</button>
+                ))}
+              </div>
             </div>
+          )}
+          {error && <p className="text-sm text-rose-500">{error}</p>}
+          <div className="flex gap-2 pt-2">
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button type="submit" color="primary" isLoading={submitting} isDisabled={submitting || !user}>
+                {submitting ? '发布中...' : '发布问题'}
+              </Button>
+            </motion.div>
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button variant="light" onPress={() => navigate('/qa')}>取消</Button>
+            </motion.div>
           </div>
-        )}
-        {error && <p className="text-sm text-rose-500">{error}</p>}
-        <div className="flex gap-2 pt-2">
-          <Button type="submit" color="primary" isLoading={submitting} isDisabled={submitting || !user}>
-            {submitting ? '发布中...' : '发布问题'}
-          </Button>
-          <Button variant="light" onPress={() => navigate('/qa')}>取消</Button>
-        </div>
-      </form>
+        </Card>
+      </motion.form>
     </div>
   );
 }
