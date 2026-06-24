@@ -5,6 +5,7 @@
 /model/*.gguf
 /model/data/local.db
 /model/data/log.jsonl
+.aider*
 __pycache__/
 *.pyc
 *.pyo

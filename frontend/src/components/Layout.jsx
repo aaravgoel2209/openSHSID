@@ -1,52 +1,98 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
-import { SunIcon, MoonIcon, PlusIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { SunIcon, MoonIcon, PlusIcon, Bars3Icon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { useUI } from '../context/UIContext';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
+import { getAvatarColor } from '../utils/avatar';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
-// Pick one background image per page load (module-level = runs once, stable across re-renders).
-// Drop images into frontend/src/assets/background/ and they're picked up automatically.
+// Pick one background image per page load (module-level = runs once, stable across re-renders)
 const _bgGlob = import.meta.glob('../assets/background/*.{jpg,jpeg,png,webp,avif,gif}', { eager: true });
 const _bgUrls = Object.values(_bgGlob).map(m => m.default);
 const RANDOM_BG = _bgUrls.length > 0 ? _bgUrls[Math.floor(Math.random() * _bgUrls.length)] : null;
 
 const NAV_LINKS = [
-  { to: '/', label: '首页', icon: '🏠' },
-  { to: '/qa', label: '问答', icon: '💬' },
-  { to: '/knowledge', label: '知识库', icon: '📚' },
-  { to: '/chat', label: '聊天', icon: '💭' },
-  { to: '/mailbox', label: '信箱', icon: '📬' },
+  { to: '/', label: '首页', icon: 'bi-house-fill' },
+  { to: '/qa', label: '问答', icon: 'bi-chat-dots-fill' },
+  { to: '/knowledge', label: '知识库', icon: 'bi-journal-bookmark-fill' },
+  { to: '/chat', label: '聊天', icon: 'bi-chat-left-text-fill' },
+  { to: '/mailbox', label: '信箱', icon: 'bi-envelope-fill' },
 ];
 
-const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
-
-function getAvatarColor(username) {
-  const hash = Math.abs(username.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 0));
-  return AVATAR_COLORS[hash % 9];
-}
 
 export default function Layout() {
   const { user, logout } = useContext(AuthContext);
   const { isDark, toggle } = useContext(ThemeContext);
-  const { complexity } = useUI();
-  // 普通及以上：顶栏加毛玻璃模糊（兼容模式保持纯色）
-  const topbarBlur = complexity !== 'simple';
-  const bgBlur = complexity === 'extreme' ? 28 : complexity === 'complex' ? 22 : 18;
+  const { complexity, hasGlass } = useUI();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [now, setNow] = useState(new Date());
+
+  const navIndex = useMemo(() => {
+    const idx = NAV_LINKS.findIndex(l => location.pathname.startsWith(l.to));
+    return idx >= 0 ? idx : 0;
+  }, [location.pathname]);
+  const prevIndex = useRef(navIndex);
+
   const [hotItems, setHotItems] = useState([]);
   const [weeklyTop, setWeeklyTop] = useState([]);
-  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
+  const [notices, setNotices] = useState([]);
+  const [noticeTitle, setNoticeTitle] = useState('');
+  const [noticeContent, setNoticeContent] = useState('');
+  const [noticePosting, setNoticePosting] = useState(false);
+  const [showNoticeForm, setShowNoticeForm] = useState(false);
+
+  // 屏幕尺寸状态
+  const [isLargeScreen, setIsLargeScreen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+  );
+
+  useEffect(() => {
+    if (!RANDOM_BG) return;
+    const html = document.documentElement;
+    html.style.backgroundImage = `url(${RANDOM_BG})`;
+    html.style.backgroundSize = 'cover';
+    html.style.backgroundAttachment = 'fixed';
+    html.style.backgroundPosition = 'center';
+    return () => {
+      html.style.backgroundImage = '';
+      html.style.backgroundSize = '';
+      html.style.backgroundAttachment = '';
+      html.style.backgroundPosition = '';
+    };
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // 监听窗口大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      const large = window.innerWidth >= 1024;
+      setIsLargeScreen(large);
+      if (!large) {
+        // 小屏时自动关闭侧边栏（浮动也关闭）
+        setSidebarOpen(false);
+      }
+    };
+    handleResize(); // 初始执行一次
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     fetch('/api/auth/weekly-top/').then(r => r.json()).then(setWeeklyTop).catch(() => {});
   }, []);
+
   useEffect(() => {
     Promise.all([
       fetch('/api/qa/questions/').then(r => r.json()).catch(() => []),
@@ -61,38 +107,121 @@ export default function Layout() {
     });
   }, []);
 
+  useEffect(() => {
+    fetch('/api/auth/notices/').then(r => r.json()).then(setNotices).catch(() => {});
+  }, []);
+
+  const token = localStorage.getItem('auth_token');
+
+  async function postNotice() {
+    if (!noticeTitle.trim()) return;
+    setNoticePosting(true);
+    try {
+      const r = await fetch('/api/auth/notices/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Token ${token}` },
+        body: JSON.stringify({ title: noticeTitle.trim(), content: noticeContent.trim() }),
+      });
+      if (r.ok) {
+        const n = await r.json();
+        setNotices(prev => [n, ...prev]);
+        setNoticeTitle('');
+        setNoticeContent('');
+        setShowNoticeForm(false);
+      }
+    } finally {
+      setNoticePosting(false);
+    }
+  }
+
+  async function deleteNotice(id) {
+    await fetch(`/api/auth/notices/${id}/`, {
+      method: 'DELETE',
+      headers: { Authorization: `Token ${token}` },
+    });
+    setNotices(prev => prev.filter(n => n.id !== id));
+  }
+
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 
-  return (
-    <div className="min-h-screen">
-      {/* Single fixed blur layer — replaces per-card backdrop-filter (1 GPU layer vs 20+) */}
-      {complexity !== 'simple' && RANDOM_BG && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'fixed',
-            top: '-60px', right: '-60px', bottom: '-60px', left: '-60px',
-            zIndex: -1,
-            backgroundImage: `url(${RANDOM_BG})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: `blur(${bgBlur}px)`,
-          }}
-        />
+  // 侧边栏内容（可复用）
+  const sidebarContent = (
+    <>
+      {/* Create Post */}
+      <motion.button whileTap={{ scale: 0.95 }} onClick={() => navigate('/qa/ask')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-3 transition-colors">
+        <PlusIcon className="w-4 h-4" />
+        发布
+      </motion.button>
+
+      {/* Navigation */}
+      <nav className="space-y-0.5">
+        {NAV_LINKS.map(({ to, label, icon }) => (
+          <Link key={to} to={to}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-colors ${
+              isActive(to)
+                ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900'
+            }`}
+          >
+            <i className={`bi ${icon} text-base`} />
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* User info */}
+      {user?.is_staff && (
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+          <Link to="/admin/memory"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 no-underline transition-colors"
+          >
+            <i className="bi bi-cpu-fill text-sm" /> 模型记忆
+          </Link>
+        </div>
       )}
+      {user && (
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2 px-3 py-2">
+            <Avatar size="sm" className="w-6 h-6">
+              <AvatarImage src={user.avatar || `/images/${getAvatarColor(user.username)}.jpg`} />
+              <AvatarFallback className="text-[9px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{user.username}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 px-3">
+        <p className="text-[10px] text-gray-400 dark:text-gray-600">In develop, not final version, preparing for ICP</p>
+      </div>
+    </>
+  );
+
+  const pageDirection = useMemo(() => {
+    const diff = navIndex - (prevIndex.current ?? navIndex);
+    prevIndex.current = navIndex;
+    if (diff > 0) return 1;
+    if (diff < 0) return -1;
+    return 0;
+  }, [navIndex]);
+
+  return (
+    <div className="min-h-screen overflow-x-hidden">
       {/* Top Bar */}
       <header className={`sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
-        topbarBlur ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
+        hasGlass ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
       }`}>
-        <div className="flex items-center h-12 px-3 gap-2 max-w-[1600px] mx-auto">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500">
+        <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
+        <div className="flex items-center h-12 px-3 gap-2 w-full">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500">
             {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
-          </button>
+          </motion.button>
           <Link to="/" className="font-bold text-sm text-gray-900 dark:text-white no-underline shrink-0">shsid</Link>
-          <div className="flex-1 max-w-md mx-auto">
+          <div className="flex-1 max-w-md mx-auto min-w-0">
             <input
               type="text"
               placeholder="搜索..."
@@ -105,9 +234,9 @@ export default function Layout() {
               }}
             />
           </div>
-          <button onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? '浅色' : '深色'}>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? '浅色' : '深色'}>
             {isDark ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
-          </button>
+          </motion.button>
           <NotificationBell />
           {user ? (
             <Dropdown>
@@ -132,81 +261,73 @@ export default function Layout() {
             </Dropdown>
           ) : (
             <div className="flex items-center gap-1">
-              <button onClick={() => navigate('/login')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-400">登录</button>
-              <button onClick={() => navigate('/register')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">注册</button>
+              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/login')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-400">登录</motion.button>
+              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/register')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">注册</motion.button>
             </div>
           )}
         </div>
       </header>
 
-      <div className="flex max-w-[1600px] mx-auto">
-        {/* Left Sidebar */}
-        {sidebarOpen && (
+      <div className="flex w-full overflow-hidden">
+        {/* 左侧边栏：大屏静态布局 */}
+        {isLargeScreen && sidebarOpen && (
           <aside className={`w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] p-2 ${
-            topbarBlur ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
+            hasGlass ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md glass-shimmer' : 'bg-gray-50 dark:bg-gray-950'
           }`}>
-            {/* Create Post */}
-            <button onClick={() => navigate('/qa/ask')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-3 transition-colors">
-              <PlusIcon className="w-4 h-4" />
-              发布
-            </button>
-
-            {/* Navigation */}
-            <nav className="space-y-0.5">
-              {NAV_LINKS.map(({ to, label, icon }) => (
-                <Link key={to} to={to}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-colors ${
-                    isActive(to)
-                      ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900'
-                  }`}
-                >
-                  <span className="text-base">{icon}</span>
-                  {label}
-                </Link>
-              ))}
-            </nav>
-
-            {/* User info */}
-            {user?.is_staff && (
-              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
-                <Link to="/admin/memory"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 no-underline transition-colors"
-                >
-                  🧠 模型记忆
-                </Link>
-              </div>
-            )}
-            {user && (
-              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
-                <div className="flex items-center gap-2 px-3 py-2">
-                  <Avatar size="sm" className="w-6 h-6">
-                    <AvatarImage src={user.avatar || `/images/${getAvatarColor(user.username)}.jpg`} />
-                    <AvatarFallback className="text-[9px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{user.username}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 px-3">
-              <p className="text-[10px] text-gray-400 dark:text-gray-600">In develop, not final version, preparing for ICP</p>
-            </div>
+            {sidebarContent}
           </aside>
         )}
 
+        {/* 左侧边栏：小屏浮动 overlay */}
+        <AnimatePresence>
+          {!isLargeScreen && sidebarOpen && (
+            <>
+              <motion.div
+                key="sidebar-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 z-40 bg-black/30"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <motion.aside
+                key="sidebar-panel"
+                initial={{ x: -256 }}
+                animate={{ x: 0 }}
+                exit={{ x: -256 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className={`fixed left-0 top-12 z-50 w-56 h-[calc(100vh-48px)] border-r border-gray-200 dark:border-gray-800 p-2 ${
+                  hasGlass ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
+                }`}
+              >
+                {sidebarContent}
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
         {/* Main Content */}
-        <main className="flex-1 min-h-[calc(100vh-48px)]">
-          <div className="max-w-3xl mx-auto px-4 py-4 dark:text-gray-200">
-            <Outlet />
+        <main className="flex-1 min-h-[calc(100vh-48px)] min-w-0">
+          <div className="w-full max-w-3xl mx-auto px-4 py-4 dark:text-gray-200">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, x: pageDirection * 20 }}
+                animate={{ opacity: 1, x: 0, transition: { duration: 0.25 } }}
+                exit={{ opacity: 0, x: pageDirection * -20, transition: { duration: 0.15 } }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
 
-        {/* Right Sidebar */}
+        {/* Right Sidebar – 四个 tile */}
         <aside className={`w-60 shrink-0 border-l border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] hidden lg:block p-3 ${
-          topbarBlur ? ' backdrop-blur-md' : ''
+          hasGlass ? 'backdrop-blur-md bg-white/30 dark:bg-black/30' : ''
         }`}>
+          {/* Tile 1: 实时时钟 */}
           <GlassPanel
             plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-center"
             glassContentClass="p-3 text-center"
@@ -219,6 +340,34 @@ export default function Layout() {
               {now.getFullYear()}年{now.getMonth() + 1}月{now.getDate()}日 周{['日','一','二','三','四','五','六'][now.getDay()]}
             </div>
           </GlassPanel>
+
+          {/* Your Contributions */}
+          {user && (
+            <GlassPanel
+              className="mt-3"
+              plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3"
+              glassContentClass="p-3"
+              cornerRadius={12}
+            >
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">你的贡献</h3>
+              <div className="flex justify-around text-center">
+                <div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{user.question_count ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">提问</p>
+                </div>
+                <div className="w-px bg-gray-100 dark:bg-gray-800" />
+                <div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{user.answer_count ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">回答</p>
+                </div>
+                <div className="w-px bg-gray-100 dark:bg-gray-800" />
+                <div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{user.article_count ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">文章</p>
+                </div>
+              </div>
+            </GlassPanel>
+          )}
 
           {/* Weekly Top Users */}
           <GlassPanel
@@ -272,6 +421,76 @@ export default function Layout() {
                   </div>
                 ))}
               </div>
+            )}
+          </GlassPanel>
+
+          {/* Notice Board */}
+          <GlassPanel
+            className="mt-3"
+            plainClass="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3"
+            glassContentClass="p-3"
+            cornerRadius={12}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">公告板</h3>
+              {user?.is_staff && (
+                <button
+                  onClick={() => setShowNoticeForm(v => !v)}
+                  className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {showNoticeForm ? '取消' : '+ 添加'}
+                </button>
+              )}
+            </div>
+
+            {user?.is_staff && showNoticeForm && (
+              <div className="mb-3 space-y-1.5">
+                <input
+                  value={noticeTitle}
+                  onChange={e => setNoticeTitle(e.target.value)}
+                  placeholder="标题"
+                  className="w-full text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+                <textarea
+                  value={noticeContent}
+                  onChange={e => setNoticeContent(e.target.value)}
+                  placeholder="内容（可选）"
+                  rows={2}
+                  className="w-full text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400 resize-none"
+                />
+                <button
+                  onClick={postNotice}
+                  disabled={noticePosting || !noticeTitle.trim()}
+                  className="w-full text-xs py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium transition-colors"
+                >
+                  {noticePosting ? '发布中…' : '发布'}
+                </button>
+              </div>
+            )}
+
+            {notices.length === 0 ? (
+              <p className="text-xs text-gray-400">暂无公告</p>
+            ) : (
+              <ul className="space-y-2">
+                {notices.map(n => (
+                  <li key={n.id} className="group flex items-start gap-1.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{n.title}</p>
+                      {n.content && <p className="text-[10px] text-gray-400 mt-0.5">{n.content}</p>}
+                      <p className="text-[10px] text-gray-300 dark:text-gray-600">{n.created_by} · {n.created_at}</p>
+                    </div>
+                    {user?.is_staff && (
+                      <button
+                        onClick={() => deleteNotice(n.id)}
+                        className="shrink-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all mt-0.5"
+                        title="删除"
+                      >
+                        <TrashIcon className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
           </GlassPanel>
         </aside>

@@ -21,8 +21,10 @@ export function UIProvider({ children }) {
     localStorage.setItem('ui_complexity', value);
   }, []);
 
+  const hasGlass = complexity !== 'simple';
+
   return (
-    <UIContext.Provider value={{ complexity, setComplexity }}>
+    <UIContext.Provider value={{ complexity, setComplexity, hasGlass }}>
       {children}
     </UIContext.Provider>
   );

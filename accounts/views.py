@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .models import UserProfile
+from .models import UserProfile, Notice
 from .serializers import RegisterSerializer, UserSerializer
 from qa.models import Question, Answer
 from knowledge.models import Article
@@ -78,6 +78,42 @@ def public_profile(request, user_id):
     except User.DoesNotExist:
         return Response({'error': '用户不存在'}, status=404)
     return Response(UserSerializer(user, context={'request': request}).data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def notices(request):
+    if request.method == 'GET':
+        items = Notice.objects.select_related('created_by').all()
+        return Response([{
+            'id': n.id,
+            'title': n.title,
+            'content': n.content,
+            'created_by': n.created_by.username,
+            'created_at': n.created_at.strftime('%Y-%m-%d'),
+        } for n in items])
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return Response({'error': '无权限'}, status=status.HTTP_403_FORBIDDEN)
+    title = (request.data.get('title') or '').strip()
+    content = (request.data.get('content') or '').strip()
+    if not title:
+        return Response({'error': '标题不能为空'}, status=status.HTTP_400_BAD_REQUEST)
+    n = Notice.objects.create(title=title, content=content, created_by=request.user)
+    return Response({'id': n.id, 'title': n.title, 'content': n.content,
+                     'created_by': request.user.username, 'created_at': n.created_at.strftime('%Y-%m-%d')},
+                    status=status.HTTP_201_CREATED)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def notice_detail(request, notice_id):
+    if not request.user.is_staff:
+        return Response({'error': '无权限'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        Notice.objects.get(id=notice_id).delete()
+    except Notice.DoesNotExist:
+        return Response({'error': '不存在'}, status=status.HTTP_404_NOT_FOUND)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['GET'])

@@ -21,17 +21,21 @@ class UserSerializer(serializers.ModelSerializer):
     embedding = serializers.SerializerMethodField()
     article_count = serializers.SerializerMethodField()
     answer_count = serializers.SerializerMethodField()
+    question_count = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'date_joined', 'is_staff', 'embedding', 'article_count', 'answer_count', 'avatar']
+        fields = ['id', 'username', 'date_joined', 'is_staff', 'embedding', 'article_count', 'answer_count', 'question_count', 'avatar']
 
     def get_article_count(self, obj):
         return obj.article_set.count()
 
     def get_answer_count(self, obj):
         return obj.answer_set.count()
+
+    def get_question_count(self, obj):
+        return obj.question_set.count()
 
     def get_avatar(self, obj):
         request = self.context.get('request')
