@@ -10,4 +10,5 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     path('api/chat/', include('chat.urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/crawler/', include('crawler.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

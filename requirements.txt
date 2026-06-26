@@ -3,6 +3,7 @@ djangorestframework>=3.17,<3.18
 django-cors-headers>=4.9,<5.0
 gunicorn>=26.0,<27.0
 requests>=2.31,<3.0
+beautifulsoup4>=4.12,<5.0
 
 torch
 flask

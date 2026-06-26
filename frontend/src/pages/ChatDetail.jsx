@@ -17,10 +17,10 @@ export default function ChatDetail() {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
 
-  const colors = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
-  const avatarUrl = (name) => {
-    const idx = Math.abs(name.split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % colors.length;
-    return `/images/${colors[idx]}.jpg`;
+  const COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
+  const fallbackAvatar = (name) => {
+    const idx = Math.abs((name || '').split('').reduce((a,c)=>a*31+c.charCodeAt(0),0)) % COLORS.length;
+    return `/images/${COLORS[idx]}.jpg`;
   };
 
   // 轮询新消息
@@ -74,11 +74,14 @@ export default function ChatDetail() {
           messages.map((m) => {
             const isMe = m.sender === user.id;
             const name = isMe ? user.username : m.sender_name;
+            const avatar = isMe
+              ? (user.avatar || fallbackAvatar(user.username))
+              : (m.sender_avatar || fallbackAvatar(m.sender_name));
             return (
               <div key={m.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                 <button onClick={() => navigate(`/user/${m.sender}`)} className="shrink-0">
                   <Avatar size="sm" className="cursor-pointer hover:opacity-80 transition-opacity">
-                    <AvatarImage src={avatarUrl(name)} />
+                    <AvatarImage src={avatar} />
                     <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </button>

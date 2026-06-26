@@ -1,11 +1,55 @@
-/db.sqlite3
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# ── Django ───────────────────────────────────────────────────────────────────
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+/media/
+/staticfiles/
+/static_collected/
+local_settings.py
+
+# Legacy log files
 /flask_err.txt
 /flask_out.txt
+
+# ── ML model files ───────────────────────────────────────────────────────────
 /model/*.pt
 /model/*.gguf
 /model/data/local.db
 /model/data/log.jsonl
+
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.idea/
+.idea/*.iml
+.vscode/
+*.suo
+*.sw?
+*.DS_Store
+
+# ── Tooling ──────────────────────────────────────────────────────────────────
 .aider*
-__pycache__/
-*.pyc
-*.pyo
+.agents/
+.claude/
+
+# ── Secrets / environment ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets.py

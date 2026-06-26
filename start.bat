@@ -12,6 +12,12 @@ start "Flask" /B python model\app.py
 :: Wait a moment
 timeout /t 2 /nobreak >nul
 
+:: Run Django migrations
+echo [Django] Running migrations...
+python manage.py migrate
+echo [Django] Migrations done.
+echo.
+
 :: Start Django (port 8000)
 echo [Django] Starting...
 start "Django" /B python manage.py runserver 19424

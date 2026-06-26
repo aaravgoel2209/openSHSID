@@ -23,6 +23,7 @@ const NAV_LINKS = [
   { to: '/knowledge', label: '知识库', icon: 'bi-journal-bookmark-fill' },
   { to: '/chat', label: '聊天', icon: 'bi-chat-left-text-fill' },
   { to: '/mailbox', label: '信箱', icon: 'bi-envelope-fill' },
+  { to: '/linkedclassroom', label: 'LC课程', icon: 'bi-grid-3x3-gap-fill' },
 ];
 
 

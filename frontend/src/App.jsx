@@ -23,6 +23,8 @@ import MemoryView from './pages/MemoryView';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminContent from './pages/AdminContent';
+import LinkedClassroom from './pages/LinkedClassroom';
+import LinkedClassroomCourse from './pages/LinkedClassroomCourse';
 
 export default function App() {
   return (
@@ -57,6 +59,8 @@ export default function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/content" element={<AdminContent />} />
+                <Route path="/linkedclassroom" element={<LinkedClassroom />} />
+                <Route path="/linkedclassroom/:courseId" element={<LinkedClassroomCourse />} />
               </Route>
             </Routes>
           </UIProvider>

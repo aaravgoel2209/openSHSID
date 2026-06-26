@@ -45,7 +45,12 @@ INSTALLED_APPS = [
     'accounts',
     'chat',
     'notifications',
+    'crawler',
 ]
+
+# LinkedClassroom credentials (override with env vars or per-request credentials in the API)
+LINKEDCLASSROOM_USERNAME = ""
+LINKEDCLASSROOM_PASSWORD = ""
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

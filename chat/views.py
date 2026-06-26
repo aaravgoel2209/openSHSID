@@ -21,12 +21,15 @@ def conversation_list(request):
         last_msg = Message.objects.filter(
             Q(sender=request.user, recipient_id=uid) |
             Q(sender_id=uid, recipient=request.user)
-        ).first()
+        ).select_related('sender__profile', 'recipient__profile').first()
         if last_msg:
             other = last_msg.sender if last_msg.sender != request.user else last_msg.recipient
+            profile = getattr(other, 'profile', None)
+            avatar = request.build_absolute_uri(profile.avatar.url) if (profile and profile.avatar) else None
             conversations.append({
                 'user_id': other.id,
                 'username': other.username,
+                'avatar': avatar,
                 'last_message': last_msg.content[:80],
                 'last_message_at': last_msg.created_at,
                 'unread': False,
@@ -47,8 +50,8 @@ def message_list(request):
         messages = Message.objects.filter(
             Q(sender=request.user, recipient_id=other_id) |
             Q(sender_id=other_id, recipient=request.user)
-        ).order_by('created_at')
-        return Response(MessageSerializer(messages, many=True).data)
+        ).order_by('created_at').select_related('sender__profile', 'recipient__profile')
+        return Response(MessageSerializer(messages, many=True, context={'request': request}).data)
 
     if request.method == 'POST':
         serializer = MessageSerializer(data=request.data)
@@ -69,5 +72,10 @@ def user_search(request):
     q = request.query_params.get('q', '').strip()
     if not q:
         return Response([])
-    users = User.objects.filter(username__icontains=q).exclude(id=request.user.id)[:10]
-    return Response([{'id': u.id, 'username': u.username} for u in users])
+    users = User.objects.filter(username__icontains=q).exclude(id=request.user.id).select_related('profile')[:10]
+
+    def _avatar(u):
+        profile = getattr(u, 'profile', None)
+        return request.build_absolute_uri(profile.avatar.url) if (profile and profile.avatar) else None
+
+    return Response([{'id': u.id, 'username': u.username, 'avatar': _avatar(u)} for u in users])
