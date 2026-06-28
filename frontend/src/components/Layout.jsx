@@ -218,8 +218,19 @@ export default function Layout() {
       }`}>
         <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
         <div className="flex items-center h-12 px-3 gap-2 w-full">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500">
-            {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 relative w-8 h-8 flex items-center justify-center overflow-hidden">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={sidebarOpen ? 'close' : 'open'}
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                {sidebarOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
+              </motion.span>
+            </AnimatePresence>
           </motion.button>
           <Link to="/" className="font-bold text-sm text-gray-900 dark:text-white no-underline shrink-0">shsid</Link>
           <div className="flex-1 max-w-md mx-auto min-w-0">
@@ -270,14 +281,25 @@ export default function Layout() {
       </header>
 
       <div className="flex w-full overflow-hidden">
-        {/* 左侧边栏：大屏静态布局 */}
-        {isLargeScreen && sidebarOpen && (
-          <aside className={`w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] p-2 ${
-            hasGlass ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md glass-shimmer' : 'bg-gray-50 dark:bg-gray-950'
-          }`}>
-            {sidebarContent}
-          </aside>
-        )}
+        {/* 左侧边栏：大屏静态布局（折叠/展开带动画） */}
+        <AnimatePresence initial={false}>
+          {isLargeScreen && sidebarOpen && (
+            <motion.aside
+              key="sidebar-static"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 224, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 34, opacity: { duration: 0.18 } }}
+              className={`shrink-0 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-48px)] overflow-hidden ${
+                hasGlass ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md glass-shimmer' : 'bg-gray-50 dark:bg-gray-950'
+              }`}
+            >
+              <div className="w-56 p-2">
+                {sidebarContent}
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
 
         {/* 左侧边栏：小屏浮动 overlay */}
         <AnimatePresence>
