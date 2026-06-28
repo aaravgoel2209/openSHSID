@@ -57,3 +57,17 @@
 ```shell
 docker pull (还没确定下来)
 ```
+
+---
+### 开发须知
+Commit 头打上
+```text
+Phrase px.x.x pre(version) p(part) c(correction) fork-
+(fork) (merge)
+```
+比如
+```
+Alpha a0.0.0 pre0 p0 c1 fork-oldui 
+```
+如果阶段是0的话可以省区对应标签
+没有这样的头的话一律不通过
