@@ -12,6 +12,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^3.1.0",
+    "@heroui/styles": "^3.1.0",
     "@khvicha/react-liquid-glass": "^1.0.14",
     "axios": "^1.16.1",
     "dompurify": "^3.4.11",

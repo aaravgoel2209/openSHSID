@@ -62,7 +62,7 @@ docker pull (还没确定下来)
 ### 开发须知
 Commit 头打上
 ```text
-Phrase px.x.x pre(version) p(part) c(correction) fork-
+Phrase (phrase代号)x.x.x pre(version) p(part) c(correction) fork-
 (fork) (merge)
 ```
 比如
