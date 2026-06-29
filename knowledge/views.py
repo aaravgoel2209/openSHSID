@@ -71,6 +71,9 @@ def article_list(request):
             if label_ids:
                 from qa.models import Label
                 a.labels.set(Label.objects.filter(id__in=label_ids))
+            # 后台自动检测语言并翻译成另一种语言，缓存供前端按语言切换
+            from OpenSHSID_backend.translation import translate_instance_async
+            translate_instance_async(a)
             return Response(ArticleDetailSerializer(a, context={'request': request}).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

@@ -4,9 +4,12 @@ import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { PlusIcon, ChatBubbleLeftRightIcon, EyeIcon, HandThumbUpIcon } from '@heroicons/react/24/outline';
 import { getQuestions } from '../api/qa';
+import { useLang } from '../context/LanguageContext';
+import { localizeTitle } from '../utils/lang';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { lang, t } = useLang();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +23,7 @@ export default function Home() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <Spinner size="lg" />
-        <p className="text-sm text-gray-400">加载中...</p>
+        <p className="text-sm text-gray-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -63,7 +66,7 @@ export default function Home() {
                   {/* Title + Labels */}
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                      {q.title}
+                      {localizeTitle(q, lang)}
                     </h2>
                     {q.labels?.map((l) => (
                       <span key={l.id} className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-medium">

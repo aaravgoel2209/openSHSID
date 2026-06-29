@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { UIProvider } from './context/UIContext';
 import Layout from './components/Layout';
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
+        <LanguageProvider>
         <AuthProvider>
           <UIProvider>
             <Routes>
@@ -65,6 +67,7 @@ export default function App() {
             </Routes>
           </UIProvider>
         </AuthProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

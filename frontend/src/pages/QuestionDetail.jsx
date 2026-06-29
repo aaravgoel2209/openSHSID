@@ -7,17 +7,21 @@ import { ArrowLeftIcon, EyeIcon, HandThumbUpIcon } from '@heroicons/react/24/out
 import { getQuestion, createAnswer, toggleQuestionLike, toggleAnswerLike } from '../api/qa';
 import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
+import { localize } from '../utils/lang';
 import { renderMarkdown } from '../utils/markdown';
 
 export default function QuestionDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { lang, t } = useLang();
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [waitingRei, setWaitingRei] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
   const viewed = useRef(null);
 
   const fetchData = () => {
@@ -92,6 +96,9 @@ export default function QuestionDetail() {
     );
   }
 
+  const loc = localize(question, lang);
+  const display = showOriginal ? { title: question.title, content: question.content } : loc;
+
   return (
     <div className="animate-fade-in">
       {/* Back button */}
@@ -105,7 +112,17 @@ export default function QuestionDetail() {
 
       {/* Question Card */}
       <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 mb-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">{question.title}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">{display.title}</h1>
+
+        {loc.translated && (
+          <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
+            <i className="bi bi-translate" />
+            <span>{showOriginal ? '' : (lang === 'zh' ? '已为你翻译' : 'Translated for you')}</span>
+            <button onClick={() => setShowOriginal(v => !v)} className="text-indigo-500 hover:underline">
+              {showOriginal ? t('common.showTranslation') : t('common.showOriginal')}
+            </button>
+          </div>
+        )}
 
         {/* Labels */}
         {question.labels?.length > 0 && (
@@ -143,7 +160,7 @@ export default function QuestionDetail() {
         </div>
 
         {/* Content */}
-        <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(question.content) }} />
+        <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(display.content) }} />
 
         {/* Debug info (embedding/heat) */}
         {question.embedding && (

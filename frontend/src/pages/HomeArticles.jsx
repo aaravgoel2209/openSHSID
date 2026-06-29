@@ -7,12 +7,15 @@ import { EyeIcon, HandThumbUpIcon, BookOpenIcon, PlusIcon } from '@heroicons/rea
 import { getArticles } from '../api/knowledge';
 import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
+import { localizeTitle } from '../utils/lang';
 
 const FLASK_URL = '';
 
 export default function HomeArticles() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { lang, t } = useLang();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +52,7 @@ export default function HomeArticles() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <Spinner size="lg" />
-        <p className="text-sm text-gray-400">加载中...</p>
+        <p className="text-sm text-gray-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -59,12 +62,12 @@ export default function HomeArticles() {
       {/* Page Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">知识库</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{articles.length} 篇文章</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('articles.title')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{articles.length} {t('articles.count')}</p>
         </div>
         <Button color="primary" variant="shadow" onPress={() => navigate('/knowledge/create')} className="font-medium">
           <PlusIcon className="w-4 h-4" />
-          发布文章
+          {t('articles.publish')}
         </Button>
       </div>
 
@@ -73,7 +76,7 @@ export default function HomeArticles() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center">
             <BookOpenIcon className="w-8 h-8 text-indigo-400" />
           </div>
-          <p className="text-gray-600 dark:text-gray-400 mb-3">还没有文章</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-3">{t('articles.empty')}</p>
           <Button color="primary" variant="flat" size="sm" onPress={() => navigate('/knowledge/create')}>
             发布第一篇文章
           </Button>
@@ -91,7 +94,7 @@ export default function HomeArticles() {
                 <div className="flex-1 min-w-0">
                   {/* Title */}
                   <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2 truncate">
-                    {a.title}
+                    {localizeTitle(a, lang)}
                   </h2>
 
                   {/* Tags & Meta */}

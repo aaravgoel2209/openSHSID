@@ -254,6 +254,51 @@ def _generate_rei_reply(question_title, question_content, trigger_content, sessi
     return '\n\n'.join(parts) if parts else '（模型未返回有效回答）'
 
 
+import re
+
+_THINK_RE = re.compile(r'<think>.*?</think>', re.DOTALL)
+
+
+def _detect_lang(text):
+    """粗略判断主体语言：含较多中日韩统一表意文字则视为中文，否则英文。"""
+    cjk = sum(1 for ch in text if '一' <= ch <= '鿿')
+    letters = sum(1 for ch in text if ch.isascii() and ch.isalpha())
+    return 'zh' if cjk >= letters else 'en'
+
+
+def _translate_text(text, target=None):
+    """调用 AI 模型在中英之间翻译。
+    target 为 'zh'/'en' 时翻译到指定语言；为空时自动取与源语言相反的一方。
+    返回 (译文, 源语言, 目标语言)。"""
+    client, model_name = _get_rei_client()
+    src = _detect_lang(text)
+    if target not in ('zh', 'en'):
+        target = 'en' if src == 'zh' else 'zh'
+    target_name = '简体中文' if target == 'zh' else 'English'
+    system_prompt = (
+        f'You are a professional translator. Translate the user-provided text into {target_name}, '
+        f'preserving meaning, tone and formatting. Output ONLY the translated text — '
+        f'no explanations, no quotes, no language labels, no extra commentary.'
+    )
+    messages = [
+        {'role': 'system', 'content': system_prompt},
+        {'role': 'user', 'content': text},
+    ]
+    max_tokens = max(512, min(8192, len(text) * 4))
+    logger.info(f'[Translate] {src} → {target} ({len(text)} 字符)')
+    resp = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=0.3,
+        stream=False,
+    )
+    content = (resp.choices[0].message.content or '').strip()
+    # 思考型模型可能把推理放进 <think>…</think>，去除后只留译文
+    content = _THINK_RE.sub('', content).strip()
+    return content, src, target
+
+
 @app.route("/")
 def index():
     return {"status": "ok", "service": "model"}
@@ -292,6 +337,27 @@ def click_endpoint():
     clicked = sum(1 for i in data["items"] if i.get("clicked"))
     logger.info(f'[Train] 完成: step={step_count} loss={loss:.6f} 点击={clicked}/{n}')
     return jsonify({"loss": round(loss, 6), "trained": True, "step": step_count})
+
+
+@app.route("/translate", methods=["POST"])
+def translate_endpoint():
+    """中英互译。请求体：{"text": "...", "target": "zh"|"en"|null}
+    target 省略/为空时自动检测源语言并翻到另一种语言。
+    返回：{"translation": "...", "source_lang": "zh"|"en", "target_lang": "zh"|"en"}"""
+    try:
+        data = request.get_json() or {}
+        text = (data.get("text") or "").strip()
+        target = data.get("target") or None
+        if not text:
+            return jsonify({"error": "text 不能为空"}), 400
+        if target not in (None, 'zh', 'en'):
+            return jsonify({"error": "target 只能为 'zh' 或 'en'"}), 400
+
+        translation, src, tgt = _translate_text(text, target)
+        return jsonify({"translation": translation, "source_lang": src, "target_lang": tgt})
+    except Exception as e:
+        logger.error(f'[Translate] 端点处理失败: {e}', exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/rei/reply", methods=["POST"])

@@ -38,6 +38,9 @@ class Article(models.Model):
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='liked_articles', verbose_name="点赞")
     labels = models.ManyToManyField('qa.Label', blank=True, related_name='articles', verbose_name="标签")
     embedding = models.JSONField(null=True, blank=True, verbose_name="向量 (32维)")
+    source_lang = models.CharField(max_length=2, blank=True, verbose_name="原文语言")  # 'zh' / 'en'
+    title_translated = models.CharField(max_length=400, blank=True, verbose_name="标题译文")
+    content_translated = models.TextField(blank=True, verbose_name="内容译文")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
 
     class Meta:

@@ -84,6 +84,9 @@ def question_list(request):
             q = serializer.save(author=request.user if request.user.is_authenticated else None)
             if label_ids:
                 q.labels.set(Label.objects.filter(id__in=label_ids))
+            # 后台自动检测语言并翻译成另一种语言，缓存供前端按语言切换
+            from OpenSHSID_backend.translation import translate_instance_async
+            translate_instance_async(q)
             return Response(QuestionDetailSerializer(q, context={'request': request}).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

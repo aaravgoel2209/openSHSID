@@ -6,6 +6,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { getArticle, toggleArticleLike } from '../api/knowledge';
 import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
+import { localize } from '../utils/lang';
 import { renderMarkdown } from '../utils/markdown';
 
 const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
@@ -19,8 +21,10 @@ export default function ArticleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { lang, t } = useLang();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showOriginal, setShowOriginal] = useState(false);
   const viewed = useRef(null);
 
   useEffect(() => {
@@ -60,6 +64,9 @@ export default function ArticleDetail() {
     return <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-300">文章不存在。</div>;
   }
 
+  const loc = localize(article, lang);
+  const display = showOriginal ? { title: article.title, content: article.content } : loc;
+
   return (
     <div>
       {/* Gradient accent line */}
@@ -75,7 +82,18 @@ export default function ArticleDetail() {
       )}
 
       {/* Title */}
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">{article.title}</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">{display.title}</h1>
+
+      {/* 译文提示 + 切换原文/译文 */}
+      {loc.translated && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
+          <i className="bi bi-translate" />
+          <span>{showOriginal ? '' : (lang === 'zh' ? '已为你翻译' : 'Translated for you')}</span>
+          <button onClick={() => setShowOriginal(v => !v)} className="text-indigo-500 hover:underline">
+            {showOriginal ? t('common.showTranslation') : t('common.showOriginal')}
+          </button>
+        </div>
+      )}
 
       {/* Meta bar */}
       <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4 flex-wrap">
@@ -107,7 +125,7 @@ export default function ArticleDetail() {
       </div>
 
       {/* Content */}
-      <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 hover:shadow-sm hover:border-gray-300 dark:hover:border-slate-700 transition-all duration-200 text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(article.content) }} />
+      <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 hover:shadow-sm hover:border-gray-300 dark:hover:border-slate-700 transition-all duration-200 text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(display.content) }} />
 
       {/* Debug info */}
       {article.embedding && (

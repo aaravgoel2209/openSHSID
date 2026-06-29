@@ -6,10 +6,12 @@ import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem 
 import { SunIcon, MoonIcon, PlusIcon, Bars3Icon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
+import { useLang } from '../context/LanguageContext';
 import { useUI } from '../context/UIContext';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
 import { getAvatarColor } from '../utils/avatar';
+import { localizeTitle } from '../utils/lang';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // Pick one background image per page load (module-level = runs once, stable across re-renders)
@@ -18,18 +20,19 @@ const _bgUrls = Object.values(_bgGlob).map(m => m.default);
 const RANDOM_BG = _bgUrls.length > 0 ? _bgUrls[Math.floor(Math.random() * _bgUrls.length)] : null;
 
 const NAV_LINKS = [
-  { to: '/', label: '首页', icon: 'bi-house-fill' },
-  { to: '/qa', label: '问答', icon: 'bi-chat-dots-fill' },
-  { to: '/knowledge', label: '知识库', icon: 'bi-journal-bookmark-fill' },
-  { to: '/chat', label: '聊天', icon: 'bi-chat-left-text-fill' },
-  { to: '/mailbox', label: '信箱', icon: 'bi-envelope-fill' },
-  { to: '/linkedclassroom', label: 'LC课程', icon: 'bi-grid-3x3-gap-fill' },
+  { to: '/', key: 'nav.home', icon: 'bi-house-fill' },
+  { to: '/qa', key: 'nav.qa', icon: 'bi-chat-dots-fill' },
+  { to: '/knowledge', key: 'nav.knowledge', icon: 'bi-journal-bookmark-fill' },
+  { to: '/chat', key: 'nav.chat', icon: 'bi-chat-left-text-fill' },
+  { to: '/mailbox', key: 'nav.mailbox', icon: 'bi-envelope-fill' },
+  { to: '/linkedclassroom', key: 'nav.lc', icon: 'bi-grid-3x3-gap-fill' },
 ];
 
 
 export default function Layout() {
   const { user, logout } = useContext(AuthContext);
   const { isDark, toggle } = useContext(ThemeContext);
+  const { lang, setLang, t } = useLang();
   const { complexity, hasGlass } = useUI();
   const navigate = useNavigate();
   const location = useLocation();
@@ -154,12 +157,12 @@ export default function Layout() {
       {/* Create Post */}
       <motion.button whileTap={{ scale: 0.95 }} onClick={() => navigate('/qa/ask')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-3 transition-colors">
         <PlusIcon className="w-4 h-4" />
-        发布
+        {t('top.publish')}
       </motion.button>
 
       {/* Navigation */}
       <nav className="space-y-0.5">
-        {NAV_LINKS.map(({ to, label, icon }) => (
+        {NAV_LINKS.map(({ to, key, icon }) => (
           <Link key={to} to={to}
             className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-colors ${
               isActive(to)
@@ -168,7 +171,7 @@ export default function Layout() {
             }`}
           >
             <i className={`bi ${icon} text-base`} />
-            {label}
+            {t(key)}
           </Link>
         ))}
       </nav>
@@ -179,7 +182,7 @@ export default function Layout() {
           <Link to="/admin/memory"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 no-underline transition-colors"
           >
-            <i className="bi bi-cpu-fill text-sm" /> 模型记忆
+            <i className="bi bi-cpu-fill text-sm" /> {t('nav.memory')}
           </Link>
         </div>
       )}
@@ -232,11 +235,11 @@ export default function Layout() {
               </motion.span>
             </AnimatePresence>
           </motion.button>
-          <Link to="/" className="font-bold text-sm text-gray-900 dark:text-white no-underline shrink-0">shsid</Link>
+          <Link to="/" className="font-bold text-sm text-gray-900 dark:text-white no-underline shrink-0">openSHSID</Link>
           <div className="flex-1 max-w-md mx-auto min-w-0">
             <input
               type="text"
-              placeholder="搜索..."
+              placeholder={t('top.search')}
               className="w-full h-8 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 text-xs dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:bg-white dark:focus:bg-gray-800 transition-colors"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && e.target.value.trim()) {
@@ -246,7 +249,27 @@ export default function Layout() {
               }}
             />
           </div>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? '浅色' : '深色'}>
+          {/* 语言选择器 */}
+          <Dropdown>
+            <DropdownTrigger>
+              <motion.button whileTap={{ scale: 0.9 }} title={t('top.language')}
+                className="flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 text-xs font-semibold">
+                <i className="bi bi-translate text-sm" />
+                {lang === 'zh' ? '中' : 'EN'}
+              </motion.button>
+            </DropdownTrigger>
+            <DropdownPopover>
+              <DropdownMenu>
+                <DropdownItem key="zh" onPress={() => setLang('zh')}>
+                  {lang === 'zh' ? '✓ ' : ''}中文
+                </DropdownItem>
+                <DropdownItem key="en" onPress={() => setLang('en')}>
+                  {lang === 'en' ? '✓ ' : ''}English
+                </DropdownItem>
+              </DropdownMenu>
+            </DropdownPopover>
+          </Dropdown>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? t('theme.light') : t('theme.dark')}>
             {isDark ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
           </motion.button>
           <NotificationBell />
@@ -273,8 +296,8 @@ export default function Layout() {
             </Dropdown>
           ) : (
             <div className="flex items-center gap-1">
-              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/login')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-400">登录</motion.button>
-              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/register')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">注册</motion.button>
+              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/login')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-400">{t('top.login')}</motion.button>
+              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/register')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">{t('top.register')}</motion.button>
             </div>
           )}
         </div>
@@ -360,7 +383,7 @@ export default function Layout() {
               {now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {now.getFullYear()}年{now.getMonth() + 1}月{now.getDate()}日 周{['日','一','二','三','四','五','六'][now.getDay()]}
+              {now.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
             </div>
           </GlassPanel>
 
@@ -372,21 +395,21 @@ export default function Layout() {
               glassContentClass="p-3"
               cornerRadius={12}
             >
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">你的贡献</h3>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">{t('side.contributions')}</h3>
               <div className="flex justify-around text-center">
                 <div>
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{user.question_count ?? 0}</p>
-                  <p className="text-[10px] text-gray-400">提问</p>
+                  <p className="text-[10px] text-gray-400">{t('side.questions')}</p>
                 </div>
                 <div className="w-px bg-gray-100 dark:bg-gray-800" />
                 <div>
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{user.answer_count ?? 0}</p>
-                  <p className="text-[10px] text-gray-400">回答</p>
+                  <p className="text-[10px] text-gray-400">{t('side.answers')}</p>
                 </div>
                 <div className="w-px bg-gray-100 dark:bg-gray-800" />
                 <div>
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{user.article_count ?? 0}</p>
-                  <p className="text-[10px] text-gray-400">文章</p>
+                  <p className="text-[10px] text-gray-400">{t('side.articles')}</p>
                 </div>
               </div>
             </GlassPanel>
@@ -399,9 +422,9 @@ export default function Layout() {
             glassContentClass="p-3"
             cornerRadius={12}
           >
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">本周活跃</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">{t('side.weeklyActive')}</h3>
             {weeklyTop.length === 0 ? (
-              <p className="text-xs text-gray-400">加载中...</p>
+              <p className="text-xs text-gray-400">{t('common.loading')}</p>
             ) : (
               <div className="space-y-2">
                 {weeklyTop.map((u, i) => (
@@ -413,7 +436,7 @@ export default function Layout() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">{u.username}</p>
-                      <p className="text-[10px] text-gray-400">热度 {u.total_heat}</p>
+                      <p className="text-[10px] text-gray-400">{t('side.heat')} {u.total_heat}</p>
                     </div>
                   </div>
                 ))}
@@ -428,9 +451,9 @@ export default function Layout() {
             glassContentClass="p-3"
             cornerRadius={12}
           >
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">热门</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">{t('side.hot')}</h3>
             {hotItems.length === 0 ? (
-              <p className="text-xs text-gray-400">加载中...</p>
+              <p className="text-xs text-gray-400">{t('common.loading')}</p>
             ) : (
               <div className="space-y-2">
                 {hotItems.map((item, i) => (
@@ -438,8 +461,8 @@ export default function Layout() {
                     onClick={() => navigate(item._type === '问答' ? `/qa/questions/${item.id}` : `/knowledge/${item.id}`)}>
                     <span className="text-xs font-bold text-gray-400 w-4 shrink-0 mt-0.5">{i + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-gray-700 dark:text-gray-300 truncate">{item.title}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{item._type} · {item.views} 次浏览</p>
+                      <p className="text-xs text-gray-700 dark:text-gray-300 truncate">{localizeTitle(item, lang)}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{item._type === '问答' ? t('type.qa') : t('type.article')} · {item.views} {t('side.views')}</p>
                     </div>
                   </div>
                 ))}
@@ -455,13 +478,13 @@ export default function Layout() {
             cornerRadius={12}
           >
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">公告板</h3>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('side.noticeBoard')}</h3>
               {user?.is_staff && (
                 <button
                   onClick={() => setShowNoticeForm(v => !v)}
                   className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
                 >
-                  {showNoticeForm ? '取消' : '+ 添加'}
+                  {showNoticeForm ? t('side.cancel') : t('side.add')}
                 </button>
               )}
             </div>
@@ -471,13 +494,13 @@ export default function Layout() {
                 <input
                   value={noticeTitle}
                   onChange={e => setNoticeTitle(e.target.value)}
-                  placeholder="标题"
+                  placeholder={t('side.noticeTitle')}
                   className="w-full text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
                 <textarea
                   value={noticeContent}
                   onChange={e => setNoticeContent(e.target.value)}
-                  placeholder="内容（可选）"
+                  placeholder={t('side.noticeContent')}
                   rows={2}
                   className="w-full text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400 resize-none"
                 />
@@ -486,13 +509,13 @@ export default function Layout() {
                   disabled={noticePosting || !noticeTitle.trim()}
                   className="w-full text-xs py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium transition-colors"
                 >
-                  {noticePosting ? '发布中…' : '发布'}
+                  {noticePosting ? t('side.posting') : t('side.publish')}
                 </button>
               </div>
             )}
 
             {notices.length === 0 ? (
-              <p className="text-xs text-gray-400">暂无公告</p>
+              <p className="text-xs text-gray-400">{t('side.noNotice')}</p>
             ) : (
               <ul className="space-y-2">
                 {notices.map(n => (

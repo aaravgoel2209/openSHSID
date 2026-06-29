@@ -44,7 +44,8 @@ class QuestionListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'title', 'content', 'author', 'author_name', 'answer_count', 'views', 'like_count', 'labels', 'embedding', 'created_at']
+        fields = ['id', 'title', 'content', 'author', 'author_name', 'answer_count', 'views', 'like_count', 'labels', 'embedding',
+                  'source_lang', 'title_translated', 'content_translated', 'created_at']
 
     def get_like_count(self, obj):
         return obj.likes.count()
@@ -66,7 +67,8 @@ class QuestionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'title', 'content', 'author', 'author_name', 'answers', 'views', 'like_count', 'is_liked', 'heat', 'labels', 'embedding', 'created_at']
+        fields = ['id', 'title', 'content', 'author', 'author_name', 'answers', 'views', 'like_count', 'is_liked', 'heat', 'labels', 'embedding',
+                  'source_lang', 'title_translated', 'content_translated', 'created_at']
 
     def get_answers(self, obj):
         qs = obj.answers.filter(parent=None)

@@ -6,9 +6,12 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import { getArticles } from '../api/knowledge';
 import { getLabels } from '../api/labels';
 import client from '../api/client';
+import { useLang } from '../context/LanguageContext';
+import { localizeTitle } from '../utils/lang';
 
 export default function KnowledgeBase() {
   const navigate = useNavigate();
+  const { lang } = useLang();
   const [allLabels, setAllLabels] = useState([]);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +86,7 @@ export default function KnowledgeBase() {
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{a.title}</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{localizeTitle(a, lang)}</h2>
                   {a.labels?.map((l) => (
                     <span key={l.id} className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-medium">{l.name}</span>
                   ))}

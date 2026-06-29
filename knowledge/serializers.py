@@ -25,7 +25,8 @@ class ArticleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'title', 'grade', 'grade_name', 'subject', 'subject_name',
-                  'author_name_display', 'views', 'like_count', 'labels', 'embedding', 'created_at']
+                  'author_name_display', 'views', 'like_count', 'labels', 'embedding',
+                  'source_lang', 'title_translated', 'created_at']
 
     def get_grade_name(self, obj):
         return obj.grade.name if obj.grade else None
@@ -55,7 +56,8 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
         model = Article
         fields = ['id', 'title', 'content', 'grade', 'grade_name', 'subject', 'subject_name',
                   'author', 'author_name', 'author_name_display', 'views', 'like_count', 'is_liked',
-                  'heat', 'labels', 'embedding', 'created_at']
+                  'heat', 'labels', 'embedding',
+                  'source_lang', 'title_translated', 'content_translated', 'created_at']
         read_only_fields = ['author', 'created_at']
 
     def get_grade_name(self, obj):

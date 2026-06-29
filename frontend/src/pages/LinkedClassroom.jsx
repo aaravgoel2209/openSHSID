@@ -4,7 +4,7 @@ import { Spinner } from '@heroui/react/spinner';
 import { AuthContext } from '../context/AuthContext';
 import { getCourses, getCredentials, saveCredentials, deleteCredentials, syncCourses, clearSessionCache, getBrowserLoginHtml } from '../api/crawler';
 
-const LC_TEAL = '#00a9ce';
+const LC_TEAL = '#155cfb';
 const LC_ORANGE = '#ED8B00';
 
 const COURSE_GRADIENTS = [
@@ -34,7 +34,7 @@ function CourseTile({ course }) {
         height: 160,
         flexShrink: 0,
         boxShadow: hovered
-          ? '0 8px 28px rgba(0,169,206,0.18), 0 2px 8px rgba(0,0,0,0.08)'
+          ? '0 8px 28px rgba(21,92,251,0.18), 0 2px 8px rgba(0,0,0,0.08)'
           : '0 2px 10px rgba(0,0,0,0.07)',
         transform: hovered ? 'translateY(-3px)' : 'none',
         overflow: 'hidden',
@@ -193,7 +193,7 @@ export default function LinkedClassroom() {
   return (
     <div className="animate-fade-in" style={{ fontFamily: "'Poppins', sans-serif" }}>
       {/* LC-style header bar */}
-      <div style={{ background: `linear-gradient(90deg, ${LC_TEAL}, #0077a8)`, borderRadius: 12, marginBottom: 24, padding: '20px 24px' }}>
+      <div style={{ background: `linear-gradient(90deg, ${LC_TEAL}, #00a9ce)`, borderRadius: 12, marginBottom: 24, padding: '20px 24px' }}>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0 }}>LinkedClassroom</h1>
