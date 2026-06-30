@@ -1,0 +1,51 @@
+{
+  "name": "openshsid-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OpenSHSID desktop app (Electron wrapper around the React frontend)",
+  "main": "main/main.js",
+  "author": "OpenSHSID",
+  "scripts": {
+    "postinstall": "npm --prefix renderer install",
+    "dev:renderer": "npm --prefix renderer run dev",
+    "dev:electron": "wait-on tcp:5180 && electron .",
+    "dev": "concurrently -k -n RENDERER,ELECTRON -c cyan,magenta \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "build:renderer": "npm --prefix renderer run build",
+    "start": "electron .",
+    "dist": "npm run build:renderer && electron-builder"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "follow-redirects": "^1.16.0",
+    "http-proxy-middleware": "^3.0.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "cn.zengyuxiang.openshsid",
+    "productName": "OpenSHSID",
+    "directories": {
+      "output": "build",
+      "buildResources": "resources"
+    },
+    "files": [
+      "main/**/*",
+      "server/**/*",
+      "config.js",
+      "renderer/dist/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

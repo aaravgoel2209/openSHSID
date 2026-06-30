@@ -43,6 +43,13 @@ local_settings.py
 *.sw?
 *.DS_Store
 
+# ── Electron desktop app ─────────────────────────────────────────────────────
+/electron/node_modules/
+/electron/build/
+/electron/dist/
+/electron/renderer/node_modules/
+/electron/renderer/dist/
+
 # ── Tooling ──────────────────────────────────────────────────────────────────
 .aider*
 .agents/
