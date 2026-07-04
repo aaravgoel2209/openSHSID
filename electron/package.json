@@ -6,7 +6,7 @@
   "main": "main/main.js",
   "author": "OpenSHSID",
   "scripts": {
-    "postinstall": "npm --prefix renderer install",
+
     "dev:renderer": "npm --prefix renderer run dev",
     "dev:electron": "wait-on tcp:5180 && electron .",
     "dev": "concurrently -k -n RENDERER,ELECTRON -c cyan,magenta \"npm:dev:renderer\" \"npm:dev:electron\"",
