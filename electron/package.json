@@ -28,6 +28,8 @@
   "build": {
     "appId": "cn.zengyuxiang.openshsid",
     "productName": "OpenSHSID",
+    "npmRebuild": false,
+    "nodeGypRebuild": false,
     "directories": {
       "output": "build",
       "buildResources": "resources"
@@ -39,7 +41,8 @@
       "renderer/dist/**/*"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "signAndEditExecutable": false
     },
     "mac": {
       "target": "dmg"
