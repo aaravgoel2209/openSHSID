@@ -1,6 +1,34 @@
 from rest_framework import serializers
 from qa.serializers import LabelSerializer
-from .models import Grade, Subject, Article
+from .models import Grade, Subject, Article, Comment
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'parent', 'content', 'author', 'author_name', 'like_count', 'is_liked', 'replies', 'created_at']
+        read_only_fields = ['author', 'created_at']
+
+    def get_author_name(self, obj):
+        return obj.author.username if obj.author else None
+
+    def get_like_count(self, obj):
+        return obj.likes.count()
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and getattr(request, 'user', None) and request.user.is_authenticated:
+            return obj.likes.filter(id=request.user.id).exists()
+        return False
+
+    def get_replies(self, obj):
+        qs = obj.replies.all()
+        return CommentSerializer(qs, many=True, context=self.context).data
 
 
 class GradeSerializer(serializers.ModelSerializer):
@@ -20,13 +48,17 @@ class ArticleListSerializer(serializers.ModelSerializer):
     subject_name = serializers.SerializerMethodField()
     author_name_display = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
     labels = LabelSerializer(many=True, read_only=True)
 
     class Meta:
         model = Article
         fields = ['id', 'title', 'grade', 'grade_name', 'subject', 'subject_name',
-                  'author_name_display', 'views', 'like_count', 'labels', 'embedding',
+                  'author_name_display', 'views', 'like_count', 'comment_count', 'labels', 'embedding',
                   'source_lang', 'title_translated', 'created_at']
+
+    def get_comment_count(self, obj):
+        return obj.comments.count()
 
     def get_grade_name(self, obj):
         return obj.grade.name if obj.grade else None
@@ -50,15 +82,20 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     heat = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
     labels = LabelSerializer(many=True, read_only=True)
 
     class Meta:
         model = Article
         fields = ['id', 'title', 'content', 'grade', 'grade_name', 'subject', 'subject_name',
                   'author', 'author_name', 'author_name_display', 'views', 'like_count', 'is_liked',
-                  'heat', 'labels', 'embedding',
+                  'heat', 'comments', 'labels', 'embedding',
                   'source_lang', 'title_translated', 'content_translated', 'created_at']
         read_only_fields = ['author', 'created_at']
+
+    def get_comments(self, obj):
+        qs = obj.comments.filter(parent=None)
+        return CommentSerializer(qs, many=True, context=self.context).data
 
     def get_grade_name(self, obj):
         return obj.grade.name if obj.grade else None

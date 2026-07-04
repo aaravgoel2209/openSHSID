@@ -52,8 +52,27 @@ class Article(models.Model):
     def heat(self):
         clicks = self.views
         likes = self.likes.count()
+        comments = self.comments.count()
         days = (timezone.now() - self.created_at).days
-        return round(max(0.0, 2.0 + clicks * 0.1 + likes * 0.3 - days * 0.1), 4)
+        return round(max(0.0, 2.0 + clicks * 0.1 + likes * 0.3 + comments * 0.2 - days * 0.1), 4)
 
     def __str__(self):
         return self.title
+
+
+class Comment(models.Model):
+    """文章评论/回复（结构对齐 qa.Answer：支持嵌套回复与点赞）"""
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments', verbose_name="所属文章")
+    content = models.TextField(verbose_name="评论内容")
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies', verbose_name="回复目标")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="作者")
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='liked_comments', verbose_name="点赞")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = "评论"
+        verbose_name_plural = "评论"
+
+    def __str__(self):
+        return f"评论 {self.id}: {self.content[:50]}"

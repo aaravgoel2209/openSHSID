@@ -17,6 +17,8 @@ export function ThemeProvider({ children }) {
       root.classList.remove('dark');
     }
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    // Electron 桌面端：同步窗口控制按钮（最小化/最大化/关闭）配色
+    window.desktop?.setTheme?.(isDark);
   }, [isDark]);
 
   const toggle = useCallback(() => setIsDark((d) => !d), []);

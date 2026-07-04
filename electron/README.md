@@ -65,6 +65,26 @@ want the desktop app to match, re-copy `../frontend` (excluding `node_modules`
 and `dist`) over `renderer/`, keeping this folder's `vite.config.js` tweak
 (`base: './'`). A sync script can be added later.
 
+## Desktop UI effects
+
+- **Native background blur** — on Windows 11 the window uses the `acrylic`
+  background material; on macOS, `vibrancy: 'under-window'`. The renderer
+  detects this via `window.desktop.nativeBlur` and switches the page background
+  to transparent (skipping the random wallpaper) so the desktop shows through,
+  blurred, behind the app's glass panels. On Windows 10 / Linux everything
+  falls back to the normal opaque background + wallpaper.
+- **Hidden titlebar** — on Windows/macOS the system titlebar is hidden and the
+  app's own topbar (48px) becomes the drag region (`-webkit-app-region`).
+  Windows keeps native min/max/close buttons via `titleBarOverlay`, whose
+  colors follow the app's dark/light theme (IPC `theme-changed`); macOS keeps
+  its traffic lights (`hiddenInset`, topbar left-padded). Linux keeps the
+  system frame.
+- **Smooth startup** — the window is created hidden and shown on
+  `ready-to-show`, avoiding the white flash.
+
+All renderer-side behavior is gated on `window.desktop` (from `preload.js`),
+so the same code is a no-op in the web frontend.
+
 ## Security
 
 `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`. The renderer

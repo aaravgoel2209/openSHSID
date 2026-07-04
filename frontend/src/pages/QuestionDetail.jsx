@@ -10,6 +10,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
 import { localize } from '../utils/lang';
 import { renderMarkdown } from '../utils/markdown';
+import MarkdownInput from '../components/MarkdownInput';
 
 export default function QuestionDetail() {
   const { id } = useParams();
@@ -160,7 +161,7 @@ export default function QuestionDetail() {
         </div>
 
         {/* Content */}
-        <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMarkdown(display.content) }} />
+        <div className="md-body text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: renderMarkdown(display.content) }} />
 
         {/* Debug info (embedding/heat) */}
         {question.embedding && (
@@ -180,15 +181,16 @@ export default function QuestionDetail() {
       <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm mb-6">
         <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">写回答</h3>
         <form onSubmit={handleSubmit}>
-          <textarea
-            placeholder={user ? '写下你的回答... 输入 @Rei 可以召唤AI助手回答' : '登录后可回答'}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
-            disabled={!user}
-            className="w-full mb-4 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-y"
-            rows={3}
-          />
+          <div className="mb-4">
+            <MarkdownInput
+              placeholder={user ? '写下你的回答... 输入 @Rei 可以召唤AI助手回答' : '登录后可回答'}
+              value={content}
+              onChange={setContent}
+              required
+              disabled={!user}
+              rows={4}
+            />
+          </div>
           <div className="flex items-center gap-3">
             <Button type="submit" color="primary" isLoading={submitting} isDisabled={submitting || !user} className="font-medium">
               {submitting ? '提交中...' : '提交回答'}
@@ -277,7 +279,7 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
           Rei 正在思考…
         </div>
       ) : (
-        <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
+        <div className="md-body text-gray-800 dark:text-gray-200">
           <span dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.content) }} />
           {answer.is_streaming && (
             <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 bg-indigo-500 animate-pulse" aria-hidden="true" />
@@ -329,17 +331,20 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
 
       {/* Reply Form */}
       {showReply && (
-        <form onSubmit={handleReply} className="mt-3 flex gap-2 animate-slide-up">
-          <input
-            className="flex-1 h-9 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-sm dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-600 transition-all"
+        <form onSubmit={handleReply} className="mt-3 space-y-2 animate-slide-up">
+          <MarkdownInput
+            compact
             placeholder="写下回复..."
             value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
+            onChange={setReplyContent}
             disabled={!user}
+            rows={2}
           />
-          <Button type="submit" size="sm" color="primary" isLoading={sending} isDisabled={!user || !replyContent.trim()}>
-            回复
-          </Button>
+          <div className="flex justify-end">
+            <Button type="submit" size="sm" color="primary" isLoading={sending} isDisabled={!user || !replyContent.trim()}>
+              回复
+            </Button>
+          </div>
         </form>
       )}
 

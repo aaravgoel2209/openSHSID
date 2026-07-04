@@ -1,0 +1,55 @@
+# 打包 Electron 桌面应用（Windows NSIS / macOS DMG / Linux AppImage）
+# 触发：推 v* 标签，或在 Actions 页手动运行（workflow_dispatch）
+name: Build Electron App
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # 默认浅克隆即含最新 commit，「关于」弹窗的版本信息
+        # （vite define 里的 git log -1）可以正常取到
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # postinstall 会顺带安装 renderer 依赖
+      - name: Install dependencies
+        run: npm install
+        working-directory: electron
+
+      - name: Build renderer
+        run: npm run build:renderer
+        working-directory: electron
+
+      - name: Package with electron-builder
+        run: npx electron-builder --publish never
+        working-directory: electron
+        env:
+          # 无签名证书：跳过 macOS 自动签名发现，避免打包失败
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openshsid-desktop-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            electron/build/*.exe
+            electron/build/*.dmg
+            electron/build/*.AppImage

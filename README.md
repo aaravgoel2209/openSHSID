@@ -67,7 +67,7 @@ Phrase (phrase代号)x.x.x pre(version) p(part) c(correction) fork-
 ```
 比如
 ```
-Alpha a0.0.0 part0 p0 c1 fork-oldui 
+Alpha a0.0.0pre0 part0 p0 c1 fork-oldui 
 ```
 如果阶段是0的话可以省区对应标签
 没有这样的头的话一律不通过

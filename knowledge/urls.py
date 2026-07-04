@@ -10,5 +10,7 @@ urlpatterns = [
     path('articles/<int:pk>/view/', views.view_article, name='view_article'),
 
     path('articles/<int:pk>/like/', views.like_article, name='like_article'),
+    path('articles/<int:pk>/comments/', views.comment_list, name='comment_list'),
+    path('comments/<int:pk>/like/', views.like_comment, name='like_comment'),
     path('memory/', memory_api.memory_list, name='memory_list'),
 ]

@@ -169,6 +169,7 @@ def _embed_item(item_id, title, content):
         emb = rag.compute_item_embedding(title, content)
         if emb:
             save_item_embedding(item_id, emb)
+            rag.bump_generation()  # 使检索矩阵缓存失效
     except Exception as e:
         logger.error(f'[Memory] 生成向量失败 id={item_id}: {e}')
 

@@ -22,3 +22,12 @@ export const createArticle = (data) =>
 
 export const toggleArticleLike = (id) =>
   client.post(`/knowledge/articles/${id}/like/`).then((r) => r.data);
+
+export const createComment = (articleId, content, parent = null) =>
+  client.post(`/knowledge/articles/${articleId}/comments/`, { content, parent }).then((r) => r.data);
+
+export const toggleCommentLike = (commentId) =>
+  client.post(`/knowledge/comments/${commentId}/like/`).then((r) => r.data);
+
+export const deleteComment = (articleId, commentId) =>
+  client.delete(`/knowledge/articles/${articleId}/comments/`, { data: { comment_id: commentId } }).then((r) => r.data);

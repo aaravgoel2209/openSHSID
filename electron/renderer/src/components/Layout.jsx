@@ -10,6 +10,7 @@ import { useLang } from '../context/LanguageContext';
 import { useUI } from '../context/UIContext';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
+import AboutDialog from './AboutDialog';
 import { getAvatarColor } from '../utils/avatar';
 import { localizeTitle } from '../utils/lang';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -37,6 +38,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showAbout, setShowAbout] = useState(false);
   const [now, setNow] = useState(new Date());
 
   const navIndex = useMemo(() => {
@@ -59,7 +61,9 @@ export default function Layout() {
   );
 
   useEffect(() => {
-    if (!RANDOM_BG) return;
+    // 桌面端启用系统级毛玻璃（Win11 acrylic / macOS vibrancy）时不铺随机壁纸，
+    // 让桌面背景透过窗口模糊呈现
+    if (!RANDOM_BG || window.desktop?.nativeBlur) return;
     const html = document.documentElement;
     html.style.backgroundImage = `url(${RANDOM_BG})`;
     html.style.backgroundSize = 'cover';
@@ -205,7 +209,7 @@ export default function Layout() {
       {/* Footer — 折叠时隐藏 */}
       {!collapsed && (
         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 px-3">
-          <p className="text-[10px] text-gray-400 dark:text-gray-600">In develop, not final version, preparing for ICP</p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-600">沪ICP备2026030323号</p>
         </div>
       )}
     </>
@@ -220,13 +224,15 @@ export default function Layout() {
   }, [navIndex]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    // overflow-x-clip 而非 hidden：hidden 会把该 div 变成滚动容器，
+    // 导致 sticky 顶栏失效（随页面滚走）；clip 只裁剪不产生滚动容器
+    <div className="min-h-screen overflow-x-clip">
       {/* Top Bar */}
-      <header className={`sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
+      <header className={`app-topbar sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
         hasGlass ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
       }`}>
         <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
-        <div className="flex items-center h-12 px-3 gap-2 w-full">
+        <div className="app-topbar-row flex items-center h-12 px-3 gap-2 w-full">
           <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 relative w-8 h-8 flex items-center justify-center overflow-hidden">
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
@@ -277,6 +283,10 @@ export default function Layout() {
           </Dropdown>
           <motion.button whileTap={{ scale: 0.9 }} onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? t('theme.light') : t('theme.dark')}>
             {isDark ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
+          </motion.button>
+          {/* 关于：显示当前构建版本信息（commit 首行） */}
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowAbout(true)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={t('top.about')}>
+            <i className="bi bi-info-circle text-sm" />
           </motion.button>
           <NotificationBell />
           {user ? (
@@ -544,6 +554,9 @@ export default function Layout() {
           </GlassPanel>
         </aside>
       </div>
+
+      {/* 关于弹窗 */}
+      <AboutDialog open={showAbout} onClose={() => setShowAbout(false)} />
     </div>
   );
 }

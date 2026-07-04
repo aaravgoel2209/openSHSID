@@ -146,3 +146,108 @@
   border-color: rgba(148, 163, 184, 0.2) !important;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
+
+/* ===== Markdown 渲染排版（.md-body）=====
+   Tailwind preflight 清掉了默认样式，这里给 renderMarkdown 的产物恢复排版层级 */
+.md-body { line-height: 1.7; word-break: break-word; }
+.md-body > :first-child { margin-top: 0; }
+.md-body > :last-child { margin-bottom: 0; }
+.md-body h1, .md-body h2, .md-body h3, .md-body h4 {
+  font-weight: 700;
+  margin: 1.1em 0 0.5em;
+  line-height: 1.3;
+}
+.md-body h1 { font-size: 1.5em; }
+.md-body h2 { font-size: 1.3em; }
+.md-body h3 { font-size: 1.15em; }
+.md-body h4 { font-size: 1.05em; }
+.md-body p { margin: 0.6em 0; }
+.md-body ul, .md-body ol { margin: 0.6em 0; padding-left: 1.5em; }
+.md-body ul { list-style: disc; }
+.md-body ol { list-style: decimal; }
+.md-body li { margin: 0.25em 0; }
+.md-body li > ul, .md-body li > ol { margin: 0.2em 0; }
+.md-body a { color: #6366f1; text-decoration: underline; text-underline-offset: 2px; }
+.md-body a:hover { color: #4f46e5; }
+.dark .md-body a { color: #818cf8; }
+.dark .md-body a:hover { color: #a5b4fc; }
+.md-body code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Courier New', monospace;
+  font-size: 0.875em;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+}
+.dark .md-body code { background: rgba(129, 140, 248, 0.15); }
+.md-body pre {
+  background: #f6f8fa;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 0.8em 1em;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.dark .md-body pre { background: #0d1117; border-color: rgba(255, 255, 255, 0.08); }
+.md-body pre code { background: none; padding: 0; font-size: 0.85em; }
+.md-body blockquote {
+  border-left: 3px solid #c7d2fe;
+  padding: 0.1em 0 0.1em 0.9em;
+  margin: 0.8em 0;
+  color: #6b7280;
+}
+.dark .md-body blockquote { border-left-color: #4338ca; color: #9ca3af; }
+.md-body table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 0.9em;
+}
+.md-body th, .md-body td {
+  border: 1px solid #e5e7eb;
+  padding: 0.4em 0.8em;
+}
+.dark .md-body th, .dark .md-body td { border-color: #374151; }
+.md-body th { background: rgba(99, 102, 241, 0.06); font-weight: 600; }
+.dark .md-body th { background: rgba(129, 140, 248, 0.1); }
+.md-body hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.2em 0; }
+.dark .md-body hr { border-top-color: #374151; }
+.md-body img { max-width: 100%; border-radius: 8px; }
+
+/* ===== Electron 桌面端（网页端无 .is-electron，以下全部不生效）===== */
+
+/* 系统级毛玻璃（Win11 acrylic / macOS vibrancy）：
+   页面底色改为透明，让 DWM 模糊透出来；#root 铺一层半透明底保证可读性 */
+html.native-blur,
+html.native-blur body {
+  background: transparent !important;
+}
+html.native-blur #root {
+  min-height: 100vh;
+  background: rgba(255, 255, 255, 0.55);
+}
+html.native-blur.dark #root {
+  background: rgba(10, 10, 14, 0.55);
+}
+
+/* 隐藏系统标题栏后，应用 topbar 充当标题栏：整条可拖动窗口，
+   交互控件（按钮/链接/输入框）恢复不可拖，保证可以点击 */
+html.is-electron .app-topbar {
+  -webkit-app-region: drag;
+}
+html.is-electron .app-topbar :is(button, a, input, [role='button']) {
+  -webkit-app-region: no-drag;
+}
+
+/* Windows 窗口控制按钮（最小化/最大化/关闭）overlay 占据右上角，
+   用 titlebar-area 环境变量给 topbar 内容让位 */
+html.overlay-controls .app-topbar-row {
+  margin-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+  width: auto;
+}
+
+/* macOS 红绿灯按钮在左上角（hiddenInset），给 topbar 左侧留位 */
+html.is-electron.platform-darwin .app-topbar-row {
+  padding-left: 76px;
+}

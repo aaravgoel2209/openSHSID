@@ -5,10 +5,10 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db import models as django_models
 from django.db.models import Q
-from .models import Article, Grade, Subject
+from .models import Article, Grade, Subject, Comment
 from .serializers import (
     GradeSerializer, SubjectSerializer,
-    ArticleListSerializer, ArticleDetailSerializer,
+    ArticleListSerializer, ArticleDetailSerializer, CommentSerializer,
 )
 
 
@@ -95,6 +95,58 @@ def article_detail(request, pk):
 def view_article(request, pk):
     Article.objects.filter(pk=pk).update(views=django_models.F('views') + 1)
     return Response({'ok': True})
+
+
+@api_view(['GET', 'POST', 'DELETE'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def comment_list(request, pk):
+    """文章评论：GET 列表（嵌套回复）/ POST 发表（可带 parent 回复某条）/ DELETE 管理员删除"""
+    article = get_object_or_404(Article, pk=pk)
+
+    if request.method == 'DELETE':
+        comment_id = request.data.get('comment_id') or request.query_params.get('comment_id')
+        if not comment_id:
+            return Response({'error': 'comment_id required'}, status=400)
+        if not request.user.is_staff:
+            return Response({'error': '仅管理员可删除'}, status=403)
+        comment = get_object_or_404(Comment, pk=comment_id, article=article)
+        comment.delete()
+        return Response({'ok': True}, status=200)
+
+    if request.method == 'GET':
+        comments = article.comments.filter(parent=None)
+        serializer = CommentSerializer(comments, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        from OpenSHSID_backend.moderation import blocked_words_error
+        err = blocked_words_error('', request.data.get('content', ''))
+        if err:
+            return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = CommentSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            parent_id = request.data.get('parent')
+            parent = None
+            if parent_id:
+                parent = get_object_or_404(Comment, pk=parent_id, article=article)
+            serializer.save(
+                article=article,
+                author=request.user if request.user.is_authenticated else None,
+                parent=parent,
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def like_comment(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    if comment.likes.filter(id=request.user.id).exists():
+        comment.likes.remove(request.user)
+    else:
+        comment.likes.add(request.user)
+    return Response({'liked': comment.likes.filter(id=request.user.id).exists(), 'count': comment.likes.count()})
 
 
 @api_view(['POST'])
