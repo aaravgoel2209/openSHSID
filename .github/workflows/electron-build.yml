@@ -1,12 +1,12 @@
 # 打包 Electron 桌面应用（Windows NSIS / macOS DMG / Linux AppImage）
-# 触发：推 v* 标签，或在 Actions 页手动运行（workflow_dispatch）
+# 触发：每次推送到 alpha 分支，或在 Actions 页手动运行（workflow_dispatch）
 name: Build Electron App
 
 on:
   workflow_dispatch:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - alpha
 
 jobs:
   build:
