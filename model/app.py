@@ -423,7 +423,12 @@ def rei_stream_endpoint():
 
 if __name__ == "__main__":
     from config import PUSH_MODE
-    logger.info(f'[Flask] 模型服务启动于 :5000  mode={PUSH_MODE}')
+    # 0.0.0.0：允许部署机之外的客户端（如打包后的 Electron 应用）连接。
+    # debug 默认关闭——Werkzeug 的交互式调试器在暴露给公网时等同于远程代码执行，
+    # 且当前接口均无鉴权；本地调试需要时显式设 REI_FLASK_DEBUG=1。
+    host = os.environ.get('REI_FLASK_HOST', '0.0.0.0')
+    debug_mode = os.environ.get('REI_FLASK_DEBUG', '0') == '1'
+    logger.info(f'[Flask] 模型服务启动于 {host}:5000  mode={PUSH_MODE}  debug={debug_mode}')
     # 为已有记忆补齐向量 + 同步知识库/问答（best-effort，服务不可用时跳过）
     try:
         import rag
@@ -431,4 +436,4 @@ if __name__ == "__main__":
         rag.sync_all(force=True)
     except Exception as e:
         logger.warning(f'[RAG] 启动初始化跳过: {e}')
-    app.run(port=5000, debug=True)
+    app.run(host=host, port=5000, debug=debug_mode)

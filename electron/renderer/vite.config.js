@@ -4,9 +4,16 @@ import tailwindcss from '@tailwindcss/vite'
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
+// electron/config.js 是打包后 proxyServer.js 用的同一份后端地址配置（CommonJS）。
+// dev 模式下 Electron 直接加载这个 Vite dev server，走的是下面 server.proxy，
+// 而不是 proxyServer.js —— 两边必须共用同一份配置，否则 dev 模式会一直打本地，
+// 即使 config.js 已经改成指向远程部署的域名。
+const require = createRequire(import.meta.url)
+const { DJANGO_URL, FLASK_URL } = require('../config.js')
 
 // 构建时抓取当前 commit 信息（首行 = 版本说明），注入给「关于」弹窗。
 // 无 git 环境（如脱离仓库打包）时降级为空串，不阻塞构建。
@@ -41,24 +48,28 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:19424',
+        target: DJANGO_URL,
         changeOrigin: true,
       },
       '/admin': {
-        target: 'http://localhost:19424',
+        target: DJANGO_URL,
         changeOrigin: true,
       },
       // Django admin 的静态资源（CSS/JS），否则后台页面会渲染成无样式的裸 HTML
       '/static': {
-        target: 'http://localhost:19424',
+        target: DJANGO_URL,
         changeOrigin: true,
       },
       '/rei': {
-        target: 'http://127.0.0.1:5000',
+        target: FLASK_URL,
         changeOrigin: true,
       },
       '/click': {
-        target: 'http://127.0.0.1:5000',
+        target: FLASK_URL,
+        changeOrigin: true,
+      },
+      '/translate': {
+        target: FLASK_URL,
         changeOrigin: true,
       },
     },

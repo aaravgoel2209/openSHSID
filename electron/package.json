@@ -1,7 +1,7 @@
 {
   "name": "openshsid-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "a0.6.0 pre1 c6",
   "description": "OpenSHSID desktop app (Electron wrapper around the React frontend)",
   "main": "main/main.js",
   "author": "OpenSHSID",
