@@ -37,10 +37,6 @@ jobs:
         run: npm run build:renderer
         working-directory: electron
 
-      - name: Install dependencies (renderer)
-        run: npm install
-        working-directory: electron/renderer
-
       - name: Package with electron-builder
         run: npx electron-builder --publish never
         working-directory: electron
