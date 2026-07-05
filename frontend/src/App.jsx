@@ -26,6 +26,7 @@ import AdminUsers from './pages/AdminUsers';
 import AdminContent from './pages/AdminContent';
 import LinkedClassroom from './pages/LinkedClassroom';
 import LinkedClassroomCourse from './pages/LinkedClassroomCourse';
+import PwaUpdateToast from './components/PwaUpdateToast';
 
 export default function App() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path="/linkedclassroom/:courseId" element={<LinkedClassroomCourse />} />
               </Route>
             </Routes>
+            <PwaUpdateToast />
           </UIProvider>
         </AuthProvider>
         </LanguageProvider>

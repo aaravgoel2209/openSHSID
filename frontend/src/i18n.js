@@ -88,6 +88,10 @@ export const STRINGS = {
     'about.runtime': '运行环境',
     'about.unknown': '（无提交信息）',
     'about.close': '关闭',
+    // PWA
+    'pwa.updateAvailable': '有新版本可用',
+    'pwa.offlineReady': '已可离线使用',
+    'pwa.reload': '刷新',
   },
   en: {
     'nav.home': 'Home',
@@ -167,5 +171,8 @@ export const STRINGS = {
     'about.runtime': 'Runtime',
     'about.unknown': '(no commit info)',
     'about.close': 'Close',
+    'pwa.updateAvailable': 'A new version is available',
+    'pwa.offlineReady': 'Ready to work offline',
+    'pwa.reload': 'Reload',
   },
 };
