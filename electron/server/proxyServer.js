@@ -16,25 +16,27 @@ const { DJANGO_URL, FLASK_URL } = require('../config');
 function startProxyServer({ port, distDir }) {
   const app = express();
 
-  const toDjango = createProxyMiddleware({
-    target: DJANGO_URL,
-    changeOrigin: true,
-  });
-  const toFlask = createProxyMiddleware({
-    target: FLASK_URL,
-    changeOrigin: true,
-    ws: true,            // 预留：SSE/长连接
-    proxyTimeout: 0,     // 模型流式输出不超时
-    timeout: 0,
-  });
+  // 注意：app.use('/prefix', middleware) 会让 Express 在调用 middleware 前
+  // 把 req.url 里的挂载前缀剥掉（例如 /api/auth/login/ 进来时 middleware 只
+  // 看到 /auth/login/）。http-proxy-middleware 直接转发被剥过的 req.url，
+  // 于是后端收到的请求丢了前缀（如 Django 收到 /auth/login/ 而非
+  // /api/auth/login/，404）。用 pathRewrite 把前缀加回去。
+  // dev 模式下 Vite 的代理不走 app.use 挂载，没有这个坑，所以只在打包后才炸。
+  const mount = (prefix, target, extra = {}) => {
+    app.use(prefix, createProxyMiddleware({
+      target,
+      changeOrigin: true,
+      pathRewrite: { '^/': `${prefix}/` },
+      ...extra,
+    }));
+  };
 
-  // 后端前缀 → 对应服务
-  app.use('/api', toDjango);
-  app.use('/admin', toDjango);
-  app.use('/static', toDjango);
-  app.use('/rei', toFlask);
-  app.use('/click', toFlask);
-  app.use('/translate', toFlask);
+  mount('/api', DJANGO_URL);
+  mount('/admin', DJANGO_URL);
+  mount('/static', DJANGO_URL);
+  mount('/rei', FLASK_URL, { ws: true, proxyTimeout: 0, timeout: 0 });
+  mount('/click', FLASK_URL);
+  mount('/translate', FLASK_URL);
 
   // 静态资源（构建产物）
   app.use(express.static(distDir));
