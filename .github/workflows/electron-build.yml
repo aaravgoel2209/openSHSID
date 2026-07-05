@@ -28,14 +28,21 @@ jobs:
         with:
           node-version: 22
 
-      # postinstall 会顺带安装 renderer 依赖
-      - name: Install dependencies
-        run: npm install
+      # 不走 postinstall / npm --prefix 的嵌套 npm 调用：Windows runner 上
+      # npm 生命周期脚本里再调 npm 会报 'npm' is not recognized。
+      # 改为按目录显式安装、构建。--ignore-scripts 跳过 electron 二进制下载
+      # （打包用的 Electron 由 electron-builder 自行下载，无需 node_modules 里的二进制）
+      - name: Install electron deps
+        run: npm install --ignore-scripts
         working-directory: electron
 
+      - name: Install renderer deps
+        run: npm install
+        working-directory: electron/renderer
+
       - name: Build renderer
-        run: npm run build:renderer
-        working-directory: electron
+        run: npm run build
+        working-directory: electron/renderer
 
       - name: Package with electron-builder
         run: npx electron-builder --publish never
