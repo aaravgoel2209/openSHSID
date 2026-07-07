@@ -13,6 +13,8 @@ import GlassPanel from './GlassPanel';
 import AboutDialog from './AboutDialog';
 import { getAvatarColor } from '../utils/avatar';
 import { localizeTitle } from '../utils/lang';
+import { API_BASE, DJANGO_ORIGIN } from '../config';
+import client from '../api/client';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // Pick one background image per page load (module-level = runs once, stable across re-renders)
@@ -98,13 +100,13 @@ export default function Layout() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/auth/weekly-top/').then(r => r.json()).then(setWeeklyTop).catch(() => {});
+    fetch(`${API_BASE}/auth/weekly-top/`).then(r => r.json()).then(setWeeklyTop).catch(() => {});
   }, []);
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/qa/questions/').then(r => r.json()).catch(() => []),
-      fetch('/api/knowledge/articles/').then(r => r.json()).catch(() => []),
+      fetch(`${API_BASE}/qa/questions/`).then(r => r.json()).catch(() => []),
+      fetch(`${API_BASE}/knowledge/articles/`).then(r => r.json()).catch(() => []),
     ]).then(([qs, as]) => {
       const daysAgo = (d) => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : 0;
       const scored = [
@@ -116,37 +118,25 @@ export default function Layout() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/auth/notices/').then(r => r.json()).then(setNotices).catch(() => {});
+    fetch(`${API_BASE}/auth/notices/`).then(r => r.json()).then(setNotices).catch(() => {});
   }, []);
-
-  const token = localStorage.getItem('auth_token');
 
   async function postNotice() {
     if (!noticeTitle.trim()) return;
     setNoticePosting(true);
     try {
-      const r = await fetch('/api/auth/notices/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Token ${token}` },
-        body: JSON.stringify({ title: noticeTitle.trim(), content: noticeContent.trim() }),
-      });
-      if (r.ok) {
-        const n = await r.json();
-        setNotices(prev => [n, ...prev]);
-        setNoticeTitle('');
-        setNoticeContent('');
-        setShowNoticeForm(false);
-      }
-    } finally {
+      const n = await client.post('/auth/notices/', { title: noticeTitle.trim(), content: noticeContent.trim() }).then(r => r.data);
+      setNotices(prev => [n, ...prev]);
+      setNoticeTitle('');
+      setNoticeContent('');
+      setShowNoticeForm(false);
+    } catch { /* 提交失败：保留表单内容，让用户重试 */ } finally {
       setNoticePosting(false);
     }
   }
 
   async function deleteNotice(id) {
-    await fetch(`/api/auth/notices/${id}/`, {
-      method: 'DELETE',
-      headers: { Authorization: `Token ${token}` },
-    });
+    await client.delete(`/auth/notices/${id}/`).catch(() => {});
     setNotices(prev => prev.filter(n => n.id !== id));
   }
 
@@ -264,11 +254,13 @@ export default function Layout() {
           {/* 语言选择器 */}
           <Dropdown>
             <DropdownTrigger>
-              <motion.button whileTap={{ scale: 0.9 }} title={t('top.language')}
-                className="flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 text-xs font-semibold">
+              {/* DropdownTrigger (react-aria Button) 自己就渲染一个真实 <button>，
+                  子元素不能再是 button，否则 button 嵌 button 触发 DOM 校验警告 */}
+              <motion.span whileTap={{ scale: 0.9 }} title={t('top.language')}
+                className="flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 text-xs font-semibold cursor-pointer">
                 <i className="bi bi-translate text-sm" />
                 {lang === 'zh' ? '中' : 'EN'}
-              </motion.button>
+              </motion.span>
             </DropdownTrigger>
             <DropdownPopover>
               <DropdownMenu>
@@ -292,7 +284,7 @@ export default function Layout() {
           {user ? (
             <Dropdown>
               <DropdownTrigger>
-                <Avatar as="button" className="cursor-pointer w-7 h-7" size="sm" color="primary">
+                <Avatar className="cursor-pointer w-7 h-7" size="sm" color="primary">
                   <AvatarImage src={user.avatar || `/images/${getAvatarColor(user.username)}.jpg`} />
                   <AvatarFallback className="text-[10px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
@@ -305,7 +297,7 @@ export default function Layout() {
                   </DropdownItem>
                   <DropdownItem key="profile" onPress={() => navigate('/profile')}>个人中心</DropdownItem>
                   <DropdownItem key="settings" onPress={() => navigate('/settings')}>设置</DropdownItem>
-                  {user.is_staff && <DropdownItem key="admin" onPress={() => window.open('/admin/', '_blank')}>管理面板</DropdownItem>}
+                  {user.is_staff && <DropdownItem key="admin" onPress={() => window.open(`${DJANGO_ORIGIN}/admin/`, '_blank')}>管理面板</DropdownItem>}
                   <DropdownItem key="logout" className="text-red-500" onPress={() => { logout(); navigate('/'); }}>登出</DropdownItem>
                 </DropdownMenu>
               </DropdownPopover>

@@ -2,6 +2,7 @@ import { useState, useContext, useMemo, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@heroui/react/button";
 import { AuthContext } from "../context/AuthContext";
+import AuthTopbar from "../components/AuthTopbar";
 
 const bgImages = [
   new URL("../assets/background/bg-1.png", import.meta.url).href,
@@ -19,7 +20,7 @@ const translations = {
     subheading: "Your Intelligent Assistant",
     title: "Log in",
     usernameLabel: "Username",
-    usernamePlaceholder: "Please Enter the School ID Number",
+    usernamePlaceholder: "Please Enter the Username",
     passwordLabel: "Password",
     passwordPlaceholder: "Enter the Password",
     remember: "Remember Username",
@@ -36,7 +37,7 @@ const translations = {
     subheading: "你的智能助手~",
     title: "登录",
     usernameLabel: "用户名",
-    usernamePlaceholder: "请输入学号",
+    usernamePlaceholder: "请输入用户名",
     passwordLabel: "密码",
     passwordPlaceholder: "输入密码",
     remember: "记住用户名",
@@ -250,6 +251,10 @@ export default function Login() {
     >
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/35"></div>
+
+      {/* 登录页没有 Layout，补回一条最简 topbar：Electron 隐藏了系统标题栏，
+          没有它这页就无法拖动窗口、也没有主题切换/关于入口 */}
+      <AuthTopbar />
 
       <div style={{ position: 'relative', zIndex: 10 }}>
         {/* SHSID logo floating above card */}

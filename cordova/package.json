@@ -1,0 +1,27 @@
+{
+  "name": "openshsid-mobile",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OpenSHSID mobile app (Cordova wrapper around the React frontend)",
+  "scripts": {
+    "sync:www": "node scripts/sync-www.js",
+    "add:android": "cordova platform add android",
+    "add:ios": "cordova platform add ios",
+    "run:android": "npm run sync:www && cordova run android",
+    "run:ios": "npm run sync:www && cordova run ios",
+    "build:android": "npm run sync:www && cordova build android --release",
+    "build:ios": "npm run sync:www && cordova build ios --release"
+  },
+  "devDependencies": {
+    "cordova": "^13.0.0",
+    "cordova-android": "^15.0.0",
+    "cordova-ios": "^8.0.1",
+    "cordova-plugin-whitelist": "^1.3.5"
+  },
+  "cordova": {
+    "plugins": {
+      "cordova-plugin-whitelist": {}
+    },
+    "platforms": []
+  }
+}

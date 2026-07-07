@@ -264,11 +264,13 @@ export default function Layout() {
           {/* 语言选择器 */}
           <Dropdown>
             <DropdownTrigger>
-              <motion.button whileTap={{ scale: 0.9 }} title={t('top.language')}
-                className="flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 text-xs font-semibold">
+              {/* DropdownTrigger (react-aria Button) 自己就渲染一个真实 <button>，
+                  子元素不能再是 button，否则 button 嵌 button 触发 DOM 校验警告 */}
+              <motion.span whileTap={{ scale: 0.9 }} title={t('top.language')}
+                className="flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 text-xs font-semibold cursor-pointer">
                 <i className="bi bi-translate text-sm" />
                 {lang === 'zh' ? '中' : 'EN'}
-              </motion.button>
+              </motion.span>
             </DropdownTrigger>
             <DropdownPopover>
               <DropdownMenu>
@@ -292,7 +294,7 @@ export default function Layout() {
           {user ? (
             <Dropdown>
               <DropdownTrigger>
-                <Avatar as="button" className="cursor-pointer w-7 h-7" size="sm" color="primary">
+                <Avatar className="cursor-pointer w-7 h-7" size="sm" color="primary">
                   <AvatarImage src={user.avatar || `/images/${getAvatarColor(user.username)}.jpg`} />
                   <AvatarFallback className="text-[10px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>

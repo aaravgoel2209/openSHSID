@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 部署的后端目前是纯 HTTP（见 electron/config.js 与 frontend/.env.cordova 里的
+     openshsid.zengyuxiang.cn），Android 9+ 默认禁止明文流量。这里只放行这一个域名，
+     而不是全局 usesCleartextTraffic，避免不必要地放宽其它所有网络请求。
+     后端上了 HTTPS 之后，删掉这个域名条目（或整份文件 + config.xml 里对它的引用）即可。 -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">openshsid.zengyuxiang.cn</domain>
+    </domain-config>
+</network-security-config>

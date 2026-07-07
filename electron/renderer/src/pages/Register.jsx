@@ -2,6 +2,7 @@ import { useState, useContext, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { AuthContext } from '../context/AuthContext';
+import AuthTopbar from '../components/AuthTopbar';
 
 const bgImages = [
   new URL('../assets/background/bg-1.png', import.meta.url).href,
@@ -209,6 +210,9 @@ export default function Register() {
     <div className="min-h-screen w-full flex items-center justify-center overflow-hidden"
          style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0 bg-black/35"></div>
+
+      {/* 注册页同样没有 Layout（原因见 Login.jsx 同位置注释） */}
+      <AuthTopbar />
 
       <div style={{ position: 'relative', zIndex: 10 }}>
         <img src={new URL('../assets/shsid-logo.png', import.meta.url).href} alt="SHSID" style={{ width: 528, height: 528, position: 'absolute', bottom: 'calc(100% - 215px)', left: '50%', transform: 'translateX(-50%)', zIndex: 30, objectFit: 'contain' }} />

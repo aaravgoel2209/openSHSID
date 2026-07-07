@@ -12,6 +12,7 @@ import { useLang } from '../context/LanguageContext';
 import { localize } from '../utils/lang';
 import { renderMarkdown } from '../utils/markdown';
 import MarkdownInput from '../components/MarkdownInput';
+import { FLASK_BASE } from '../config';
 
 const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
 const avatarUrl = (name) => {
@@ -69,7 +70,7 @@ export default function ArticleDetail() {
         if (user && data.embedding) {
           client.get('/auth/profile/').then((prof) => {
             const userEmb = prof.data.embedding?.vector || Array(32).fill(0);
-            fetch('', {
+            fetch(`${FLASK_BASE}/click`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

@@ -1,10 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import client from '../api/client';
 import '../styles/Admin.css';
 
 export default function AdminDashboard() {
-  const { user, token } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,25 +17,11 @@ export default function AdminDashboard() {
       return;
     }
 
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/auth/admin/dashboard/', {
-          headers: {
-            'Authorization': `Token ${token}`,
-          },
-        });
-        if (!response.ok) throw new Error('Failed to fetch stats');
-        const data = await response.json();
-        setStats(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, [user, token, navigate]);
+    client.get('/auth/admin/dashboard/')
+      .then((r) => setStats(r.data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [user, navigate]);
 
   if (!user?.is_staff) return null;
 

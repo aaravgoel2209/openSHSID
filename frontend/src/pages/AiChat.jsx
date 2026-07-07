@@ -5,6 +5,7 @@ import { Spinner } from '@heroui/react/spinner';
 import { PaperAirplaneIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { renderMarkdown } from '../utils/markdown';
+import { FLASK_BASE } from '../config';
 
 // 读取图片并按最长边缩放，导出 JPEG base64 data URL（控制体积与 token）
 function fileToDataURL(file, maxDim = 1024) {
@@ -53,7 +54,7 @@ export default function AiChat() {
   useEffect(() => {
     if (!user) return;
     sessionRef.current = `chat-user-${user.id}`;
-    fetch(`/rei/history?session_id=${encodeURIComponent(sessionRef.current)}`)
+    fetch(`${FLASK_BASE}/rei/history?session_id=${encodeURIComponent(sessionRef.current)}`)
       .then((r) => (r.ok ? r.json() : { messages: [] }))
       .then((d) => {
         const msgs = (d.messages || [])
@@ -92,7 +93,7 @@ export default function AiChat() {
     ]);
     setLoading(true);
     try {
-      const res = await fetch('/rei/stream', {
+      const res = await fetch(`${FLASK_BASE}/rei/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question_title: '', question_content: '', trigger_content: userMsg, session_id: sessionRef.current, image: img }),

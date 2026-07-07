@@ -1,0 +1,9 @@
+# 全部由 `cordova platform add` / sync-www 脚本生成，不进版本库
+node_modules/
+platforms/
+plugins/
+www/
+*.apk
+*.aab
+*.ipa
+.cordova/

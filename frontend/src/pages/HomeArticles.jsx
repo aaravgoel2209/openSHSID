@@ -9,8 +9,7 @@ import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
 import { localizeTitle } from '../utils/lang';
-
-const FLASK_URL = '';
+import { FLASK_BASE } from '../config';
 
 export default function HomeArticles() {
   const navigate = useNavigate();
@@ -31,7 +30,7 @@ export default function HomeArticles() {
     try {
       const prof = await client.get('/auth/profile/');
       const userEmb = prof.data.embedding?.vector || Array(32).fill(0);
-      fetch(`${FLASK_URL}/click`, {
+      fetch(`${FLASK_BASE}/click`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
