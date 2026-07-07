@@ -24,7 +24,6 @@ CORS(app)
 model = load_model()
 optimizer = None
 step_count = 0
-
 _rei_model_cache = {}
 
 
