@@ -69,6 +69,14 @@ export default defineConfig(({ mode }) => {
           // 否则 /admin（Django 后台）离线时会被错误地换成 SPA 的 index.html，
           // /api /rei /click /translate 等接口也绝不能被当成页面导航处理。
           navigateFallbackDenylist: [/^\/admin/, /^\/api/, /^\/static/, /^\/rei/, /^\/click/, /^\/translate/],
+          // MathJax（~2MB）只在出现公式时才动态加载，不进预缓存以免拖慢 SW 安装；
+          // 首次用到后按 CacheFirst 运行时缓存，之后离线也能排版公式。
+          globIgnores: ['**/tex-mml-svg-*.js'],
+          runtimeCaching: [{
+            urlPattern: /\/assets\/tex-mml-svg-.*\.js$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'mathjax', expiration: { maxEntries: 2 } },
+          }],
         },
         devOptions: {
           // dev 模式默认不启用 SW，避免本地开发时缓存干扰热更新

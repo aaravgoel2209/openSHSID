@@ -15,10 +15,11 @@
     "@heroui/styles": "^3.1.0",
     "@khvicha/react-liquid-glass": "^1.0.14",
     "axios": "^1.16.1",
+    "bootstrap-icons": "^1.13.1",
     "dompurify": "^3.4.11",
     "framer-motion": "^12.40.0",
     "marked": "^18.0.5",
-    "bootstrap-icons": "^1.13.1",
+    "mathjax": "^3.2.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.16.0"

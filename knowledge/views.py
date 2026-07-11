@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -158,3 +158,136 @@ def like_article(request, pk):
     else:
         article.likes.add(request.user)
     return Response({'liked': article.likes.filter(id=request.user.id).exists(), 'count': article.likes.count()})
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def ocr_import(request):
+    """【占位 / Placeholder】文档 OCR → 知识库。
+
+    当前实现：上传一份 PDF/图片 → 调本地模型服务 OCR → 返回 Markdown 文本；
+    可选 save=true 时把文本直接落库成一篇文章（标题取文件名）。
+
+    尚未接入（后续任务）：
+      1. LinkedClassroom PDF 自动拉取（走 crawler 的 download 代理），免手动上传；
+      2. Rei 大模型对 OCR 文本做摘要/清洗，再作为文章正文。
+    这两步落地前，本端点仅做「识别 + 原样落库」，作为流程预留桩。
+    """
+    from .ocr_client import ocr_document, service_available
+
+    upload = request.FILES.get('file')
+    if upload is None:
+        return Response({'error': '请通过 multipart 的 file 字段上传 PDF/图片'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    if not service_available():
+        return Response(
+            {'error': '模型服务离线（localhost:5000），OCR 暂不可用', 'service': 'offline'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    text = ocr_document(upload.read(), upload.name)
+    if text is None:
+        return Response(
+            {'error': 'OCR 未就绪或识别失败（模型后端需 GPU + 权重）', 'service': 'unavailable'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    result = {'filename': upload.name, 'text': text, 'chars': len(text)}
+
+    # 占位：summary 步骤待接入 AI，先留空
+    if str(request.data.get('save', '')).lower() in ('1', 'true', 'yes') and text.strip():
+        title = upload.name.rsplit('.', 1)[0][:200] or 'OCR 导入'
+        article = Article.objects.create(
+            title=title,
+            content=text,
+            author=request.user if request.user.is_authenticated else None,
+            author_name=getattr(request.user, 'username', ''),
+        )
+        result['article_id'] = article.id
+        result['saved'] = True
+
+    return Response(result)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ocr_scan(request):
+    """工具箱·OCR 扫描：上传 PDF/图片 → OCR → 返回带版面框的可勾选区域。
+
+    返回：{filename, pages:[{index,image}], regions:[{id,page,type,bbox,text}], text}
+    bbox 为 0-999 归一化坐标，前端据此在页面预览图上画框 + 勾选。
+    OCR 服务离线/未就绪时返回 503（前端据此提示）。
+    """
+    from .ocr_client import ocr_document_structured, service_available
+
+    upload = request.FILES.get('file')
+    if upload is None:
+        return Response({'error': '请通过 multipart 的 file 字段上传 PDF/图片'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    if not service_available():
+        return Response({'error': 'OCR 服务离线，暂不可用', 'service': 'offline'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    data = ocr_document_structured(upload.read(), upload.name)
+    if data is None:
+        return Response({'error': 'OCR 未就绪或识别失败（模型后端需 GPU + 权重）', 'service': 'unavailable'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    return Response({
+        'filename': upload.name,
+        'pages': data['pages'],
+        'regions': data['regions'],
+        'text': data['text'],
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ocr_save(request):
+    """工具箱·OCR 扫描：把勾选文本存入知识库，返回新建文章 id。
+
+    请求体：{"title": "可选标题", "text": "正文"}
+    """
+    text = (request.data.get('text') or '').strip()
+    title = (request.data.get('title') or '').strip() or 'OCR 导入'
+    if not text:
+        return Response({'error': '没有可保存的文本'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from OpenSHSID_backend.moderation import blocked_words_error
+    err = blocked_words_error(title, text)
+    if err:
+        return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
+
+    article = Article.objects.create(
+        title=title[:200],
+        content=text,
+        author=request.user if request.user.is_authenticated else None,
+        author_name=getattr(request.user, 'username', ''),
+    )
+    from OpenSHSID_backend.translation import translate_instance_async
+    translate_instance_async(article)
+    return Response({'article_id': article.id, 'title': article.title}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ocr_summarize(request):
+    """工具箱·OCR 扫描：把用户勾选的文本交给主聊天模型摘要并返回。
+
+    请求体：{"text": "...", "instruction": "可选"}
+    返回：{summary}。主聊天模型不可用时返回 503。
+    """
+    from .ocr_client import summarize
+
+    text = (request.data.get('text') or '').strip()
+    instruction = (request.data.get('instruction') or '').strip()
+    if not text:
+        return Response({'error': '没有可摘要的文本'}, status=status.HTTP_400_BAD_REQUEST)
+
+    result = summarize(text, instruction)
+    if result is None:
+        return Response({'error': '主聊天模型不可用，摘要失败', 'service': 'unavailable'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return Response({'summary': result})

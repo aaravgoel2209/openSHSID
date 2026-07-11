@@ -8,7 +8,7 @@ import {
   createComment, deleteComment, toggleCommentLike,
 } from '../api/postbar';
 import { AuthContext } from '../context/AuthContext';
-import { renderMarkdown } from '../utils/markdown';
+import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
 
 export default function PostDetail() {
@@ -110,7 +110,7 @@ export default function PostDetail() {
           )}
         </div>
 
-        <div className="md-body text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
+        <MarkdownView className="md-body text-gray-700 dark:text-gray-300" markdown={post.content} />
       </div>
 
       {/* Comment box */}
@@ -199,7 +199,7 @@ function CommentCard({ comment, post, user, onToggleLike, onChanged }) {
 
   return (
     <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-5 transition-all duration-200 hover:border-gray-300 dark:hover:border-slate-700">
-      <div className="md-body text-gray-800 dark:text-gray-200" dangerouslySetInnerHTML={{ __html: renderMarkdown(comment.content) }} />
+      <MarkdownView className="md-body text-gray-800 dark:text-gray-200" markdown={comment.content} />
 
       <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
         <span className="font-medium text-gray-700 dark:text-gray-300">{comment.author_name || '匿名'}</span>

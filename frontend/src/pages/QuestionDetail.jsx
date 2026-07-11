@@ -9,7 +9,7 @@ import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
 import { localize } from '../utils/lang';
-import { renderMarkdown } from '../utils/markdown';
+import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
 
 export default function QuestionDetail() {
@@ -161,7 +161,7 @@ export default function QuestionDetail() {
         </div>
 
         {/* Content */}
-        <div className="md-body text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: renderMarkdown(display.content) }} />
+        <MarkdownView className="md-body text-gray-700 dark:text-gray-300" markdown={display.content} />
 
         {/* Debug info (embedding/heat) */}
         {question.embedding && (
@@ -280,7 +280,7 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
         </div>
       ) : (
         <div className="md-body text-gray-800 dark:text-gray-200">
-          <span dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.content) }} />
+          <MarkdownView as="span" markdown={answer.content} />
           {answer.is_streaming && (
             <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 bg-indigo-500 animate-pulse" aria-hidden="true" />
           )}

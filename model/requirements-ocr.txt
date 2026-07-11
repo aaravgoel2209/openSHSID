@@ -1,0 +1,13 @@
+# Unlimited-OCR (baidu/Unlimited-OCR) 推理依赖。
+# 仅在带 CUDA GPU 的模型后端机器上安装；主 Django 服务不需要这些。
+# 版本对齐官方 model card 测试环境（Python 3.12 + CUDA 12.9）。
+torch==2.10.0
+torchvision==0.25.0
+transformers==4.57.1
+Pillow==12.1.1
+matplotlib==3.10.8
+einops==0.8.2
+addict==2.4.0
+easydict==1.13
+pymupdf==1.27.2.2
+psutil==7.2.2

@@ -4,7 +4,7 @@ import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { PaperAirplaneIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
-import { renderMarkdown } from '../utils/markdown';
+import MarkdownView from '../components/MarkdownView';
 import { FLASK_BASE } from '../config';
 
 // 读取图片并按最长边缩放，导出 JPEG base64 data URL（控制体积与 token）
@@ -185,7 +185,7 @@ export default function AiChat() {
                 <Spinner size="sm" />
               ) : (
                 <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                  <span dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
+                  <MarkdownView as="span" markdown={m.content} />
                   {m.streaming && (
                     <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 align-middle bg-indigo-500 animate-pulse" aria-hidden="true" />
                   )}

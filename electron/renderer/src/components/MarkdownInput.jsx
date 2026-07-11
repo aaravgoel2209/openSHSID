@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useLang } from '../context/LanguageContext';
-import { renderMarkdown } from '../utils/markdown';
+import MarkdownView from './MarkdownView';
 
 // Markdown 输入框：工具栏（加粗/斜体/代码/链接/列表…）+ 编辑/预览切换。
 // 受控组件：onChange 直接收新字符串（非事件对象）。
@@ -117,7 +117,7 @@ export default function MarkdownInput({
       {preview ? (
         <div className={`md-body px-3 py-2 text-sm text-gray-700 dark:text-gray-300 ${compact ? 'min-h-[3.5rem]' : 'min-h-[5rem]'}`}>
           {value.trim()
-            ? <div dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }} />
+            ? <MarkdownView markdown={value} />
             : <p className="text-gray-400">{t('md.previewEmpty')}</p>}
         </div>
       ) : (

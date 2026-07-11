@@ -158,6 +158,11 @@ CSRF_TRUSTED_ORIGINS += [
     o.strip() for o in _os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
 ]
 
+# 模型/OCR 服务地址。OCR 跑在带 GPU 的机器上（Unlimited-OCR），主聊天模型在本机。
+# 均可用同名环境变量覆盖。
+OCR_SERVICE_URL = _os.environ.get('OCR_SERVICE_URL', 'http://192.168.2.103:5001')
+MODEL_SERVICE_URL = _os.environ.get('MODEL_SERVICE_URL', 'http://localhost:5000')
+
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

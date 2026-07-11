@@ -359,6 +359,48 @@ def translate_endpoint():
         return jsonify({"error": str(e)}), 500
 
 
+def _summarize_text(text, instruction=''):
+    """调用主聊天模型对（可能来自 OCR 的）文本做中文摘要，返回纯摘要文本。"""
+    client, model_name = _get_rei_client()
+    system_prompt = (
+        '你是一个文档摘要助手。请阅读用户提供的文本（可能是 OCR 提取、含少量噪声与排版符号），'
+        '生成条理清晰的中文摘要：先一句话总述，再用要点列出关键信息。'
+        '忽略明显的 OCR 噪声与坐标/标记符号，只输出摘要本身，不要额外说明。'
+    )
+    user_content = (f'{instruction}\n\n' if instruction else '') + text
+    max_tokens = max(512, min(8192, len(text)))
+    logger.info(f'[Summarize] 摘要 {len(text)} 字符')
+    resp = client.chat.completions.create(
+        model=model_name,
+        messages=[
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_content},
+        ],
+        max_tokens=max_tokens,
+        temperature=0.3,
+        stream=False,
+    )
+    content = (resp.choices[0].message.content or '').strip()
+    return _THINK_RE.sub('', content).strip()
+
+
+@app.route("/summarize", methods=["POST"])
+def summarize_endpoint():
+    """文本摘要。请求体：{"text": "...", "instruction": "可选的额外要求"}
+    返回：{"summary": "..."}。主聊天模型不可用时返回 500（调用方可优雅降级）。"""
+    try:
+        data = request.get_json() or {}
+        text = (data.get("text") or "").strip()
+        instruction = (data.get("instruction") or "").strip()
+        if not text:
+            return jsonify({"error": "text 不能为空"}), 400
+        summary = _summarize_text(text, instruction)
+        return jsonify({"summary": summary})
+    except Exception as e:
+        logger.error(f'[Summarize] 端点处理失败: {e}', exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/rei/reply", methods=["POST"])
 def rei_reply_endpoint():
     try:

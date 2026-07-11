@@ -10,7 +10,7 @@ import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
 import { localize } from '../utils/lang';
-import { renderMarkdown } from '../utils/markdown';
+import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
 import { FLASK_BASE } from '../config';
 
@@ -200,7 +200,7 @@ export default function ArticleDetail() {
       </div>
 
       {/* Content */}
-      <div className="md-body bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 hover:shadow-sm hover:border-gray-300 dark:hover:border-slate-700 transition-all duration-200 text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: renderMarkdown(display.content) }} />
+      <MarkdownView className="md-body bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 hover:shadow-sm hover:border-gray-300 dark:hover:border-slate-700 transition-all duration-200 text-gray-700 dark:text-gray-300" markdown={display.content} />
 
       {/* Debug info */}
       {article.embedding && (
@@ -319,7 +319,7 @@ function CommentCard({ comment, article, user, t, onToggleLike, onChanged }) {
   return (
     <div className="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-5 transition-all duration-200 hover:border-gray-300 dark:hover:border-slate-700">
       {/* Content */}
-      <div className="md-body text-gray-800 dark:text-gray-200" dangerouslySetInnerHTML={{ __html: renderMarkdown(comment.content) }} />
+      <MarkdownView className="md-body text-gray-800 dark:text-gray-200" markdown={comment.content} />
 
       {/* Footer */}
       <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">

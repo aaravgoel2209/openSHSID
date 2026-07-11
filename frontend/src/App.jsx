@@ -12,6 +12,8 @@ import KnowledgeBase from './pages/KnowledgeBase';
 import ArticleDetail from './pages/ArticleDetail';
 import CreateArticle from './pages/CreateArticle';
 import PostbarHome from './pages/PostbarHome';
+import Toolbox from './pages/Toolbox';
+import OcrScan from './pages/OcrScan';
 import SubbarDetail from './pages/SubbarDetail';
 import PostDetail from './pages/PostDetail';
 import Login from './pages/Login';
@@ -55,6 +57,8 @@ export default function App() {
                 <Route path="/postbar" element={<PostbarHome />} />
                 <Route path="/postbar/b/:subbarId" element={<SubbarDetail />} />
                 <Route path="/postbar/posts/:id" element={<PostDetail />} />
+                <Route path="/toolbox" element={<Toolbox />} />
+                <Route path="/toolbox/ocr" element={<OcrScan />} />
                 <Route path="/chat" element={<ChatList />} />
                 <Route path="/chat/:userId" element={<ChatDetail />} />
                 <Route path="/chat/ai" element={<AiChat />} />

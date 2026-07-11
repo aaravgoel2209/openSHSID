@@ -55,7 +55,31 @@ function renderRaw(text) {
   }
 }
 
+// 把 LaTeX 公式段先挖出来占位，避免 marked 把 \[ \] \( \) 当成 markdown 转义
+// （会被吃成裸括号，导致 MathJax 认不出定界符）。markdown/净化之后再原样填回，交给 MathJax 排版。
+const MATH_PATTERNS = [
+  /\$\$[\s\S]+?\$\$/g,          // $$...$$
+  /\\\[[\s\S]+?\\\]/g,          // \[...\]
+  /\\\([\s\S]+?\\\)/g,          // \(...\)
+  /\$(?!\s)[^\n$]+?(?<!\s)\$/g, // $...$（两端非空白，尽量避免误伤 "$5 ... $10"）
+];
+
+function protectMath(text) {
+  const store = [];
+  let out = text;
+  for (const re of MATH_PATTERNS) {
+    out = out.replace(re, (m) => `%%MJX${store.push(m) - 1}%%`);
+  }
+  return { out, store };
+}
+
+function restoreMath(html, store) {
+  return html.replace(/%%MJX(\d+)%%/g, (_, i) => store[+i] ?? '');
+}
+
 export function renderMarkdown(text) {
   if (!text) return '';
-  return DOMPurify.sanitize(renderRaw(text), PURIFY_OPTS);
+  const { out, store } = protectMath(text);
+  const html = DOMPurify.sanitize(renderRaw(out), PURIFY_OPTS);
+  return store.length ? restoreMath(html, store) : html;
 }

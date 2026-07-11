@@ -34,6 +34,14 @@ local_settings.py
 /model/*.gguf
 /model/data/local.db
 /model/data/log.jsonl
+# Downloaded OCR model (baidu/Unlimited-OCR) — multi-GB weights + vendored code, not versioned.
+# ocr_infer.py / ocr_service.py / requirements-ocr.txt live in /model (not /model/ocr) and stay tracked.
+/model/ocr/
+# Model weight/binary formats anywhere under model/ (belt-and-suspenders)
+/model/**/*.safetensors
+/model/**/*.bin
+/model/**/*.onnx
+/model/**/*.h5
 
 # ── IDE ──────────────────────────────────────────────────────────────────────
 .idea/
@@ -60,3 +68,5 @@ local_settings.py
 .env.*
 !.env.example
 secrets.py
+/model/shattered-1.pdf
+/model/shattered-2.pdf

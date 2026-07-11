@@ -26,6 +26,7 @@ const NAV_LINKS = [
   { to: '/qa', key: 'nav.qa', icon: 'bi-chat-dots-fill' },
   { to: '/postbar', key: 'nav.postbar', icon: 'bi-people-fill' },
   { to: '/knowledge', key: 'nav.knowledge', icon: 'bi-journal-bookmark-fill' },
+  { to: '/toolbox', key: 'nav.toolbox', icon: 'bi-tools' },
   { to: '/chat', key: 'nav.chat', icon: 'bi-chat-left-text-fill' },
   { to: '/mailbox', key: 'nav.mailbox', icon: 'bi-envelope-fill' },
   { to: '/linkedclassroom', key: 'nav.lc', icon: 'bi-grid-3x3-gap-fill' },
