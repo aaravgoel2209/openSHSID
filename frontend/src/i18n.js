@@ -5,7 +5,7 @@ export const STRINGS = {
     // 导航
     'nav.home': '首页',
     'nav.qa': '问答',
-    'nav.postbar': '贴吧',
+    'nav.postbar': '闲聊贴吧',
     'nav.knowledge': '知识库',
     'postbar.team': '吧务团队',
     'postbar.owner': '吧主',

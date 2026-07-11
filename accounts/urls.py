@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin/users/', admin_views.admin_users, name='admin_users'),
     path('admin/users/<int:user_id>/', admin_views.admin_user_detail, name='admin_user_detail'),
     path('admin/content/', admin_views.admin_content, name='admin_content'),
+    path('admin/content/<str:kind>/<int:obj_id>/', admin_views.admin_content_delete, name='admin_content_delete'),
     path('notices/', views.notices, name='notices'),
     path('notices/<int:notice_id>/', views.notice_detail, name='notice_detail'),
     path('weekly-top/', views.weekly_top_users, name='weekly_top_users'),

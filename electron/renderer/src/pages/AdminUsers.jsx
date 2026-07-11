@@ -1,10 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import client from '../api/client';
 import '../styles/Admin.css';
 
 export default function AdminUsers() {
-  const { user, token } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,25 +19,11 @@ export default function AdminUsers() {
       return;
     }
 
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/auth/admin/users/', {
-          headers: {
-            'Authorization': `Token ${token}`,
-          },
-        });
-        if (!response.ok) throw new Error('Failed to fetch users');
-        const data = await response.json();
-        setUsers(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, [user, token, navigate]);
+    client.get('/auth/admin/users/')
+      .then((r) => setUsers(r.data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [user, navigate]);
 
   const handleEdit = (u) => {
     setEditingId(u.id);
@@ -50,16 +37,7 @@ export default function AdminUsers() {
 
   const handleSave = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/admin/users/${userId}/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editData),
-      });
-      if (!response.ok) throw new Error('Failed to update user');
-      const updated = await response.json();
+      const updated = await client.patch(`/auth/admin/users/${userId}/`, editData).then((r) => r.data);
       setUsers(users.map(u => u.id === userId ? updated : u));
       setEditingId(null);
     } catch (err) {
@@ -70,13 +48,7 @@ export default function AdminUsers() {
   const handleDelete = async (userId) => {
     if (!window.confirm('确定要删除该用户吗？')) return;
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/admin/users/${userId}/`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Token ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to delete user');
+      await client.delete(`/auth/admin/users/${userId}/`);
       setUsers(users.filter(u => u.id !== userId));
     } catch (err) {
       setError(err.message);

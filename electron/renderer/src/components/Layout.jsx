@@ -315,7 +315,8 @@ export default function Layout() {
                   </DropdownItem>
                   <DropdownItem key="profile" onPress={() => navigate('/profile')}>个人中心</DropdownItem>
                   <DropdownItem key="settings" onPress={() => navigate('/settings')}>设置</DropdownItem>
-                  {user.is_staff && <DropdownItem key="admin" onPress={() => window.open('/admin/', '_blank')}>管理面板</DropdownItem>}
+                  {user.is_staff && <DropdownItem key="admin" onPress={() => navigate('/admin')}>管理面板</DropdownItem>}
+                  {user.is_staff && <DropdownItem key="django-admin" onPress={() => window.open('/admin/', '_blank')}>数据库后台</DropdownItem>}
                   <DropdownItem key="logout" className="text-red-500" onPress={() => { logout(); navigate('/'); }}>登出</DropdownItem>
                 </DropdownMenu>
               </DropdownPopover>
