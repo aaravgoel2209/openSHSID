@@ -11,6 +11,9 @@ import AskQuestion from './pages/AskQuestion';
 import KnowledgeBase from './pages/KnowledgeBase';
 import ArticleDetail from './pages/ArticleDetail';
 import CreateArticle from './pages/CreateArticle';
+import PostbarHome from './pages/PostbarHome';
+import SubbarDetail from './pages/SubbarDetail';
+import PostDetail from './pages/PostDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -49,6 +52,9 @@ export default function App() {
                 <Route path="/knowledge" element={<KnowledgeBase />} />
                 <Route path="/knowledge/create" element={<CreateArticle />} />
                 <Route path="/knowledge/:id" element={<ArticleDetail />} />
+                <Route path="/postbar" element={<PostbarHome />} />
+                <Route path="/postbar/b/:subbarId" element={<SubbarDetail />} />
+                <Route path="/postbar/posts/:id" element={<PostDetail />} />
                 <Route path="/chat" element={<ChatList />} />
                 <Route path="/chat/:userId" element={<ChatDetail />} />
                 <Route path="/chat/ai" element={<AiChat />} />

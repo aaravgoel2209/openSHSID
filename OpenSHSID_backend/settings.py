@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'chat',
     'notifications',
     'crawler',
+    'postbar',
 ]
 
 # LinkedClassroom credentials (override with env vars or per-request credentials in the API)

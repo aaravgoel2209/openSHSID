@@ -11,6 +11,7 @@ import { useUI } from '../context/UIContext';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
 import AboutDialog from './AboutDialog';
+import SubbarTeamPanel from './SubbarTeamPanel';
 import { getAvatarColor } from '../utils/avatar';
 import { localizeTitle } from '../utils/lang';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -23,6 +24,7 @@ const RANDOM_BG = _bgUrls.length > 0 ? _bgUrls[Math.floor(Math.random() * _bgUrl
 const NAV_LINKS = [
   { to: '/', key: 'nav.home', icon: 'bi-house-fill' },
   { to: '/qa', key: 'nav.qa', icon: 'bi-chat-dots-fill' },
+  { to: '/postbar', key: 'nav.postbar', icon: 'bi-people-fill' },
   { to: '/knowledge', key: 'nav.knowledge', icon: 'bi-journal-bookmark-fill' },
   { to: '/chat', key: 'nav.chat', icon: 'bi-chat-left-text-fill' },
   { to: '/mailbox', key: 'nav.mailbox', icon: 'bi-envelope-fill' },
@@ -46,6 +48,12 @@ export default function Layout() {
     return idx >= 0 ? idx : 0;
   }, [location.pathname]);
   const prevIndex = useRef(navIndex);
+
+  // 当前是否在浏览某个子吧 → 右栏显示「吧务团队」
+  const activeSubbarId = useMemo(() => {
+    const m = location.pathname.match(/^\/postbar\/b\/(\d+)/);
+    return m ? m[1] : null;
+  }, [location.pathname]);
 
   const [hotItems, setHotItems] = useState([]);
   const [weeklyTop, setWeeklyTop] = useState([]);
@@ -401,6 +409,9 @@ export default function Layout() {
               {now.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
             </div>
           </GlassPanel>
+
+          {/* 吧务团队（仅在子吧页显示） */}
+          {activeSubbarId && <SubbarTeamPanel subbarId={activeSubbarId} />}
 
           {/* Your Contributions */}
           {user && (
