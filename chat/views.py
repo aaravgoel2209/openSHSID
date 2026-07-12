@@ -25,7 +25,7 @@ def conversation_list(request):
         if last_msg:
             other = last_msg.sender if last_msg.sender != request.user else last_msg.recipient
             profile = getattr(other, 'profile', None)
-            avatar = request.build_absolute_uri(profile.avatar.url) if (profile and profile.avatar) else None
+            avatar = profile.avatar.url if (profile and profile.avatar) else None
             conversations.append({
                 'user_id': other.id,
                 'username': other.username,
@@ -76,6 +76,6 @@ def user_search(request):
 
     def _avatar(u):
         profile = getattr(u, 'profile', None)
-        return request.build_absolute_uri(profile.avatar.url) if (profile and profile.avatar) else None
+        return profile.avatar.url if (profile and profile.avatar) else None
 
     return Response([{'id': u.id, 'username': u.username, 'avatar': _avatar(u)} for u in users])

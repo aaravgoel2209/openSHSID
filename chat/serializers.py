@@ -2,10 +2,12 @@ from rest_framework import serializers
 from .models import Message
 
 
-def _avatar_url(user, request):
+def _avatar_url(user, request=None):
+    # 根相对路径即可（见 accounts.serializers.get_avatar 的说明）；request 参数保留
+    # 以兼容既有调用点，但不再用它拼绝对地址。
     profile = getattr(user, 'profile', None)
     if profile and profile.avatar:
-        return request.build_absolute_uri(profile.avatar.url) if request else profile.avatar.url
+        return profile.avatar.url
     return None
 
 

@@ -38,10 +38,13 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.question_set.count()
 
     def get_avatar(self, obj):
-        request = self.context.get('request')
+        # 返回根相对路径（/media/...），不用 build_absolute_uri：后者会把请求里看到的
+        # Host 写进 URL。前端经 Vite 代理（changeOrigin）或反代访问时，那个 Host 是
+        # localhost:19424 之类的内部地址，导致网页端去请求 localhost 而非服务器。
+        # 相对路径交给浏览器按 SPA 所在源解析；Cordova 端再由 resolveAvatar 挂到公网域名。
         profile = getattr(obj, 'profile', None)
         if profile and profile.avatar:
-            return request.build_absolute_uri(profile.avatar.url) if request else profile.avatar.url
+            return profile.avatar.url
         return None
 
     def get_embedding(self, obj):

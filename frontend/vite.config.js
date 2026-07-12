@@ -114,6 +114,12 @@ export default defineConfig(({ mode }) => {
           target: 'http://localhost:19424',
           changeOrigin: true,
         },
+        // 用户上传的媒体（头像等）。序列化器返回根相对路径 /media/...，
+        // 由本代理转发到 Django，这样网页端按当前源解析、不会去打 localhost:19424。
+        '/media': {
+          target: 'http://localhost:19424',
+          changeOrigin: true,
+        },
         '/rei': {
           target: 'http://127.0.0.1:5000',
           changeOrigin: true,
