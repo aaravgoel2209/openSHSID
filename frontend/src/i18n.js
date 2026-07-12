@@ -33,6 +33,11 @@ export const STRINGS = {
     'common.translating': '翻译中…',
     'common.showOriginal': '显示原文',
     'common.showTranslation': '显示译文',
+    // 发布成功提示（右上角弹出）
+    'toast.articlePublished': '文章已发布',
+    'toast.questionPublished': '问题已发布',
+    'toast.postPublished': '帖子已发布',
+    'toast.view': '查看',
     // 列表页
     'articles.title': '知识库',
     'articles.count': '篇文章',
@@ -132,6 +137,11 @@ export const STRINGS = {
     'common.translating': 'Translating…',
     'common.showOriginal': 'Show original',
     'common.showTranslation': 'Show translation',
+    // Publish-success toast (top-right)
+    'toast.articlePublished': 'Article published',
+    'toast.questionPublished': 'Question posted',
+    'toast.postPublished': 'Post published',
+    'toast.view': 'View',
     'articles.title': 'Knowledge Base',
     'articles.count': 'articles',
     'articles.publish': 'New article',

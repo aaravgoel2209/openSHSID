@@ -3,6 +3,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { UIProvider } from './context/UIContext';
+import { ToastProvider } from './context/ToastContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import HomeArticles from './pages/HomeArticles';
@@ -39,6 +40,7 @@ export default function App() {
         <LanguageProvider>
         <AuthProvider>
           <UIProvider>
+            <ToastProvider>
             <Routes>
               {/* Auth pages — no Layout wrapper */}
               <Route path="/login" element={<Login />} />
@@ -75,6 +77,7 @@ export default function App() {
                 <Route path="/linkedclassroom/:courseId" element={<LinkedClassroomCourse />} />
               </Route>
             </Routes>
+            </ToastProvider>
           </UIProvider>
         </AuthProvider>
         </LanguageProvider>

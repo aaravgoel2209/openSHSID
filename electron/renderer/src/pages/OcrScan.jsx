@@ -9,6 +9,7 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import { ocrScan, summarizeText, saveToKnowledge } from '../api/toolbox';
 import MarkdownView from '../components/MarkdownView';
+import { copyText as copyToClipboard } from '../utils/clipboard';
 
 const TYPE_LABEL = {
   title: '标题', text: '正文', table: '表格', formula: '公式',
@@ -34,8 +35,10 @@ export default function OcrScan() {
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState('');
   const [copied, setCopied] = useState(false);
+  const [textCopied, setTextCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(null);
+  const [title, setTitle] = useState('');
 
   const reset = () => {
     setPages(null); setRegions([]); setSelected(new Set());
@@ -46,6 +49,7 @@ export default function OcrScan() {
     if (!f) return;
     reset();
     setFile(f);
+    setTitle((f.name || '').replace(/\.[^.]+$/, '')); // 用文件名作为默认标题
     setScanning(true);
     try {
       const data = await ocrScan(f);
@@ -89,8 +93,8 @@ export default function OcrScan() {
     if (!text) return;
     setSaving(true); setSaved(null); setError('');
     try {
-      const title = (file?.name || 'OCR 导入').replace(/\.[^.]+$/, '');
-      setSaved(await saveToKnowledge(text, title));
+      const finalTitle = title.trim() || (file?.name || 'OCR 导入').replace(/\.[^.]+$/, '');
+      setSaved(await saveToKnowledge(text, finalTitle));
     } catch (e) {
       setError(e.response?.data?.error || '保存失败');
     } finally {
@@ -98,9 +102,23 @@ export default function OcrScan() {
     }
   };
 
-  const copySummary = () => navigator.clipboard.writeText(summary).then(() => {
-    setCopied(true); setTimeout(() => setCopied(false), 1500);
-  });
+  const copySummary = async () => {
+    if (await copyToClipboard(summary)) {
+      setCopied(true); setTimeout(() => setCopied(false), 1500);
+    } else {
+      setError('复制失败，请手动选择文本复制');
+    }
+  };
+
+  const copyText = async () => {
+    const text = selectedText();
+    if (!text) return;
+    if (await copyToClipboard(text)) {
+      setTextCopied(true); setTimeout(() => setTextCopied(false), 1500);
+    } else {
+      setError('复制失败，请手动选择文本复制');
+    }
+  };
 
   if (!user) {
     return (
@@ -160,26 +178,61 @@ export default function OcrScan() {
       {pages && !scanning && (
         <>
           {/* 操作条 */}
-          <div className="sticky top-2 z-10 flex flex-wrap items-center gap-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-gray-200/80 dark:border-slate-800/80 rounded-xl px-4 py-2.5 mb-4 shadow-sm">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-indigo-500" />
-              已选 {selected.size}/{regions.length}
-            </label>
-            <button onClick={() => setShowList((v) => !v)} className="text-xs text-gray-500 hover:text-indigo-500 transition-colors">
-              {showList ? '隐藏文本列表' : '查看文本列表'}
-            </button>
-            <div className="flex-1" />
-            <Button size="sm" color="primary" variant="flat" onPress={handleSummarize}
-              isLoading={summarizing} isDisabled={summarizing || selected.size === 0}
-              startContent={!summarizing && <SparklesIcon className="w-4 h-4" />}>
-              生成摘要
-            </Button>
-            <Button size="sm" color="primary" onPress={handleSave}
-              isLoading={saving} isDisabled={saving || selected.size === 0}
-              startContent={!saving && <BookmarkIcon className="w-4 h-4" />}>
-              存入知识库
-            </Button>
+          <div className="sticky top-2 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-gray-200/80 dark:border-slate-800/80 rounded-xl px-4 py-2.5 mb-4 shadow-sm space-y-2.5">
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 accent-indigo-500" />
+                已选 {selected.size}/{regions.length}
+              </label>
+              <button onClick={() => setShowList((v) => !v)} className="text-xs text-gray-500 hover:text-indigo-500 transition-colors">
+                {showList ? '隐藏文本列表' : '查看文本列表'}
+              </button>
+              <div className="flex-1" />
+              <Button size="sm" variant="flat" onPress={copyText} isDisabled={selected.size === 0}
+                startContent={textCopied ? <CheckIcon className="w-4 h-4" /> : <ClipboardIcon className="w-4 h-4" />}>
+                {textCopied ? '已复制' : '复制文本'}
+              </Button>
+              <Button size="sm" color="primary" variant="flat" onPress={handleSummarize}
+                isLoading={summarizing} isDisabled={summarizing || selected.size === 0}
+                startContent={!summarizing && <SparklesIcon className="w-4 h-4" />}>
+                生成摘要
+              </Button>
+              <Button size="sm" color="primary" onPress={handleSave}
+                isLoading={saving} isDisabled={saving || selected.size === 0}
+                startContent={!saving && <BookmarkIcon className="w-4 h-4" />}>
+                存入知识库
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">标题</span>
+              <input
+                type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+                placeholder="存入知识库时的文章标题"
+                className="flex-1 min-w-0 text-sm rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+              />
+            </div>
           </div>
+
+          {/* 摘要输出（紧跟操作条下方） */}
+          {(summarizing || summary) && (
+            <div className="mb-4 bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                  <SparklesIcon className="w-4 h-4 text-indigo-500" /> AI 摘要
+                </h3>
+                {summary && (
+                  <button onClick={copySummary} className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-500 transition-colors">
+                    <ClipboardIcon className="w-3.5 h-3.5" />{copied ? '已复制' : '复制'}
+                  </button>
+                )}
+              </div>
+              {summarizing && !summary ? (
+                <div className="flex items-center gap-2 text-gray-400 text-sm"><Spinner size="sm" /> 正在总结…</div>
+              ) : (
+                <MarkdownView className="md-body text-gray-700 dark:text-gray-300" markdown={summary} />
+              )}
+            </div>
+          )}
 
           {saved && (
             <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-sm rounded-lg p-3 mb-4 flex items-center gap-2">
@@ -254,27 +307,6 @@ export default function OcrScan() {
             </div>
           )}
         </>
-      )}
-
-      {/* 摘要输出 */}
-      {(summarizing || summary) && (
-        <div className="mt-5 bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-              <SparklesIcon className="w-4 h-4 text-indigo-500" /> AI 摘要
-            </h3>
-            {summary && (
-              <button onClick={copySummary} className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-500 transition-colors">
-                <ClipboardIcon className="w-3.5 h-3.5" />{copied ? '已复制' : '复制'}
-              </button>
-            )}
-          </div>
-          {summarizing && !summary ? (
-            <div className="flex items-center gap-2 text-gray-400 text-sm"><Spinner size="sm" /> 正在总结…</div>
-          ) : (
-            <MarkdownView className="md-body text-gray-700 dark:text-gray-300" markdown={summary} />
-          )}
-        </div>
       )}
     </div>
   );

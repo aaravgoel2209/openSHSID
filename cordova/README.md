@@ -77,6 +77,14 @@ should not be exempted once it isn't needed.
 Requires the Cordova CLI plus each platform's native SDK (Android Studio /
 `ANDROID_HOME` for Android; Xcode + CocoaPods for iOS, macOS only).
 
+The Android npm scripts (`add:android` / `run:android` / `build:android`) run
+through `scripts/cordova-android.js`, which resolves `ANDROID_HOME` and
+`JAVA_HOME` (JDK 21) for Gradle — using those env vars if set, otherwise
+auto-detecting the SDK at `%LOCALAPPDATA%\Android\Sdk` and a JDK under
+`C:\Program Files\Java`. So a bare `npm run build:android` works without
+exporting anything first. Check what got resolved with `npm run env:android`;
+override by setting `ANDROID_HOME` / `JAVA_HOME` before the command.
+
 ```bash
 cd cordova
 npm install                # installs cordova-cli, platforms, plugins as local devDeps

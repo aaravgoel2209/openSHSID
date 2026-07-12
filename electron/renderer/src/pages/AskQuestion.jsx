@@ -8,12 +8,16 @@ import { TextArea } from '@heroui/react/textarea';
 import { createQuestion } from '../api/qa';
 import { getLabels } from '../api/labels';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { useLang } from '../context/LanguageContext';
 import client from '../api/client';
 
 
 export default function AskQuestion() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
+  const { t } = useLang();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [allLabels, setAllLabels] = useState([]);
@@ -37,6 +41,11 @@ export default function AskQuestion() {
     setSubmitting(true);
     try {
       const q = await client.post('/qa/questions/', { title, content, labels: selectedLabels }).then((r) => r.data);
+      showToast({
+        message: t('toast.questionPublished'),
+        type: 'success',
+        action: { label: t('toast.view'), onPress: () => navigate(`/qa/questions/${q.id}`) },
+      });
       navigate(`/qa/questions/${q.id}`);
     } catch (err) {
       if (err?.response?.status === 401) setError('请先登录后再发布问题');

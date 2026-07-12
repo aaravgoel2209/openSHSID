@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { UIProvider } from './context/UIContext';
+import { ToastProvider } from './context/ToastContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import HomeArticles from './pages/HomeArticles';
@@ -33,13 +34,20 @@ import LinkedClassroom from './pages/LinkedClassroom';
 import LinkedClassroomCourse from './pages/LinkedClassroomCourse';
 import PwaUpdateToast from './components/PwaUpdateToast';
 
+// Cordova 原生壳把内容托管在 https://localhost/index.html（无服务端路由，也没有
+// history rewrite），BrowserRouter 起始路径是 /index.html，匹配不到任何路由 → 白屏。
+// 用 HashRouter 把路由放进 URL 片段（#/...），与托管路径解耦；网页/PWA 仍用
+// BrowserRouter 保持真实路径。判据是构建 mode（见 vite.config 的 build:cordova）。
+const Router = import.meta.env.MODE === 'cordova' ? HashRouter : BrowserRouter;
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <ThemeProvider>
         <LanguageProvider>
         <AuthProvider>
           <UIProvider>
+            <ToastProvider>
             <Routes>
               {/* Auth pages — no Layout wrapper */}
               <Route path="/login" element={<Login />} />
@@ -77,10 +85,11 @@ export default function App() {
               </Route>
             </Routes>
             <PwaUpdateToast />
+            </ToastProvider>
           </UIProvider>
         </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </Router>
   );
 }

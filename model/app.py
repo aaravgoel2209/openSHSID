@@ -39,7 +39,7 @@ def _get_rei_client():
         from openai import OpenAI
         api_base = os.environ.get('REI_API_BASE', 'http://factory.zengyuxiang.cn/v1')
         api_key = os.environ.get('REI_API_KEY', '114514')
-        model_name = os.environ.get('REI_MODEL', 'Qwen3.6-35B-A3B-MXFP4_MOE.gguf')
+        model_name = os.environ.get('REI_MODEL', 'gemma-4-E4B-it-Q4_K_M.gguf')
         logger.info(f'[Rei] OpenAI 兼容 API: {api_base} model={model_name}')
         # 直连 LAN 模型服务：绕过系统代理（HTTP_PROXY 会劫持导致超时）；
         # 流式生成读超时放宽（token 间隔），连接超时较短
@@ -257,6 +257,38 @@ import re
 
 _THINK_RE = re.compile(r'<think>.*?</think>', re.DOTALL)
 
+# 数学公式片段：翻译前先抠出来用占位符替换，避免大模型把 LaTeX（\text{} 里的词、
+# 命令、$ 定界符）一起“翻译”坏掉导致前端 MathJax 无法解析。顺序很重要：块级在前，行内在后。
+_MATH_PATTERNS = [
+    re.compile(r'\$\$[\s\S]+?\$\$'),
+    re.compile(r'\\\[[\s\S]+?\\\]'),
+    re.compile(r'\\\([\s\S]+?\\\)'),
+    re.compile(r'\\begin\{[a-zA-Z*]+\}[\s\S]+?\\end\{[a-zA-Z*]+\}'),
+    re.compile(r'\$(?!\s)[^\n$]+?(?<!\s)\$'),
+]
+
+
+def _protect_math(text):
+    """把公式替换成不会被翻译的占位符，返回 (masked_text, store)。"""
+    store = []
+
+    def _sub(m):
+        store.append(m.group(0))
+        return f'{len(store) - 1}'  # 私有区字符，模型会原样保留
+
+    for pat in _MATH_PATTERNS:
+        text = pat.sub(_sub, text)
+    return text, store
+
+
+def _restore_math(text, store):
+    """把占位符还原成原始公式。容忍模型在占位符周围加空格。"""
+    def _un(m):
+        i = int(m.group(1))
+        return store[i] if 0 <= i < len(store) else m.group(0)
+
+    return re.sub('\\s*(\\d+)\\s*', _un, text)
+
 
 def _detect_lang(text):
     """粗略判断主体语言：含较多中日韩统一表意文字则视为中文，否则英文。"""
@@ -274,17 +306,21 @@ def _translate_text(text, target=None):
     if target not in ('zh', 'en'):
         target = 'en' if src == 'zh' else 'zh'
     target_name = '简体中文' if target == 'zh' else 'English'
+    # 先把数学公式抠成占位符，避免模型翻译时改坏 LaTeX（导致前端 MathJax 无法渲染）
+    masked, math_store = _protect_math(text)
     system_prompt = (
         f'You are a professional translator. Translate the user-provided text into {target_name}, '
         f'preserving meaning, tone and formatting. Output ONLY the translated text — '
-        f'no explanations, no quotes, no language labels, no extra commentary.'
+        f'no explanations, no quotes, no language labels, no extra commentary. '
+        f'The text may contain placeholder markers (private-use characters wrapping a number); '
+        f'keep every such marker exactly as-is, do not translate, reorder, or alter them.'
     )
     messages = [
         {'role': 'system', 'content': system_prompt},
-        {'role': 'user', 'content': text},
+        {'role': 'user', 'content': masked},
     ]
     max_tokens = max(512, min(8192, len(text) * 4))
-    logger.info(f'[Translate] {src} → {target} ({len(text)} 字符)')
+    logger.info(f'[Translate] {src} → {target} ({len(text)} 字符, {len(math_store)} 处公式)')
     resp = client.chat.completions.create(
         model=model_name,
         messages=messages,
@@ -295,6 +331,8 @@ def _translate_text(text, target=None):
     content = (resp.choices[0].message.content or '').strip()
     # 思考型模型可能把推理放进 <think>…</think>，去除后只留译文
     content = _THINK_RE.sub('', content).strip()
+    # 把占位符还原成原始公式
+    content = _restore_math(content, math_store)
     return content, src, target
 
 

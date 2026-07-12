@@ -8,12 +8,16 @@ import { Input } from '@heroui/react/input';
 import { ArrowLeftIcon, PlusIcon, ChatBubbleLeftRightIcon, EyeIcon, HandThumbUpIcon } from '@heroicons/react/24/outline';
 import { getSubbar, getSubbarPosts, createPost } from '../api/postbar';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { useLang } from '../context/LanguageContext';
 import MarkdownInput from '../components/MarkdownInput';
 
 export default function SubbarDetail() {
   const { subbarId } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
+  const { t } = useLang();
   const [subbar, setSubbar] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +43,11 @@ export default function SubbarDetail() {
     setSubmitting(true);
     try {
       const post = await createPost(subbarId, title.trim(), content);
+      showToast({
+        message: t('toast.postPublished'),
+        type: 'success',
+        action: { label: t('toast.view'), onPress: () => navigate(`/postbar/posts/${post.id}`) },
+      });
       navigate(`/postbar/posts/${post.id}`);
     } catch (err) {
       if (err?.response?.status === 401) setError('请先登录后再发帖');

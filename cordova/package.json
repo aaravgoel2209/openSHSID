@@ -5,11 +5,12 @@
   "description": "OpenSHSID mobile app (Cordova wrapper around the React frontend)",
   "scripts": {
     "sync:www": "node scripts/sync-www.js",
-    "add:android": "cordova platform add android",
+    "env:android": "node scripts/android-env.js",
+    "add:android": "node scripts/cordova-android.js platform add android",
     "add:ios": "cordova platform add ios",
-    "run:android": "npm run sync:www && cordova run android",
+    "run:android": "npm run sync:www && node scripts/cordova-android.js run android",
     "run:ios": "npm run sync:www && cordova run ios",
-    "build:android": "npm run sync:www && cordova build android --release",
+    "build:android": "npm run sync:www && node scripts/cordova-android.js build android --release",
     "build:ios": "npm run sync:www && cordova build ios --release"
   },
   "devDependencies": {
@@ -22,6 +23,8 @@
     "plugins": {
       "cordova-plugin-whitelist": {}
     },
-    "platforms": []
+    "platforms": [
+      "android"
+    ]
   }
 }

@@ -7,11 +7,15 @@ import { Input } from '@heroui/react/input';
 import { TextArea } from '@heroui/react/textarea';
 import { getLabels } from '../api/labels';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { useLang } from '../context/LanguageContext';
 import client from '../api/client';
 
 export default function CreateArticle() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
+  const { t } = useLang();
   const [title, setTitle] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [content, setContent] = useState('');
@@ -43,6 +47,11 @@ export default function CreateArticle() {
         author_name: authorName,
         labels: selectedLabels,
       }).then((r) => r.data);
+      showToast({
+        message: t('toast.articlePublished'),
+        type: 'success',
+        action: { label: t('toast.view'), onPress: () => navigate(`/knowledge/${a.id}`) },
+      });
       navigate(`/knowledge/${a.id}`);
     } catch (err) {
       if (err?.response?.status === 401) setError('请先登录后再发布文章');
