@@ -7,7 +7,7 @@ import {
   BookmarkIcon, CheckIcon,
 } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
-import { ocrScan, summarizeText, saveToKnowledge } from '../api/toolbox';
+import { ocrScan, ocrScanStream, summarizeText, saveToKnowledge } from '../api/toolbox';
 import MarkdownView from '../components/MarkdownView';
 import { copyText as copyToClipboard } from '../utils/clipboard';
 
@@ -26,6 +26,7 @@ export default function OcrScan() {
 
   const [file, setFile] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [pages, setPages] = useState(null);
   const [regions, setRegions] = useState([]);
   const [selected, setSelected] = useState(() => new Set());
@@ -43,6 +44,7 @@ export default function OcrScan() {
   const reset = () => {
     setPages(null); setRegions([]); setSelected(new Set());
     setSummary(''); setSaved(null); setError('');
+    setProgress({ done: 0, total: 0 });
   };
 
   const handleFile = async (f) => {
@@ -51,13 +53,42 @@ export default function OcrScan() {
     setFile(f);
     setTitle((f.name || '').replace(/\.[^.]+$/, '')); // 用文件名作为默认标题
     setScanning(true);
+    setProgress({ done: 0, total: 0 });
+    setPages([]); // 立刻展示容器，逐页填充
+
+    let received = 0;
     try {
-      const data = await ocrScan(f);
-      setPages(data.pages || []);
-      setRegions(data.regions || []);
-      setSelected(new Set((data.regions || []).map((r) => r.id))); // 默认全选
+      await ocrScanStream(f, {
+        onMeta: ({ pages: total }) => setProgress({ done: 0, total: total || 0 }),
+        onPage: ({ index, image, regions: rgs }) => {
+          received += 1;
+          const list = rgs || [];
+          setPages((prev) => [...(prev || []), { index, image }]);
+          setRegions((prev) => [...prev, ...list]);
+          setSelected((prev) => {
+            const next = new Set(prev);
+            list.forEach((r) => next.add(r.id)); // 默认全选
+            return next;
+          });
+          setProgress((p) => ({ done: p.done + 1, total: p.total }));
+        },
+      });
     } catch (e) {
-      setError(e.response?.data?.error || 'OCR 识别失败');
+      if (received === 0) {
+        // 流式不可用（旧后端 / 网络）→ 回退到一次性识别
+        try {
+          const data = await ocrScan(f);
+          setPages(data.pages || []);
+          setRegions(data.regions || []);
+          setSelected(new Set((data.regions || []).map((r) => r.id)));
+        } catch (e2) {
+          setError(e2.response?.data?.error || e.message || 'OCR 识别失败');
+          setPages(null);
+        }
+      } else {
+        // 已收到部分页 → 保留已识别内容，仅提示中断
+        setError(e.message || '识别中断，已保留已识别的页面');
+      }
     } finally {
       setScanning(false);
     }
@@ -168,14 +199,25 @@ export default function OcrScan() {
         </div>
       )}
 
-      {scanning && (
+      {/* 首页到达前：大 spinner */}
+      {scanning && (!pages || pages.length === 0) && (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
           <Spinner size="lg" />
-          <p className="text-sm">正在识别文字…（多页 PDF 可能较慢）</p>
+          <p className="text-sm">
+            正在识别文字…{progress.total > 0 ? `（共 ${progress.total} 页，逐页显示）` : '（多页 PDF 可能较慢）'}
+          </p>
         </div>
       )}
 
-      {pages && !scanning && (
+      {/* 识别进行中：逐页进度条（已有页面时显示在结果区上方） */}
+      {scanning && pages && pages.length > 0 && (
+        <div className="flex items-center gap-3 text-sm text-indigo-600 dark:text-indigo-400 mb-4">
+          <Spinner size="sm" />
+          <span>正在识别… 已完成 {progress.done}{progress.total ? ` / ${progress.total}` : ''} 页</span>
+        </div>
+      )}
+
+      {pages && pages.length > 0 && (
         <>
           {/* 操作条 */}
           <div className="sticky top-2 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-gray-200/80 dark:border-slate-800/80 rounded-xl px-4 py-2.5 mb-4 shadow-sm space-y-2.5">
@@ -243,7 +285,7 @@ export default function OcrScan() {
             </div>
           )}
 
-          {regions.length === 0 && (
+          {!scanning && regions.length === 0 && (
             <p className="text-sm text-gray-400 py-8 text-center">未识别到可勾选的文字区域</p>
           )}
 

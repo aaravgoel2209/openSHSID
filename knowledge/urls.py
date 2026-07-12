@@ -17,6 +17,8 @@ urlpatterns = [
     path('ocr-import/', views.ocr_import, name='ocr_import'),
     # 工具箱·OCR 扫描：识别 → 勾选区域 → 主聊天模型摘要 / 存入知识库
     path('ocr-scan/', views.ocr_scan, name='ocr_scan'),
+    # 流式版：逐页 NDJSON 下发，大 PDF 不超时（前端优先用它，失败回退 ocr-scan/）
+    path('ocr-scan-stream/', views.ocr_scan_stream, name='ocr_scan_stream'),
     path('ocr-summarize/', views.ocr_summarize, name='ocr_summarize'),
     path('ocr-save/', views.ocr_save, name='ocr_save'),
 ]

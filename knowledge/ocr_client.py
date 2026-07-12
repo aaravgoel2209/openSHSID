@@ -163,3 +163,44 @@ def ocr_document_structured(file_bytes, filename, timeout=1200):
     except Exception as e:  # noqa: BLE001
         logger.error("[OCR] 结构化识别异常: %s", e, exc_info=True)
         return None
+
+
+def _ndjson_line(obj):
+    """把 dict 序列化成一行 NDJSON（bytes，含换行）。"""
+    import json
+    return (json.dumps(obj, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def ocr_document_structured_stream(file_bytes, filename, timeout=1200):
+    """流式结构化 OCR 生成器：向 OCR 服务发起 stream 请求，逐行把上游 NDJSON 透传出去。
+
+    产出 bytes（每段已含换行），供 Django StreamingHttpResponse 直接下发。
+    上游离线 / 未就绪 / 出错时，产出一个 {"event":"error",...} 行后正常结束，
+    让前端可优雅提示，而不是把异常抛给 WSGI。
+    """
+    if not file_bytes:
+        yield _ndjson_line({"event": "done", "text": ""})
+        return
+    try:
+        resp = requests.post(
+            OCR_URL,
+            files={"file": (filename, file_bytes)},
+            data={"structured": "1", "stream": "1"},
+            timeout=timeout,
+            proxies=_NO_PROXY,
+            stream=True,
+        )
+        if resp.status_code == 503:
+            logger.warning("[OCR] OCR 未就绪（无 GPU/权重）")
+            yield _ndjson_line({"event": "error", "error": "OCR 未就绪（模型后端需 GPU + 权重）", "code": 503})
+            return
+        resp.raise_for_status()
+        for line in resp.iter_lines(decode_unicode=False):
+            if line:  # iter_lines 去掉了换行，逐行补回
+                yield line + b"\n"
+    except requests.exceptions.RequestException as e:
+        logger.error("[OCR] 流式请求模型服务失败: %s", e)
+        yield _ndjson_line({"event": "error", "error": "请求 OCR 服务失败"})
+    except Exception as e:  # noqa: BLE001
+        logger.error("[OCR] 流式识别异常: %s", e, exc_info=True)
+        yield _ndjson_line({"event": "error", "error": str(e)})

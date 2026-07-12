@@ -245,6 +245,37 @@ def ocr_scan(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def ocr_scan_stream(request):
+    """工具箱·OCR 扫描（流式）：逐页把结构化结果以 NDJSON 下发，避免大 PDF 一次性阻塞超时。
+
+    响应体：application/x-ndjson，每行一个事件：
+      {"event":"meta","pages":N}
+      {"event":"page","index":i,"image":"data:...","regions":[...]}   ← 每识别完一页即下发
+      {"event":"done","text":"<全文>"}
+      {"event":"error","error":"...","code":503?}                      ← 出错时（连接已建立）
+    OCR 服务离线时仍走普通 JSON 503（连接尚未升级为流）。
+    """
+    from django.http import StreamingHttpResponse
+    from .ocr_client import ocr_document_structured_stream, service_available
+
+    upload = request.FILES.get('file')
+    if upload is None:
+        return Response({'error': '请通过 multipart 的 file 字段上传 PDF/图片'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    if not service_available():
+        return Response({'error': 'OCR 服务离线，暂不可用', 'service': 'offline'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    stream = ocr_document_structured_stream(upload.read(), upload.name)
+    resp = StreamingHttpResponse(stream, content_type='application/x-ndjson')
+    resp['Cache-Control'] = 'no-cache'
+    resp['X-Accel-Buffering'] = 'no'  # 关掉 nginx 缓冲，保证逐页实时下发
+    return resp
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def ocr_save(request):
     """工具箱·OCR 扫描：把勾选文本存入知识库，返回新建文章 id。
 

@@ -16,11 +16,12 @@ GPU 机器上单独运行，不需要拖上 torch 排序模型 / openai 等其�
 Django 侧通过环境变量 OCR_SERVICE_URL 指向本服务（见 knowledge/ocr_client.py）。
 """
 import base64
+import json
 import logging
 import os
 import tempfile
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context
 from flask_cors import CORS
 
 import ocr_infer
@@ -56,18 +57,20 @@ def ocr_endpoint():
     OCR 依赖 GPU + 权重，未就绪时返回 503（best-effort，调用方可优雅降级）。
     懒加载：仅本端点被调用时才载入 OCR 模型。
     """
-    # 取文件字节 + 文件名 + 是否结构化
-    filename, raw, structured = None, None, False
+    # 取文件字节 + 文件名 + 是否结构化 + 是否流式
+    filename, raw, structured, stream = None, None, False, False
     if "file" in request.files:
         f = request.files["file"]
         filename = f.filename or "upload"
         raw = f.read()
         structured = str(request.form.get("structured", "")).lower() in ("1", "true", "yes")
+        stream = str(request.form.get("stream", "")).lower() in ("1", "true", "yes")
     else:
         data = request.get_json(silent=True) or {}
         b64 = data.get("content_base64")
         filename = data.get("filename") or "upload"
         structured = bool(data.get("structured"))
+        stream = bool(data.get("stream"))
         if b64:
             try:
                 raw = base64.b64decode(b64)
@@ -79,10 +82,41 @@ def ocr_endpoint():
 
     suffix = os.path.splitext(filename)[1].lower() or ".pdf"
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    tmp.write(raw)
+    tmp.close()
+    logger.info(
+        f"[OCR] 开始识别 {filename} ({len(raw)} bytes, suffix={suffix}, "
+        f"structured={structured}, stream={stream})"
+    )
+
+    # 流式结构化：逐页产出 NDJSON（每行一个事件），大 PDF 也不会一次性阻塞到超时。
+    # 注意：Response 会先返回、生成器随后才执行，所以临时文件必须由生成器自己清理，
+    # 不能走普通分支的 finally（那会在生成器读取前就把文件删了）。
+    if structured and stream:
+        def generate(path=tmp.name):
+            n = 0
+            try:
+                for ev, payload in ocr_infer.ocr_file_structured_stream(path):
+                    if ev == "page":
+                        n += 1
+                    yield json.dumps({"event": ev, **payload}, ensure_ascii=False) + "\n"
+                logger.info(f"[OCR] 流式完成: {n} 页")
+            except RuntimeError as e:  # 无 GPU / 权重缺失
+                logger.error(f"[OCR] 环境不可用: {e}")
+                yield json.dumps({"event": "error", "error": str(e), "code": 503}) + "\n"
+            except Exception as e:
+                logger.error(f"[OCR] 流式识别失败: {e}", exc_info=True)
+                yield json.dumps({"event": "error", "error": str(e)}) + "\n"
+            finally:
+                try:
+                    os.unlink(path)
+                except OSError:
+                    pass
+
+        return Response(stream_with_context(generate()), mimetype="application/x-ndjson")
+
+    # 非流式（图片 / 小文档 / 纯文本）：保持一次性返回。
     try:
-        tmp.write(raw)
-        tmp.close()
-        logger.info(f"[OCR] 开始识别 {filename} ({len(raw)} bytes, suffix={suffix}, structured={structured})")
         if structured:
             result = ocr_infer.ocr_file_structured(tmp.name)
             logger.info(f"[OCR] 完成: {len(result.get('regions', []))} 区域 / {len(result.get('pages', []))} 页")
@@ -108,4 +142,10 @@ if __name__ == "__main__":
     port = int(os.environ.get("OCR_PORT", "5001"))
     debug = os.environ.get("OCR_DEBUG", "0") == "1"
     logger.info(f"[OCR] 独立 OCR 服务启动于 {host}:{port}  ready={ocr_infer.is_available()}")
+    # OCR_WARMUP=1：启动即加载权重并跑一次极小推理，把冷启动开销从首个用户请求前移到这里。
+    if os.environ.get("OCR_WARMUP", "0") == "1":
+        import time
+        t0 = time.time()
+        ok = ocr_infer.warmup()
+        logger.info(f"[OCR] 预热{'完成' if ok else '跳过（无 GPU/权重）'}，耗时 {time.time() - t0:.1f}s")
     app.run(host=host, port=port, debug=debug)
