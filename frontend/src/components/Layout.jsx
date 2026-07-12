@@ -12,7 +12,7 @@ import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
 import AboutDialog from './AboutDialog';
 import SubbarTeamPanel from './SubbarTeamPanel';
-import { getAvatarColor } from '../utils/avatar';
+import { getAvatarColor, resolveAvatar } from '../utils/avatar';
 import { localizeTitle } from '../utils/lang';
 import { API_BASE, DJANGO_ORIGIN } from '../config';
 import client from '../api/client';
@@ -197,7 +197,7 @@ export default function Layout() {
         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
           <div className={`flex items-center gap-2 py-2 ${collapsed ? 'justify-center px-0' : 'px-3'}`}>
             <Avatar size="sm" className="w-6 h-6 shrink-0">
-              <AvatarImage src={user.avatar || `/images/${getAvatarColor(user.username)}.jpg`} />
+              <AvatarImage src={resolveAvatar(user.avatar) || `/images/${getAvatarColor(user.username)}.jpg`} />
               <AvatarFallback className="text-[9px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             {!collapsed && <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{user.username}</span>}
@@ -294,7 +294,7 @@ export default function Layout() {
             <Dropdown>
               <DropdownTrigger>
                 <Avatar className="cursor-pointer w-7 h-7" size="sm" color="primary">
-                  <AvatarImage src={user.avatar || `/images/${getAvatarColor(user.username)}.jpg`} />
+                  <AvatarImage src={resolveAvatar(user.avatar) || `/images/${getAvatarColor(user.username)}.jpg`} />
                   <AvatarFallback className="text-[10px]">{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </DropdownTrigger>

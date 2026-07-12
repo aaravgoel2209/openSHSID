@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { getMessages, sendMessage } from '../api/chat';
 import { AuthContext } from '../context/AuthContext';
+import { resolveAvatar } from '../utils/avatar';
 
 export default function ChatDetail() {
   const { userId } = useParams();
@@ -75,8 +76,8 @@ export default function ChatDetail() {
             const isMe = m.sender === user.id;
             const name = isMe ? user.username : m.sender_name;
             const avatar = isMe
-              ? (user.avatar || fallbackAvatar(user.username))
-              : (m.sender_avatar || fallbackAvatar(m.sender_name));
+              ? (resolveAvatar(user.avatar) || fallbackAvatar(user.username))
+              : (resolveAvatar(m.sender_avatar) || fallbackAvatar(m.sender_name));
             return (
               <div key={m.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                 <button onClick={() => navigate(`/user/${m.sender}`)} className="shrink-0">

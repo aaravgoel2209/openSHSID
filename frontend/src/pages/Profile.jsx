@@ -7,6 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 import { getQuestions } from '../api/qa';
 import { getArticles } from '../api/knowledge';
 import client from '../api/client';
+import { resolveAvatar } from '../utils/avatar';
 
 const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
 
@@ -104,7 +105,7 @@ export default function Profile() {
           <div className="flex items-end gap-4 -mt-10">
             <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-900 overflow-hidden shadow-lg">
               <img
-                src={profile.avatar || `/images/${getAvatarColor(profile.username)}.jpg`}
+                src={resolveAvatar(profile.avatar) || `/images/${getAvatarColor(profile.username)}.jpg`}
                 alt={profile.username}
                 className="w-full h-full object-cover"
               />

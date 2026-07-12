@@ -2,6 +2,7 @@ import { useContext, useRef, useState, useCallback } from 'react';
 import { Cog6ToothIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { uploadAvatar } from '../api/auth';
+import { resolveAvatar } from '../utils/avatar';
 import { useUI } from '../context/UIContext';
 import GlassPanel from '../components/GlassPanel';
 
@@ -56,7 +57,7 @@ export default function Settings() {
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState(null); // { type: 'ok'|'err', text }
 
-  const currentAvatar = user?.avatar || null;
+  const currentAvatar = resolveAvatar(user?.avatar);
   const fallbackSrc = user ? `/images/${getAvatarColor(user.username)}.jpg` : null;
 
   const handleFileChange = useCallback(async (e) => {

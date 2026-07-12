@@ -5,6 +5,7 @@ import { Spinner } from '@heroui/react/spinner';
 import { PlusIcon, ChatBubbleLeftEllipsisIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { getConversations, searchUsers, sendMessage } from '../api/chat';
 import { AuthContext } from '../context/AuthContext';
+import { resolveAvatar } from '../utils/avatar';
 
 const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
 
@@ -108,7 +109,7 @@ export default function ChatList() {
                 <div key={u.id} className="p-4 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 rounded-lg overflow-hidden">
-                      <img src={u.avatar || `/images/${getAvatarColor(u.username)}.jpg`} alt="" className="w-full h-full object-cover" />
+                      <img src={resolveAvatar(u.avatar) || `/images/${getAvatarColor(u.username)}.jpg`} alt="" className="w-full h-full object-cover" />
                     </div>
                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{u.username}</span>
                   </div>
@@ -172,7 +173,7 @@ export default function ChatList() {
               <div className="flex items-center gap-3">
                 {/* Avatar */}
                 <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
-                  <img src={c.avatar || `/images/${getAvatarColor(c.username)}.jpg`} alt="" className="w-full h-full object-cover" />
+                  <img src={resolveAvatar(c.avatar) || `/images/${getAvatarColor(c.username)}.jpg`} alt="" className="w-full h-full object-cover" />
                 </div>
 
                 {/* Content */}
