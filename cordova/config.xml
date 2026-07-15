@@ -47,6 +47,14 @@
     <platform name="ios">
         <preference name="WKWebViewOnly" value="true" />
         <preference name="deployment-target" value="14.0" />
+        <!-- OCR 拍照：WKWebView 里 <input capture> 唤起相机 / 相册需要这两条用途说明，否则 iOS 直接崩溃 -->
+        <edit-config target="NSCameraUsageDescription" file="*-Info.plist" mode="merge">
+            <string>用于拍摄文档照片进行 OCR 识别</string>
+        </edit-config>
+        <edit-config target="NSPhotoLibraryUsageDescription" file="*-Info.plist" mode="merge">
+            <string>用于从相册选择图片进行 OCR 识别</string>
+        </edit-config>
+
         <!-- 同 Android：只给这一个域名开 ATS 明文例外，而不是关掉整个 ATS -->
         <edit-config target="NSAppTransportSecurity" file="*-Info.plist" mode="merge">
             <dict>

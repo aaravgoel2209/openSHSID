@@ -4,7 +4,7 @@ import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import {
   ArrowLeftIcon, DocumentArrowUpIcon, SparklesIcon, ClipboardIcon,
-  BookmarkIcon, CheckIcon,
+  BookmarkIcon, CheckIcon, CameraIcon,
 } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { ocrScan, ocrScanStream, summarizeText, saveToKnowledge } from '../api/toolbox';
@@ -19,10 +19,16 @@ const TYPE_LABEL = {
 // bbox 为 0-999 归一化坐标 → 百分比
 const pct = (v) => `${v / 9.99}%`;
 
+// 原生壳 / 移动端浏览器才提供「拍照」入口（桌面端 capture 会被忽略，与上传重复，故隐藏）
+const CAN_CAPTURE =
+  import.meta.env.MODE === 'cordova' ||
+  (typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
+
 export default function OcrScan() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const fileRef = useRef(null);
+  const cameraRef = useRef(null);
 
   const [file, setFile] = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -92,6 +98,13 @@ export default function OcrScan() {
     } finally {
       setScanning(false);
     }
+  };
+
+  // 拍照拿到的 File 名通常是 image.jpg，改成带时间戳的名字，作为默认标题更友好
+  const handleCapture = (f) => {
+    if (!f) return;
+    const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    handleFile(new File([f], `拍照文档_${ts}.jpg`, { type: f.type || 'image/jpeg' }));
   };
 
   const toggle = (id) => setSelected((prev) => {
@@ -181,17 +194,31 @@ export default function OcrScan() {
         ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden"
         onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ''; }}
       />
+      {/* 拍照入口：capture 直接唤起后置摄像头（原生壳 / 移动浏览器均支持，无需插件） */}
+      <input
+        ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
+        onChange={(e) => { handleCapture(e.target.files?.[0]); e.target.value = ''; }}
+      />
       <div
         onClick={() => fileRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files?.[0]); }}
-        className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors mb-5"
+        className={`cursor-pointer border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors ${CAN_CAPTURE ? 'mb-3' : 'mb-5'}`}
       >
         <DocumentArrowUpIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
         <p className="text-sm text-gray-600 dark:text-gray-300">
           {file ? file.name : '点击或拖拽文件到此处上传（PDF / 图片）'}
         </p>
       </div>
+      {CAN_CAPTURE && (
+        <Button
+          fullWidth variant="flat" color="primary" className="mb-5"
+          onPress={() => cameraRef.current?.click()}
+          startContent={<CameraIcon className="w-5 h-5" />}
+        >
+          拍照识别文档
+        </Button>
+      )}
 
       {error && (
         <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-300 text-sm rounded-lg p-3 mb-4">
