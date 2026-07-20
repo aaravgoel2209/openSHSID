@@ -169,7 +169,7 @@ function InputField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete="on"
-          className="w-full bg-transparent outline-none text-[14px] text-gray-700 placeholder-[#5b8dd9]"
+          className="w-full bg-transparent outline-none text-[16px] min-[900px]:text-[14px] text-gray-700 placeholder-[#5b8dd9]"
           style={{ border: "none", caretColor: '#2563eb' }}
         />
       </div>
@@ -193,6 +193,16 @@ export default function Login() {
   const [isUsernameError, setIsUsernameError] = useState(false);
   const [isPasswordError, setIsPasswordError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia("(max-width: 899px)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 899px)");
+    const onChange = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     if (error) {
@@ -238,6 +248,232 @@ export default function Login() {
     setIsUsernameError(false);
     setIsPasswordError(false);
   };
+
+  /* ===== Mobile layout — single-column card, touch friendly ===== */
+  if (isMobile) {
+    return (
+      <div
+        className="min-h-screen w-full overflow-y-auto"
+        style={{
+          backgroundImage: `url(${bgUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Dark overlay */}
+        <div className="fixed inset-0 bg-black/35 pointer-events-none"></div>
+
+        {/* Language switcher — top right, clear of the notch */}
+        <button
+          type="button"
+          onClick={() => setLang(lang === "en" ? "zh" : "en")}
+          className="absolute right-4 z-20 flex items-center gap-2 text-white bg-white/10 rounded-full px-3 py-2 border border-white/20 backdrop-blur-sm cursor-pointer"
+          style={{ top: "calc(env(safe-area-inset-top, 0px) + 14px)" }}
+        >
+          <GlobeIcon />
+          <span className="text-xs font-semibold">
+            {lang === "en" ? "EN" : "中文"}
+          </span>
+        </button>
+
+        <div
+          className="relative z-10 flex min-h-screen items-center justify-center px-5"
+          style={{
+            paddingTop: "calc(env(safe-area-inset-top, 0px) + 40px)",
+            paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
+          }}
+        >
+          <div
+            className="w-full rounded-[16px] relative"
+            style={{
+              maxWidth: 400,
+              background: "#ffffff",
+              boxShadow: "0 12px 40px rgba(0,0,0,.18)",
+              padding: "28px 22px 20px",
+            }}
+          >
+            {/* Header — AI logo + greeting */}
+            <div className="flex flex-col items-center">
+              <div style={{ width: 92, height: 92 }}>
+                <AILogo />
+              </div>
+              <h2
+                className="text-[#344054] text-[18px] font-semibold leading-tight"
+                style={{ marginTop: -24 }}
+              >
+                {t.heading}
+              </h2>
+              <p className="text-[14px] text-gray-400 mt-0.5">
+                {t.subheading}
+              </p>
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col w-full mt-1"
+            >
+              {/* Title */}
+              <h1 className="text-[#344054] text-[22px] font-bold leading-tight tracking-tight text-center">
+                {t.title}
+              </h1>
+              <div
+                className="mx-auto"
+                style={{
+                  width: 56,
+                  height: 3.5,
+                  borderRadius: 999,
+                  background: "#2270e3",
+                  marginTop: 4,
+                }}
+              ></div>
+
+              {/* Error banner — tap to dismiss */}
+              {error && (
+                <div
+                  onClick={handleClear}
+                  className="flex items-start gap-2 mt-3 px-3 py-2.5 rounded-[10px] cursor-pointer"
+                  style={{ background: "#fef2f2", border: "1.5px solid #feabad" }}
+                >
+                  <svg
+                    className="w-[16px] h-[16px] shrink-0 mt-[1px]"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    style={{ color: "#ef4444" }}
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span
+                    className="text-[13px] font-medium leading-tight"
+                    style={{ color: "#dc2626" }}
+                  >
+                    {error}
+                  </span>
+                </div>
+              )}
+
+              {/* Username */}
+              <div className="mt-[14px]">
+                <InputField
+                  label={t.usernameLabel}
+                  icon={<UserIcon />}
+                  placeholder={t.usernamePlaceholder}
+                  value={username}
+                  onChange={setUsername}
+                  isError={isUsernameError && !!error}
+                />
+              </div>
+
+              {/* Password */}
+              <div className="mt-[18px]">
+                <InputField
+                  label={t.passwordLabel}
+                  icon={<LockIcon />}
+                  type="password"
+                  placeholder={t.passwordPlaceholder}
+                  value={password}
+                  onChange={setPassword}
+                  isError={isPasswordError && !!error}
+                />
+              </div>
+
+              {/* Remember + Forgot */}
+              <div className="flex items-center justify-between mt-[16px] w-full">
+                <div
+                  className="gap-2 select-none"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    minHeight: 32,
+                  }}
+                  onClick={() => {
+                    if (!username) {
+                      setError(t.emptyUsername);
+                      setIsUsernameError(true);
+                      return;
+                    }
+                    setRemember(!remember);
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 18,
+                      height: 18,
+                      flexShrink: 0,
+                      border: remember ? "none" : "1px solid #d1d5db",
+                      borderRadius: 3,
+                      backgroundColor: remember ? "#2563eb" : "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {remember && (
+                      <svg viewBox="0 0 14 14" fill="none" width={12} height={12}>
+                        <path
+                          d="M3 7.5L5.5 10L11 4"
+                          stroke="#fff"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-500 select-none">
+                    {t.remember}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  style={{ color: "#2270e3", minHeight: 32 }}
+                  className="text-sm font-medium no-underline transition-colors hover:text-blue-700"
+                >
+                  {t.forgot}
+                </button>
+              </div>
+
+              {/* Login button */}
+              <div className="mt-[16px] w-full">
+                <Button
+                  type="submit"
+                  fullWidth
+                  color="primary"
+                  isLoading={submitting}
+                  style={{
+                    height: 52,
+                    fontSize: 16,
+                    borderRadius: 10,
+                    background: "#1f6fe5",
+                    fontWeight: "bold",
+                  }}
+                  className="font-bold"
+                >
+                  {t.loginBtn}
+                </Button>
+              </div>
+
+              {/* Register link */}
+              <p className="text-sm text-center w-full mt-5 text-gray-400">
+                {t.noAccount}{" "}
+                <Link
+                  to="/register"
+                  style={{ color: "#2270e3" }}
+                  className="font-semibold no-underline transition-colors hover:text-blue-700 ml-1"
+                >
+                  {t.signUp}
+                </Link>
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

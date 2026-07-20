@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { uploadAvatar } from '../api/auth';
 import { resolveAvatar } from '../utils/avatar';
 import { useUI } from '../context/UIContext';
+import { getServerOverride, setServerOverride, DJANGO_ORIGIN } from '../config';
 import GlassPanel from '../components/GlassPanel';
 
 const LEVELS = [
@@ -56,6 +57,26 @@ export default function Settings() {
   const [compressing, setCompressing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState(null); // { type: 'ok'|'err', text }
+
+  // 后端地址（运行时覆盖，存 localStorage；保存后需刷新页面生效）
+  const [serverInput, setServerInput] = useState(getServerOverride());
+  const [serverMsg, setServerMsg] = useState(null); // { type: 'ok'|'err', text }
+  const currentServer = getServerOverride() || DJANGO_ORIGIN || '同源（当前域名）';
+
+  function handleSaveServer() {
+    try {
+      setServerOverride(serverInput);
+      // 配置在模块加载时读取，必须整页刷新才能让新地址生效
+      window.location.reload();
+    } catch {
+      setServerMsg({ type: 'err', text: '地址格式无效，例如 https://openshsid.zengyuxiang.cn' });
+    }
+  }
+
+  function handleResetServer() {
+    setServerOverride('');
+    window.location.reload();
+  }
 
   const currentAvatar = resolveAvatar(user?.avatar);
   const fallbackSrc = user ? `/images/${getAvatarColor(user.username)}.jpg` : null;
@@ -227,6 +248,65 @@ export default function Settings() {
             液态玻璃特效在 Chromium 内核浏览器中效果最佳（Safari/Firefox 仅部分支持）。目前正在开发中
           </p>
         )}
+      </GlassPanel>
+
+      {/* ── Backend server section ── */}
+      <GlassPanel
+        plainClass="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 mt-4"
+        glassContentClass="p-6 mt-4"
+        cornerRadius={20}
+      >
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">后端地址</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">
+          页面连接的后端服务器地址。留空使用默认值，保存后自动刷新生效。
+        </p>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          当前生效：<span className="font-mono text-[13px] text-indigo-600 dark:text-indigo-400 break-all">{currentServer}</span>
+          {getServerOverride() && (
+            <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">自定义</span>
+          )}
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={serverInput}
+            onChange={(e) => { setServerInput(e.target.value); setServerMsg(null); }}
+            placeholder={DJANGO_ORIGIN || 'https://example.com（留空 = 默认）'}
+            spellCheck={false}
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-sm font-mono text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition-colors"
+          />
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleSaveServer}
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-medium text-white transition-colors"
+            >
+              保存并刷新
+            </button>
+            {getServerOverride() && (
+              <button
+                type="button"
+                onClick={handleResetServer}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                恢复默认
+              </button>
+            )}
+          </div>
+        </div>
+
+        {serverMsg && (
+          <p className={`text-sm mt-3 ${serverMsg.type === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+            {serverMsg.text}
+          </p>
+        )}
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
+          注意：跨域连接需要目标后端在 CORS 中放行本站域名，否则请求会被浏览器拦截。
+        </p>
       </GlassPanel>
     </div>
   );

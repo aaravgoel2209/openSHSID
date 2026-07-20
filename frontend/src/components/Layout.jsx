@@ -34,6 +34,16 @@ const NAV_LINKS = [
   { to: '/linkedclassroom', key: 'nav.lc', icon: 'bi-grid-3x3-gap-fill' },
 ];
 
+// 移动端底部 Tab 栏：只放最高频的一级入口（拇指可达），中间是发布 FAB。
+// null 是中间发布按钮的占位。其余入口（工具箱/聊天/信箱/LC）仍在抽屉里。
+const TAB_LINKS = [
+  { to: '/', key: 'nav.home', icon: 'bi-house-fill' },
+  { to: '/qa', key: 'nav.qa', icon: 'bi-chat-dots-fill' },
+  null,
+  { to: '/postbar', key: 'nav.postbar', icon: 'bi-people-fill' },
+  { to: '/knowledge', key: 'nav.knowledge', icon: 'bi-journal-bookmark-fill' },
+];
+
 
 export default function Layout() {
   const { user, logout } = useContext(AuthContext);
@@ -58,6 +68,13 @@ export default function Layout() {
     return m ? m[1] : null;
   }, [location.pathname]);
 
+  // 聊天会话页（/chat/ai、/chat/:userId）隐藏底部 Tab 栏：这些页面底部有固定
+  // 输入框，且高度按「无 Tab 栏」计算（h-[calc(100vh-120px)]），露出 Tab 栏会挡住输入区
+  const showTabBar = useMemo(
+    () => !location.pathname.startsWith('/chat/'),
+    [location.pathname],
+  );
+
   const [hotItems, setHotItems] = useState([]);
   const [weeklyTop, setWeeklyTop] = useState([]);
   const [notices, setNotices] = useState([]);
@@ -73,20 +90,31 @@ export default function Layout() {
 
   useEffect(() => {
     // 桌面端启用系统级毛玻璃（Win11 acrylic / macOS vibrancy）时不铺随机壁纸，
-    // 让桌面背景透过窗口模糊呈现
+    // 让桌面背景透过窗口模糊呈现。
+    // 小屏（手机 / Cordova）同样不铺：照片背景下小字可读性差，改铺纯色底，
+    // 更接近原生 App 的观感（底色跟随深浅色模式）
     if (!RANDOM_BG || window.desktop?.nativeBlur) return;
+    const mq = window.matchMedia('(min-width: 768px)');
     const html = document.documentElement;
-    html.style.backgroundImage = `url(${RANDOM_BG})`;
-    html.style.backgroundSize = 'cover';
-    html.style.backgroundAttachment = 'fixed';
-    html.style.backgroundPosition = 'center';
+    const apply = () => {
+      const wp = mq.matches;
+      html.style.backgroundImage = wp ? `url(${RANDOM_BG})` : '';
+      html.style.backgroundSize = wp ? 'cover' : '';
+      html.style.backgroundAttachment = wp ? 'fixed' : '';
+      html.style.backgroundPosition = wp ? 'center' : '';
+      html.style.backgroundColor = wp ? '' : (isDark ? '#030712' : '#f3f4f6');
+    };
+    apply();
+    mq.addEventListener('change', apply);
     return () => {
+      mq.removeEventListener('change', apply);
       html.style.backgroundImage = '';
       html.style.backgroundSize = '';
       html.style.backgroundAttachment = '';
       html.style.backgroundPosition = '';
+      html.style.backgroundColor = '';
     };
-  }, []);
+  }, [isDark]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -226,8 +254,8 @@ export default function Layout() {
     // overflow-x-clip 而非 hidden：hidden 会把该 div 变成滚动容器，
     // 导致 sticky 顶栏失效（随页面滚走）；clip 只裁剪不产生滚动容器
     <div className="min-h-screen overflow-x-clip">
-      {/* Top Bar */}
-      <header className={`app-topbar sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 ${
+      {/* Top Bar — pt 吃刘海屏安全区，小屏隐藏语言/主题/关于（挪进抽屉底部） */}
+      <header className={`app-topbar sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 pt-[env(safe-area-inset-top)] ${
         hasGlass ? 'bg-white/70 dark:bg-black/60 backdrop-blur-md' : 'bg-white dark:bg-black'
       }`}>
         <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
@@ -260,33 +288,35 @@ export default function Layout() {
               }}
             />
           </div>
-          {/* 语言选择器 */}
-          <Dropdown>
-            <DropdownTrigger>
-              {/* DropdownTrigger (react-aria Button) 自己就渲染一个真实 <button>，
-                  子元素不能再是 button，否则 button 嵌 button 触发 DOM 校验警告 */}
-              <motion.span whileTap={{ scale: 0.9 }} title={t('top.language')}
-                className="flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 text-xs font-semibold cursor-pointer">
-                <i className="bi bi-translate text-sm" />
-                {lang === 'zh' ? '中' : 'EN'}
-              </motion.span>
-            </DropdownTrigger>
-            <DropdownPopover>
-              <DropdownMenu>
-                <DropdownItem key="zh" onPress={() => setLang('zh')}>
-                  {lang === 'zh' ? '✓ ' : ''}中文
-                </DropdownItem>
-                <DropdownItem key="en" onPress={() => setLang('en')}>
-                  {lang === 'en' ? '✓ ' : ''}English
-                </DropdownItem>
-              </DropdownMenu>
-            </DropdownPopover>
-          </Dropdown>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={toggle} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? t('theme.light') : t('theme.dark')}>
+          {/* 语言选择器（小屏隐藏，入口在抽屉底部） */}
+          <div className="hidden md:block">
+            <Dropdown>
+              <DropdownTrigger>
+                {/* DropdownTrigger (react-aria Button) 自己就渲染一个真实 <button>，
+                    子元素不能再是 button，否则 button 嵌 button 触发 DOM 校验警告 */}
+                <motion.span whileTap={{ scale: 0.9 }} title={t('top.language')}
+                  className="flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500 text-xs font-semibold cursor-pointer">
+                  <i className="bi bi-translate text-sm" />
+                  {lang === 'zh' ? '中' : 'EN'}
+                </motion.span>
+              </DropdownTrigger>
+              <DropdownPopover>
+                <DropdownMenu>
+                  <DropdownItem key="zh" onPress={() => setLang('zh')}>
+                    {lang === 'zh' ? '✓ ' : ''}中文
+                  </DropdownItem>
+                  <DropdownItem key="en" onPress={() => setLang('en')}>
+                    {lang === 'en' ? '✓ ' : ''}English
+                  </DropdownItem>
+                </DropdownMenu>
+              </DropdownPopover>
+            </Dropdown>
+          </div>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={toggle} className="hidden md:block p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={isDark ? t('theme.light') : t('theme.dark')}>
             {isDark ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
           </motion.button>
-          {/* 关于：显示当前构建版本信息（commit 首行） */}
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowAbout(true)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={t('top.about')}>
+          {/* 关于：显示当前构建版本信息（commit 首行）。小屏隐藏，入口在抽屉底部 */}
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowAbout(true)} className="hidden md:block p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-500" title={t('top.about')}>
             <i className="bi bi-info-circle text-sm" />
           </motion.button>
           <NotificationBell />
@@ -315,7 +345,7 @@ export default function Layout() {
           ) : (
             <div className="flex items-center gap-1">
               <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/login')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-600 dark:text-gray-400">{t('top.login')}</motion.button>
-              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/register')} className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">{t('top.register')}</motion.button>
+              <motion.button whileTap={{ scale: 0.93 }} onClick={() => navigate('/register')} className="hidden sm:block text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">{t('top.register')}</motion.button>
             </div>
           )}
         </div>
@@ -358,19 +388,41 @@ export default function Layout() {
                 animate={{ x: 0 }}
                 exit={{ x: -256 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className={`fixed left-0 top-12 z-50 w-56 h-[calc(100vh-48px)] border-r border-gray-200 dark:border-gray-800 p-2 ${
+                onClick={(e) => { if (e.target.closest('a')) setSidebarOpen(false); }}
+                className={`fixed left-0 top-[calc(3rem+env(safe-area-inset-top))] z-50 w-56 h-[calc(100vh-3rem-env(safe-area-inset-top))] border-r border-gray-200 dark:border-gray-800 p-2 flex flex-col ${
                   hasGlass ? 'bg-white/60 dark:bg-black/60 backdrop-blur-md' : 'bg-gray-50 dark:bg-gray-950'
                 }`}
               >
-                {renderSidebar(false)}
+                {/* 点击任意导航链接后自动收起抽屉 */}
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  {renderSidebar(false)}
+                </div>
+                {/* 小屏顶栏隐藏的主题 / 语言 / 关于，挪到抽屉底部 */}
+                <div className="shrink-0 mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 space-y-0.5">
+                  <button onClick={toggle}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+                    {isDark ? <SunIcon className="w-4 h-4 shrink-0" /> : <MoonIcon className="w-4 h-4 shrink-0" />}
+                    {isDark ? t('theme.light') : t('theme.dark')}
+                  </button>
+                  <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+                    <i className="bi bi-translate text-base shrink-0" />
+                    {t('top.language')}：{lang === 'zh' ? '中文' : 'English'}
+                  </button>
+                  <button onClick={() => { setShowAbout(true); setSidebarOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+                    <i className="bi bi-info-circle text-base shrink-0" />
+                    {t('top.about')}
+                  </button>
+                </div>
               </motion.aside>
             </>
           )}
         </AnimatePresence>
 
-        {/* Main Content */}
+        {/* Main Content — 小屏底部留出 Tab 栏高度（聊天会话页无 Tab 栏，恢复正常） */}
         <main className="flex-1 min-h-[calc(100vh-48px)] min-w-0">
-          <div className="w-full max-w-3xl mx-auto px-4 py-4 dark:text-gray-200">
+          <div className={`w-full max-w-3xl mx-auto px-4 pt-4 dark:text-gray-200 ${showTabBar ? 'pb-20' : 'pb-4'} lg:pb-4`}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
@@ -559,6 +611,44 @@ export default function Layout() {
           </GlassPanel>
         </aside>
       </div>
+
+      {/* 移动端底部 Tab 栏（<lg）：一级入口拇指可达，中间凸起发布 FAB。
+          z-30 低于抽屉遮罩（z-40），抽屉打开时被正常盖住；聊天会话页隐藏 */}
+      {showTabBar && (
+        <nav className={`lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-gray-200 dark:border-gray-800 pb-[env(safe-area-inset-bottom)] ${
+          hasGlass ? 'bg-white/80 dark:bg-black/70 backdrop-blur-md' : 'bg-white dark:bg-black'
+        }`}>
+          <div className="flex items-stretch h-14">
+            {TAB_LINKS.map((item) =>
+              item === null ? (
+                <div key="publish" className="flex-1 flex items-center justify-center">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => navigate('/qa/ask')}
+                    title={t('top.publish')}
+                    className="w-11 h-11 -mt-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30 border-4 border-white dark:border-black flex items-center justify-center transition-colors"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                  </motion.button>
+                </div>
+              ) : (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 no-underline transition-colors ${
+                    isActive(item.to)
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  <i className={`bi ${item.icon} text-lg leading-none`} />
+                  <span className="text-[10px] font-medium leading-none">{t(item.key)}</span>
+                </Link>
+              ),
+            )}
+          </div>
+        </nav>
+      )}
 
       {/* 关于弹窗 */}
       <AboutDialog open={showAbout} onClose={() => setShowAbout(false)} />

@@ -16,6 +16,9 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
       'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
     line-height: 1.6;
+    /* 移动端触控体验：去掉点击时的灰色闪块，取消双击缩放延迟（App 手感） */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   /* Custom scrollbar */

@@ -2,7 +2,9 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover：让 WebView 内容延伸到刘海/圆角区域，
+         由 CSS env(safe-area-inset-*) 负责避让（Cordova 原生壳全屏时必需） -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="openSHSID —— 问答 / 知识库 / LinkedClassroom" />
     <meta name="theme-color" content="#6366f1" />
     <link rel="icon" href="/favicon.png" type="image/png" />
