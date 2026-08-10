@@ -100,6 +100,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: '0.0.0.0',
+      allowedHosts: ['openshsid.zengyuxiang.cn'], //样例
       proxy: {
         '/api': {
           target: 'http://localhost:19424',
