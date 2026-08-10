@@ -7,6 +7,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="openSHSID —— 问答 / 知识库 / LinkedClassroom" />
     <meta name="theme-color" content="#6366f1" />
+    <!-- 让 Dark Reader 跳过本站：站内已有完整暗色模式，扩展反而会覆盖背景/主题色 -->
+    <meta name="darkreader-lock" />
+    <style>
+      /* 首屏加载占位：关键 JS 尚未加载时显示的居中转圈。
+         纯内联 CSS，不依赖 Tailwind（此时样式表可能还没到）；
+         React 挂载后 #root 内容被替换，此占位自动消失。 */
+      #root:empty::before {
+        content: '';
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 40px;
+        height: 40px;
+        margin: -20px 0 0 -20px;
+        border: 3px solid rgba(99, 102, 241, 0.25);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: openshsid-spin 0.8s linear infinite;
+      }
+      @keyframes openshsid-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <!-- iOS「添加到主屏幕」：manifest 本身在 iOS 上支持有限，这几个标签才是实际生效的 -->
