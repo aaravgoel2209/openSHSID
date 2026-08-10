@@ -2,6 +2,10 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+from OpenSHSID_backend.config_loader import cfg
+
+_HEAT = cfg['ranking']['heat']
+
 
 class Label(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name="标签")
@@ -39,7 +43,10 @@ class Question(models.Model):
         likes = self.likes.count()
         comments = self.answers.count()
         days = (timezone.now() - self.created_at).days
-        return round(max(0.0, 2.0 + clicks * 0.1 + likes * 0.3 + comments * 0.2 - days * 1), 4)
+        # 权重集中在 config.json ranking.heat（与知识库/周榜共用同一份）
+        h = _HEAT
+        return round(max(0.0, h['initial'] + clicks * h['click'] + likes * h['like']
+                         + comments * h['comment'] - days * h['decay']), 4)
 
     def __str__(self):
         return self.title

@@ -215,7 +215,7 @@ export default function Register() {
       <AuthTopbar />
 
       <div style={{ position: 'relative', zIndex: 10 }}>
-        <img src={new URL('../assets/shsid-logo.png', import.meta.url).href} alt="SHSID" style={{ width: 528, height: 528, position: 'absolute', bottom: 'calc(100% - 215px)', left: '50%', transform: 'translateX(-50%)', zIndex: 30, objectFit: 'contain' }} />
+        {/*<img src={new URL('../assets/shsid-logo.png', import.meta.url).href} alt="SHSID" style={{ width: 528, height: 528, position: 'absolute', bottom: 'calc(100% - 215px)', left: '50%', transform: 'translateX(-50%)', zIndex: 30, objectFit: 'contain' }} />*/}
         <div className="w-[870px] h-[510px] rounded-[16px] overflow-hidden relative flex" style={{ boxShadow: '0 12px 40px rgba(0,0,0,.12)' }}>
 
           <div className="absolute left-[39%] top-0 bottom-0 z-20 pointer-events-none w-[1px]" style={{ background: 'rgba(255,255,255,.35)' }}></div>

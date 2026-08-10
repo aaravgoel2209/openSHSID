@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 
+# 中央配置：所有可调配置集中在项目根 config.json（密钥用环境变量注入，见 config_loader.py）
+from OpenSHSID_backend.config_loader import cfg
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,12 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*zab9p&)=o8ji6kg^u)7yh#moe%(k&-i1jo3b@_=ih#w2^vbqm'
+SECRET_KEY = cfg['django']['secret_key']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = cfg['django']['debug']
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = cfg['django']['allowed_hosts']
 
 
 # Application definition
@@ -49,9 +52,9 @@ INSTALLED_APPS = [
     'postbar',
 ]
 
-# LinkedClassroom credentials (override with env vars or per-request credentials in the API)
-LINKEDCLASSROOM_USERNAME = ""
-LINKEDCLASSROOM_PASSWORD = ""
+# LinkedClassroom credentials (config.json 中配置，密钥走环境变量注入)
+LINKEDCLASSROOM_USERNAME = cfg['django']['linkedclassroom']['username']
+LINKEDCLASSROOM_PASSWORD = cfg['django']['linkedclassroom']['password']
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -90,11 +93,11 @@ WSGI_APPLICATION = 'OpenSHSID_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': cfg['django']['database']['engine'],
+        'NAME': BASE_DIR / cfg['django']['database']['name'],
         'OPTIONS': {
-            # 锁等待 20s（配合 signals.py 的 WAL/busy_timeout），缓解流式写入并发下的锁冲突
-            'timeout': 20,
+            # 锁等待（配合 signals.py 的 WAL/busy_timeout），缓解流式写入并发下的锁冲突
+            'timeout': cfg['django']['database']['timeout'],
         },
     }
 }
@@ -134,34 +137,29 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = cfg['django']['static_url']
+STATIC_ROOT = BASE_DIR / cfg['django']['static_root']
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = cfg['django']['media_url']
+MEDIA_ROOT = BASE_DIR / cfg['django']['media_root']
 
 # CORS - allow React dev server
-CORS_ALLOW_ALL_ORIGINS = True  # Dev / Docker only
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = cfg['django']['cors']['allow_all']  # Dev / Docker only
+CORS_ALLOW_CREDENTIALS = cfg['django']['cors']['allow_credentials']
 
 # CSRF - 信任的来源（POST/PUT/DELETE 等不安全请求会校验 Origin）
 # 开发：Vite 5173 与 Django 19424；生产域名用环境变量 CSRF_TRUSTED_ORIGINS 追加（逗号分隔）
 import os as _os
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:19424',
-    'http://127.0.0.1:19424',
-]
+CSRF_TRUSTED_ORIGINS = list(cfg['django']['csrf_trusted_origins'])
 CSRF_TRUSTED_ORIGINS += [
     o.strip() for o in _os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
 ]
 
 # 模型/OCR 服务地址。OCR 跑在带 GPU 的机器上（Unlimited-OCR），主聊天模型在本机。
-# 均可用同名环境变量覆盖。
-OCR_SERVICE_URL = _os.environ.get('OCR_SERVICE_URL', 'http://192.168.2.103:5001')
-MODEL_SERVICE_URL = _os.environ.get('MODEL_SERVICE_URL', 'http://localhost:5000')
+# 在 config.json 的 services 段配置，仍可用同名环境变量覆盖。
+OCR_SERVICE_URL = cfg['services']['ocr_service_url']
+MODEL_SERVICE_URL = cfg['services']['model_service_url']
 
 # Django REST Framework
 REST_FRAMEWORK = {
@@ -179,11 +177,5 @@ REST_FRAMEWORK = {
 }
 
 # 内容审核：发布文章/问答时禁止包含的违禁词（命中则拒绝发布，大小写不敏感）
-# 按需在此增删词条即可，无需改动代码
-BLOCKED_WORDS = [
-    '广告',
-    '加微信',
-    '代写',
-    '赌博',
-    '色情',
-]
+# 在 config.json 的 django.blocked_words 中维护
+BLOCKED_WORDS = list(cfg['django']['blocked_words'])

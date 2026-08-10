@@ -10,6 +10,9 @@ from .models import UserProfile, Notice
 from .serializers import RegisterSerializer, UserSerializer
 from qa.models import Question, Answer
 from knowledge.models import Article
+from OpenSHSID_backend.config_loader import cfg
+
+_HEAT = cfg['ranking']['heat']
 
 
 class LoginView(ObtainAuthToken):
@@ -124,19 +127,20 @@ def weekly_top_users(request):
     ans = list(Answer.objects.filter(created_at__gte=since, author__isnull=False).prefetch_related('likes'))
     arts = list(Article.objects.filter(created_at__gte=since, author__isnull=False).prefetch_related('likes'))
     heat_sums = {}
+    h0 = _HEAT
     for q in qs:
         aid = q.author_id
         days = (timezone.now() - q.created_at).days
-        h = 2.0 + q.views * 0.1 + q.likes.count() * 0.3 + q.answers.count() * 0.2 - days * 0.1
+        h = h0['initial'] + q.views * h0['click'] + q.likes.count() * h0['like'] + q.answers.count() * h0['comment'] - days * h0['decay']
         heat_sums[aid] = heat_sums.get(aid, 0) + max(0, h)
     for a in ans:
         aid = a.author_id
-        h = 1.0 + a.likes.count() * 0.2
+        h = h0['answer_initial'] + a.likes.count() * h0['answer_like']
         heat_sums[aid] = heat_sums.get(aid, 0) + max(0, h)
     for a in arts:
         aid = a.author_id
         days = (timezone.now() - a.created_at).days
-        h = 2.0 + a.views * 0.1 + a.likes.count() * 0.3 - days * 0.1
+        h = h0['initial'] + a.views * h0['click'] + a.likes.count() * h0['like'] - days * h0['decay']
         heat_sums[aid] = heat_sums.get(aid, 0) + max(0, h)
     sorted_users = sorted(heat_sums.items(), key=lambda x: x[1], reverse=True)[:5]
     users_map = {u.id: u for u in User.objects.filter(id__in=[u[0] for u in sorted_users])}
@@ -148,3 +152,24 @@ def weekly_top_users(request):
         'article_count': sum(1 for a in arts if a.author_id == uid),
         'total_heat': round(heat, 2),
     } for uid, heat in sorted_users if uid in users_map])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ai_session(request):
+    """签发当前登录用户的 AI 会话令牌。
+
+    关键点：session_id 由服务端按 request.user 推导，客户端无法指定。
+    模型服务只认这里签出的令牌，因此没人能拿别人的 session_id 去读写其聊天记录。
+    """
+    import logging
+    from OpenSHSID_backend import rei_session
+
+    session_id = f'chat-user-{request.user.id}'
+    try:
+        token = rei_session.sign(session_id)
+    except rei_session.SecretMissing as e:
+        logging.getLogger(__name__).error('[Rei] 会话令牌签发失败: %s', e)
+        return Response({'error': 'AI 会话服务未正确配置，请联系管理员'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return Response({'session_id': session_id, 'token': token})

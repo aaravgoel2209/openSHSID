@@ -6,6 +6,7 @@ urlpatterns = [
     path('grades/', views.grade_list, name='grade_list'),
     path('subjects/', views.subject_list, name='subject_list'),
     path('articles/', views.article_list, name='article_list'),
+    path('search-titles/', views.title_suggest, name='title_suggest'),
     path('articles/<int:pk>/', views.article_detail, name='article_detail'),
     path('articles/<int:pk>/view/', views.view_article, name='view_article'),
 

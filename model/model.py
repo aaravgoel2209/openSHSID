@@ -9,6 +9,8 @@ heat 作为 item 向量的标量缩放，在模型外部应用
 import torch
 import torch.nn as nn
 
+from config_loader import cfg
+
 
 def _make_encoder(in_dim: int, out_dim: int, dropout: float) -> nn.Sequential:
     return nn.Sequential(
@@ -21,7 +23,12 @@ def _make_encoder(in_dim: int, out_dim: int, dropout: float) -> nn.Sequential:
 
 
 class RecoModel(nn.Module):
-    def __init__(self, emb_dim: int = 32, hidden: int = 64, dropout: float = 0.1):
+    def __init__(self, emb_dim: int = None, hidden: int = None, dropout: float = None):
+        # 架构超参集中在 config.json 的 reco_model 段；显式传参（测试）优先
+        rc = cfg['reco_model']
+        emb_dim = rc['emb_dim'] if emb_dim is None else emb_dim
+        hidden = rc['hidden'] if hidden is None else hidden
+        dropout = rc['dropout'] if dropout is None else dropout
         super().__init__()
         self.item_enc = _make_encoder(emb_dim, hidden, dropout)
         self.user_enc = _make_encoder(emb_dim, hidden, dropout)

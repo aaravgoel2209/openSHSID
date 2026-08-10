@@ -5,6 +5,7 @@ import { uploadAvatar } from '../api/auth';
 import { resolveAvatar } from '../utils/avatar';
 import { useUI } from '../context/UIContext';
 import { getServerOverride, setServerOverride, DJANGO_ORIGIN } from '../config';
+import { getPrefs, updatePrefs, ACCENT_PRESETS, DEFAULT_ACCENT } from '../config/prefs';
 import GlassPanel from '../components/GlassPanel';
 
 const LEVELS = [
@@ -62,6 +63,16 @@ export default function Settings() {
   const [serverInput, setServerInput] = useState(getServerOverride());
   const [serverMsg, setServerMsg] = useState(null); // { type: 'ok'|'err', text }
   const currentServer = getServerOverride() || DJANGO_ORIGIN || '同源（当前域名）';
+
+  // 个性化主题色（null = 默认靛蓝）
+  const [accent, setAccentState] = useState(() => getPrefs().accent || null);
+  const isDefaultAccent = !accent;
+  const activeAccent = accent || DEFAULT_ACCENT;
+
+  function setAccent(value) {
+    setAccentState(value);
+    updatePrefs({ accent: value });
+  }
 
   function handleSaveServer() {
     try {
@@ -248,6 +259,96 @@ export default function Settings() {
             液态玻璃特效在 Chromium 内核浏览器中效果最佳（Safari/Firefox 仅部分支持）。目前正在开发中
           </p>
         )}
+      </GlassPanel>
+
+      {/* ── Theme color section ── */}
+      <GlassPanel
+        plainClass="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 mt-4"
+        glassContentClass="p-6 mt-4"
+        cornerRadius={20}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">主题色</h2>
+          {!isDefaultAccent && (
+            <button
+              type="button"
+              onClick={() => setAccent(null)}
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:opacity-70 transition-opacity"
+            >
+              恢复默认
+            </button>
+          )}
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">选择全站的主色调，按钮、链接、导航高亮会同步更换。</p>
+
+        {/* 预设色板 */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          {ACCENT_PRESETS.map((p) => {
+            const active = (p.value || null) === accent;
+            return (
+              <button
+                key={p.name}
+                type="button"
+                title={p.name}
+                onClick={() => setAccent(p.value)}
+                className="flex flex-col items-center gap-1.5 group"
+              >
+                <span
+                  className={`w-9 h-9 rounded-full transition-all ${
+                    active ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-105' : 'group-hover:scale-105'
+                  }`}
+                  style={{
+                    backgroundColor: p.value || DEFAULT_ACCENT,
+                    ...(active ? { boxShadow: `0 0 0 2px ${p.value || DEFAULT_ACCENT}` } : {}),
+                  }}
+                />
+                <span className={`text-[11px] ${active ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-400'}`}>
+                  {p.name.replace('（默认）', '')}
+                </span>
+              </button>
+            );
+          })}
+
+          {/* 自定义取色 */}
+          <label className="flex flex-col items-center gap-1.5 cursor-pointer group" title="自定义颜色">
+            <span className="relative w-9 h-9 rounded-full border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <span
+                className="absolute inset-1 rounded-full"
+                style={{ background: `conic-gradient(#f43f5e, #f59e0b, #10b981, #06b6d4, #8b5cf6, #f43f5e)` }}
+              />
+              <span
+                className="absolute inset-1 rounded-full border border-white/60"
+                style={{ backgroundColor: !isDefaultAccent && !ACCENT_PRESETS.some((p) => p.value === accent) ? accent : 'transparent' }}
+              />
+            </span>
+            <span className="text-[11px] text-gray-400">自定义</span>
+            <input
+              type="color"
+              value={accent || DEFAULT_ACCENT}
+              onChange={(e) => setAccent(e.target.value)}
+              className="absolute w-0 h-0 opacity-0"
+            />
+          </label>
+        </div>
+
+        {/* 当前效果预览 */}
+        <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800/60">
+          <button
+            type="button"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors"
+            style={{ backgroundColor: activeAccent }}
+          >
+            示例按钮
+          </button>
+          <span className="text-sm" style={{ color: activeAccent }}>主题色文字链接</span>
+          <span
+            className="text-xs px-2 py-0.5 rounded-full font-medium"
+            style={{ backgroundColor: `${activeAccent}22`, color: activeAccent }}
+          >
+            标签
+          </span>
+          <span className="text-xs text-gray-400 ml-auto font-mono">{isDefaultAccent ? '默认（靛蓝）' : activeAccent.toUpperCase()}</span>
+        </div>
       </GlassPanel>
 
       {/* ── Backend server section ── */}

@@ -8,10 +8,14 @@ import threading
 
 import requests
 
+from OpenSHSID_backend.config_loader import cfg
+
 logger = logging.getLogger(__name__)
 
-# 本地模型服务（model/app.py）翻译端点；直连、绕过系统代理
-TRANSLATE_URL = "http://localhost:5000/translate"
+# 本地模型服务（model/app.py）翻译端点；直连、绕过系统代理。
+# 地址来自 config.json services.model_service_url（可用 MODEL_SERVICE_URL 环境变量覆盖）。
+_TRANSLATE_URL = f"{cfg['services']['model_service_url'].rstrip('/')}/translate"
+_SERVICE_ROOT = cfg['services']['model_service_url'].rstrip('/')
 _NO_PROXY = {"http": None, "https": None}
 
 
@@ -24,7 +28,7 @@ def detect_lang(text):
     return "zh" if cjk >= letters else "en"
 
 
-def translate(text, target=None, timeout=120):
+def translate(text, target=None, timeout=cfg['translate']['timeout']):
     """把 text 翻译到 target（'zh'/'en'；为空则自动取相反语言）。
     成功返回译文字符串；失败返回 None。"""
     text = (text or "").strip()
@@ -32,7 +36,7 @@ def translate(text, target=None, timeout=120):
         return ""
     try:
         resp = requests.post(
-            TRANSLATE_URL,
+            _TRANSLATE_URL,
             json={"text": text, "target": target},
             timeout=timeout,
             proxies=_NO_PROXY,
@@ -51,10 +55,10 @@ def translate(text, target=None, timeout=120):
         return None
 
 
-def service_available(timeout=3):
+def service_available(timeout=cfg['translate']['service_check_timeout']):
     """快速探测模型服务是否在线（供数据迁移批量翻译前判断）。"""
     try:
-        requests.get("http://localhost:5000/", timeout=timeout, proxies=_NO_PROXY)
+        requests.get(_SERVICE_ROOT, timeout=timeout, proxies=_NO_PROXY)
         return True
     except requests.exceptions.RequestException:
         return False

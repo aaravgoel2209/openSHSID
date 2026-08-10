@@ -7,20 +7,22 @@ BPR (Bayesian Personalised Ranking) 强化学习训练
 import json
 import time
 import logging
-from pathlib import Path
 import torch
 import torch.nn.functional as F
 from model import RecoModel
 
+from config_loader import cfg, ROOT
+
 logger = logging.getLogger(__name__)
 
-DATA_DIR = Path(__file__).parent / "data"
+TRAIN_CFG = cfg['training']
+DATA_DIR = ROOT / TRAIN_CFG['data_dir']
 DATA_DIR.mkdir(exist_ok=True)
-MODEL_PATH = DATA_DIR / "model.pt"
-LOG_PATH = DATA_DIR / "log.jsonl"
+MODEL_PATH = ROOT / TRAIN_CFG['model_path']
+LOG_PATH = ROOT / TRAIN_CFG['log_path']
 
-SAVE_INTERVAL = 10   # 每 N 步保存一次模型
-MAX_GRAD_NORM = 1.0  # 梯度裁剪上限
+SAVE_INTERVAL = TRAIN_CFG['save_interval']   # 每 N 步保存一次模型
+MAX_GRAD_NORM = TRAIN_CFG['max_grad_norm']   # 梯度裁剪上限
 
 
 def load_model() -> RecoModel:

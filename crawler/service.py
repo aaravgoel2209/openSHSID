@@ -9,24 +9,24 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
-BASE_URL = "https://www.linkedclassroom.com"
-LOGIN_URL = f"{BASE_URL}/login/index.php"
+from OpenSHSID_backend.config_loader import cfg
+
+CRAWL_CFG = cfg['crawler']
+
+BASE_URL = CRAWL_CFG['base_url']
+LOGIN_URL = f"{BASE_URL}{CRAWL_CFG['login_path']}"
 
 
 class LinkedClassroomCrawler:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/114.0.0.0 Safari/537.36"
-            )
+            "User-Agent": CRAWL_CFG['user_agent']
         })
         self.logged_in = False
 
     def login(self, username: str, password: str) -> bool:
-        resp = self.session.get(LOGIN_URL, timeout=15)
+        resp = self.session.get(LOGIN_URL, timeout=CRAWL_CFG['timeout'])
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
 
@@ -40,7 +40,7 @@ class LinkedClassroomCrawler:
             "password": password,
             "rememberusername": "1",
             "anchor": "",
-        }, timeout=15)
+        }, timeout=CRAWL_CFG['timeout'])
         login_resp.raise_for_status()
 
         # Success: redirected to dashboard or /my/
@@ -59,7 +59,7 @@ class LinkedClassroomCrawler:
 
     def get_all_courses(self) -> dict[str, str]:
         """Return {course_id: course_name} for the logged-in user."""
-        resp = self.session.get(f"{BASE_URL}/my/", timeout=15)
+        resp = self.session.get(f"{BASE_URL}/my/", timeout=CRAWL_CFG['timeout'])
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
         courses = {}
@@ -91,7 +91,7 @@ class LinkedClassroomCrawler:
 
         # fall back to course index
         if not courses:
-            resp2 = self.session.get(f"{BASE_URL}/course/index.php?categoryid=0", timeout=15)
+            resp2 = self.session.get(f"{BASE_URL}/course/index.php?categoryid=0", timeout=CRAWL_CFG['timeout'])
             resp2.raise_for_status()
             soup2 = BeautifulSoup(resp2.text, "html.parser")
             for box in soup2.find_all("div", class_="coursebox"):
@@ -131,7 +131,7 @@ class LinkedClassroomCrawler:
     def get_course_contents(self, course_id: int | str) -> dict:
         """Return full course structure: title, summary, list of sections with activities."""
         course_url = f"{BASE_URL}/course/view.php?id={course_id}"
-        resp = self.session.get(course_url, timeout=15)
+        resp = self.session.get(course_url, timeout=CRAWL_CFG['timeout'])
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
 
@@ -184,7 +184,7 @@ class LinkedClassroomCrawler:
                             break
 
             try:
-                sec_resp = self.session.get(section_url, timeout=15)
+                sec_resp = self.session.get(section_url, timeout=CRAWL_CFG['timeout'])
                 sec_resp.raise_for_status()
                 sec_soup = BeautifulSoup(sec_resp.text, "html.parser")
 
@@ -226,7 +226,7 @@ class LinkedClassroomCrawler:
 
     def scrape_folder(self, folder_url: str) -> list[dict]:
         """Return list of {name, url} for all files in a Moodle folder page."""
-        resp = self.session.get(folder_url, timeout=15)
+        resp = self.session.get(folder_url, timeout=CRAWL_CFG['timeout'])
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
         files = []

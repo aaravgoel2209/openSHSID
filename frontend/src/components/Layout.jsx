@@ -14,6 +14,8 @@ import AboutDialog from './AboutDialog';
 import SubbarTeamPanel from './SubbarTeamPanel';
 import { getAvatarColor, resolveAvatar } from '../utils/avatar';
 import { localizeTitle } from '../utils/lang';
+import { useDebounce } from '../hooks/useDebounce';
+import { searchTitles } from '../api/knowledge';
 import { API_BASE, DJANGO_ORIGIN } from '../config';
 import client from '../api/client';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -82,6 +84,50 @@ export default function Layout() {
   const [noticeContent, setNoticeContent] = useState('');
   const [noticePosting, setNoticePosting] = useState(false);
   const [showNoticeForm, setShowNoticeForm] = useState(false);
+
+  // 顶部搜索建议：受控输入 + 防抖拉取 + 聚焦显示下拉
+  const [query, setQuery] = useState('');
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const searchRef = useRef(null);
+  const debouncedQuery = useDebounce(query, 250);
+
+  useEffect(() => {
+    const q = debouncedQuery.trim();
+    if (!q) { setSuggestions([]); setSuggestLoading(false); return; }
+    setSuggestLoading(true);
+    let cancelled = false;
+    searchTitles(q)
+      .then((hits) => { if (!cancelled) setSuggestions(hits || []); })
+      .catch(() => { if (!cancelled) setSuggestions([]); })
+      .finally(() => { if (!cancelled) setSuggestLoading(false); });
+    return () => { cancelled = true; };
+  }, [debouncedQuery]);
+
+  // 点击外部 / Esc 关闭建议面板
+  useEffect(() => {
+    if (!showSuggest) return;
+    const onDoc = (e) => { if (searchRef.current && !searchRef.current.contains(e.target)) setShowSuggest(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setShowSuggest(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+  }, [showSuggest]);
+
+  // Enter → 完整搜索结果页；点击建议 → 直达详情
+  const goSearch = () => {
+    const q = query.trim();
+    if (!q) return;
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+    setQuery('');
+    setShowSuggest(false);
+  };
+  const goSuggestion = (s) => {
+    setQuery('');
+    setShowSuggest(false);
+    navigate(s.type === 'article' ? `/knowledge/${s.id}` : `/qa/questions/${s.id}`);
+  };
 
   // 屏幕尺寸状态
   const [isLargeScreen, setIsLargeScreen] = useState(
@@ -275,18 +321,51 @@ export default function Layout() {
             </AnimatePresence>
           </motion.button>
           <Link to="/" className="font-bold text-sm text-gray-900 dark:text-white no-underline shrink-0">openSHSID</Link>
-          <div className="flex-1 max-w-md mx-auto min-w-0">
+          <div className="flex-1 max-w-md mx-auto min-w-0 relative" ref={searchRef}>
             <input
               type="text"
+              value={query}
               placeholder={t('top.search')}
-              className="w-full h-8 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 text-xs dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:bg-white dark:focus:bg-gray-800 transition-colors"
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setShowSuggest(true)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.target.value.trim()) {
-                  navigate(`/search?q=${encodeURIComponent(e.target.value.trim())}`);
-                  e.target.value = '';
-                }
+                if (e.key === 'Enter') goSearch();
               }}
+              className="w-full h-8 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 text-xs dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:bg-white dark:focus:bg-gray-800 transition-colors"
             />
+            {/* 聚焦时显示标题建议 */}
+            {showSuggest && query.trim() && (
+              <div className="absolute left-0 right-0 mt-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg z-50 overflow-hidden">
+                {suggestLoading ? (
+                  <div className="py-3 text-center text-xs text-gray-400">搜索中...</div>
+                ) : suggestions.length === 0 ? (
+                  <div className="py-3 text-center text-xs text-gray-400">未找到匹配的内容</div>
+                ) : (
+                  <ul className="max-h-80 overflow-y-auto py-1">
+                    {suggestions.map((s, i) => (
+                      <li key={`${s.type}-${s.id}`}>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => goSuggestion(s)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                        >
+                          <span className={`text-xs shrink-0 px-1.5 py-0.5 rounded font-medium ${s.type === 'article'
+                            ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
+                            : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'}`}>
+                            {s.type === 'article' ? '文章' : '问答'}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-xs truncate text-gray-800 dark:text-gray-200">{s.title}</span>
+                            {s.meta && <span className="block text-[10px] text-gray-400 truncate">{s.meta}</span>}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
           {/* 语言选择器（小屏隐藏，入口在抽屉底部） */}
           <div className="hidden md:block">

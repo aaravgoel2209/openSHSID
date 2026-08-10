@@ -4,13 +4,15 @@
 import sqlite3
 import json
 import time
-from pathlib import Path
 
-DB_PATH = Path(__file__).parent / 'data' / 'local.db'
+from config_loader import cfg, ROOT
+
+# 路径集中在 config.json 的 database 段
+DB_PATH = ROOT / cfg['database']['path']
 
 
 def get_conn():
-    Path(__file__).parent.joinpath('data').mkdir(exist_ok=True)
+    DB_PATH.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute('''
@@ -35,6 +37,16 @@ def get_conn():
         )
     ''')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_history(session_id, created_at)')
+    # 滚动摘要：被 token 预算挤出上下文的旧消息，折叠进这里，避免早期对话“凭空消失”。
+    # last_id = 已并入摘要的最大 chat_history.id，下次只需增量折叠更新的溢出消息。
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS session_summaries (
+            session_id TEXT PRIMARY KEY,
+            summary TEXT NOT NULL,
+            last_id INTEGER NOT NULL DEFAULT 0,
+            updated_at REAL NOT NULL
+        )
+    ''')
     # 外部内容向量缓存（从 Django 同步，用于 RAG 检索）：source = 'kb' | 'qa' ...
     # 长文按段切块，一条内容可对应多行（chunk_idx 递增）
     conn.execute('''
@@ -89,6 +101,73 @@ def load_recent_messages(session_id, limit=20):
     ).fetchall()
     conn.close()
     return [{'role': r['role'], 'content': r['content']} for r in rows[-limit:]]
+
+
+def load_messages_after(session_id, after_id=0, limit=500):
+    """按 id 升序加载 id>after_id 的消息（带 id，供上下文预算/摘要用）。
+    limit 只做兜底，防止异常长会话把内存撑爆——正常情况下预算会先把它们截掉。"""
+    conn = get_conn()
+    rows = conn.execute(
+        'SELECT id, role, content FROM chat_history WHERE session_id=? AND id>? ORDER BY id ASC',
+        (session_id, after_id)
+    ).fetchall()
+    conn.close()
+    rows = rows[-limit:]
+    return [{'id': r['id'], 'role': r['role'], 'content': r['content']} for r in rows]
+
+
+def count_session(session_id):
+    """返回 (消息条数, 内容总字符数)，用于 100k 压缩的廉价预检（不加载正文）。"""
+    conn = get_conn()
+    row = conn.execute(
+        'SELECT COUNT(*) AS c, COALESCE(SUM(LENGTH(content)), 0) AS s '
+        'FROM chat_history WHERE session_id=?', (session_id,)
+    ).fetchone()
+    conn.close()
+    return row['c'], row['s']
+
+
+def load_all_messages(session_id):
+    conn = get_conn()
+    rows = conn.execute(
+        'SELECT id, role, content FROM chat_history WHERE session_id=? ORDER BY id ASC',
+        (session_id,)
+    ).fetchall()
+    conn.close()
+    return [{'id': r['id'], 'role': r['role'], 'content': r['content']} for r in rows]
+
+
+def delete_messages_upto(session_id, max_id):
+    """物理删除 id<=max_id 的原始消息（100k 压缩后清理已折叠进摘要的旧消息）。"""
+    conn = get_conn()
+    conn.execute('DELETE FROM chat_history WHERE session_id=? AND id<=?', (session_id, max_id))
+    conn.commit()
+    conn.close()
+
+
+# ── 会话滚动摘要 ─────────────────────────────────────────
+
+def get_session_summary(session_id):
+    """返回 (summary, last_id)；无记录时 ('', 0)。"""
+    conn = get_conn()
+    row = conn.execute(
+        'SELECT summary, last_id FROM session_summaries WHERE session_id=?', (session_id,)
+    ).fetchone()
+    conn.close()
+    return (row['summary'], row['last_id']) if row else ('', 0)
+
+
+def save_session_summary(session_id, summary, last_id):
+    conn = get_conn()
+    conn.execute(
+        '''INSERT INTO session_summaries (session_id, summary, last_id, updated_at)
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(session_id) DO UPDATE SET
+               summary=excluded.summary, last_id=excluded.last_id, updated_at=excluded.updated_at''',
+        (session_id, summary, last_id, time.time())
+    )
+    conn.commit()
+    conn.close()
 
 
 # ── RAG 记忆向量 ──────────────────────────────────────────

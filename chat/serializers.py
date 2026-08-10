@@ -45,4 +45,4 @@ class ConversationSerializer(serializers.Serializer):
     avatar = serializers.CharField(allow_null=True, required=False, default=None)
     last_message = serializers.CharField()
     last_message_at = serializers.DateTimeField()
-    unread = serializers.BooleanField(default=False)
+    unread = serializers.IntegerField(default=0)

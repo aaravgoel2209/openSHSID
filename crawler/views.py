@@ -15,6 +15,9 @@ from rest_framework import status
 from .models import Course, Section, Activity, Credential
 from .serializers import CourseSerializer, CourseListSerializer
 from .service import LinkedClassroomCrawler, BASE_URL as LC_BASE, LOGIN_URL as LC_LOGIN_URL
+from OpenSHSID_backend.config_loader import cfg
+
+_CRAWL_CFG = cfg['crawler']
 
 # ---------------------------------------------------------------------------
 # Module-level LC session cache (avoids re-login on every image proxy call)
@@ -48,7 +51,7 @@ def _resolve_cred(user):
 def _proxy_lc_url(url: str, cred, *, attachment: bool = False):
     """Fetch an LC URL through a cached session and return a StreamingHttpResponse."""
     def _fetch(sess):
-        return sess.get(url, timeout=30, stream=True)
+        return sess.get(url, timeout=_CRAWL_CFG['proxy_timeout'], stream=True)
 
     sess = _get_lc_session(cred.username, cred.password)
     resp = _fetch(sess)
@@ -285,7 +288,7 @@ def browser_login(request):
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
         )
-        r = temp.get(LC_LOGIN_URL, timeout=10)
+        r = temp.get(LC_LOGIN_URL, timeout=_CRAWL_CFG['login_probe_timeout'])
         soup = BeautifulSoup(r.text, "html.parser")
         token_el = soup.find("input", {"name": "logintoken"})
         logintoken = html_escape(token_el["value"]) if token_el else ""

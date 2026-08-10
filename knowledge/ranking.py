@@ -1,19 +1,24 @@
 """
 轻量排名引擎 — 内联在 Django 中，避免 Flask HTTP 开销
+
+所有数值集中在 config.json 的 ranking 段（与 model/config.py 同一事实来源）。
 """
 import time
 import math
 
-# 必须与 model/config.py 保持一致
-PUSH_MODE = "algorithm"  # "algorithm" | "model"
+from OpenSHSID_backend.config_loader import cfg
 
-HEAT_INIT = 2.0
-HEAT_CLICK = 0.1
-HEAT_LIKE = 0.3
+RANK_CFG = cfg['ranking']
+
+PUSH_MODE = RANK_CFG['push_mode']  # "algorithm" | "model"
+
+HEAT_INIT = RANK_CFG['heat']['initial']
+HEAT_CLICK = RANK_CFG['heat']['click']
+HEAT_LIKE = RANK_CFG['heat']['like']
 
 # 简单缓存: key=user_id → {"articles": [...], "expires": timestamp}
 _cache = {}
-CACHE_TTL = 5  # 缓存 5 秒
+CACHE_TTL = RANK_CFG['cache_ttl']  # 缓存秒数
 
 
 def score_item_algorithm(item_emb, user_emb, heat):

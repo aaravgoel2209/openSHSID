@@ -9,6 +9,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DJANGO_SETTINGS_MODULE=OpenSHSID_backend.settings
+      # AI 会话令牌签名密钥：backend 与 model 必须一致，否则模型服务会拒绝全部请求。
+      # 用 .env 提供，切勿写死在仓库里：python -c "import secrets; print(secrets.token_urlsafe(48))"
+      - REI_SESSION_SECRET=${REI_SESSION_SECRET:?REI_SESSION_SECRET 未设置}
     restart: unless-stopped
 
   model:
@@ -20,6 +23,8 @@ services:
       - "5000:5000"
     volumes:
       - ./model/data:/app/model/data
+    environment:
+      - REI_SESSION_SECRET=${REI_SESSION_SECRET:?REI_SESSION_SECRET 未设置}
     restart: unless-stopped
 
   frontend:

@@ -15,4 +15,6 @@ urlpatterns = [
     path('notices/<int:notice_id>/', views.notice_detail, name='notice_detail'),
     path('weekly-top/', views.weekly_top_users, name='weekly_top_users'),
     path('avatar/upload/', views.upload_avatar, name='upload_avatar'),
+    # AI 聊天会话令牌（session_id 按登录身份签发，模型服务凭此校验越权）
+    path('ai-session/', views.ai_session, name='ai_session'),
 ]

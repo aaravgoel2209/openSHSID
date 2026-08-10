@@ -1,10 +1,16 @@
 """
 Tool 注册表 — 为 Rei 提供函数调用能力
 每个 tool 定义遵循 OpenAI function calling 格式
+
+外部服务地址 / 超时等集中在 config.json 的 tools 段。
 """
 import json
 import time
 import logging
+
+from config_loader import cfg
+
+TOOLS_CFG = cfg['tools']
 
 logger = logging.getLogger(__name__)
 
@@ -40,13 +46,10 @@ def bing_search(query, count=5):
     import requests
     from bs4 import BeautifulSoup
 
-    base_url = "https://cn.bing.com/search"
+    bing_cfg = TOOLS_CFG['bing']
+    base_url = bing_cfg['base_url']
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/125.0.0.0 Safari/537.36"
-        ),
+        "User-Agent": bing_cfg['user_agent'],
         "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
     }
 
@@ -56,7 +59,7 @@ def bing_search(query, count=5):
     try:
         while len(results) < count:
             params = {"q": query, "first": page * 10 + 1, "FORM": "PORE"}
-            resp = requests.get(base_url, params=params, headers=headers, timeout=15)
+            resp = requests.get(base_url, params=params, headers=headers, timeout=bing_cfg['timeout'])
             resp.raise_for_status()
 
             soup = BeautifulSoup(resp.text, "html.parser")
@@ -78,7 +81,7 @@ def bing_search(query, count=5):
             if not items:
                 break
             page += 1
-            time.sleep(1)
+            time.sleep(TOOLS_CFG['bing']['page_sleep'])
     except Exception as e:
         logger.error(f'[Bing] 搜索失败: {e}')
         return f'搜索失败: {e}'
@@ -181,7 +184,7 @@ def _memory_search_fallback(keyword):
     rows = conn.execute('SELECT id, title FROM items').fetchall()
     conn.close()
     chars = set(keyword)
-    matched = [r for r in rows if sum(1 for c in chars if c in r['title']) >= 2]
+    matched = [r for r in rows if sum(1 for c in chars if c in r['title']) >= TOOLS_CFG['memory_fallback_min_chars']]
     if not matched:
         return '未找到匹配的条目。'
     return '\n'.join(f'ID={r["id"]} 标题={r["title"]}' for r in matched)
@@ -191,7 +194,8 @@ def memory_search(keyword):
     # 仅在记忆库内语义检索（RAG）；失败或无结果时回退字符模糊匹配
     try:
         import rag
-        hits = rag.retrieve(keyword, top_k=5, min_score=0.0, sources=('memory',))
+        ms = TOOLS_CFG['memory_search']
+        hits = rag.retrieve(keyword, top_k=ms['top_k'], min_score=ms['min_score'], sources=('memory',))
         if hits:
             return '\n'.join(
                 f'ID={it["id"]} 相关度={s:.2f} 标题={it["title"]}' for it, s in hits
@@ -201,11 +205,12 @@ def memory_search(keyword):
     return _memory_search_fallback(keyword)
 
 
-def rag_search(query, top_k=6):
+def rag_search(query, top_k=None):
     """在知识库 + 记忆库中做语义检索（RAG），返回带来源/ID/相关度/标题的排序结果"""
     try:
         import rag
-        hits = rag.retrieve(query, top_k=top_k, min_score=0.0)
+        rs = TOOLS_CFG['rag_search']
+        hits = rag.retrieve(query, top_k=top_k or rs['top_k'], min_score=rs['min_score'])
     except Exception as e:
         logger.error(f'[RAG] rag_search 失败: {e}')
         return f'检索失败: {e}'
@@ -317,14 +322,14 @@ KB_READ_DEF = {
 
 # ── 知识库工具实现 ──────────────────────────────────
 
-DJANGO_API = 'http://localhost:19424/api'
+DJANGO_API = cfg['services']['django_api']
 
 
 def _api_get(url):
     """GET Django 接口并解析 JSON，绕过系统代理（localhost 直连）"""
     import urllib.request, json
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(url, timeout=8) as r:
+    with opener.open(url, timeout=TOOLS_CFG['api_get_timeout']) as r:
         return json.loads(r.read())
 
 
@@ -467,9 +472,9 @@ WEATHER_DEF = {
 def get_current_weather(location):
     """调用 wttr.in 获取天气"""
     import urllib.request, json, urllib.parse
-    url = f'https://wttr.in/{urllib.parse.quote(location)}?format=j1'
+    url = TOOLS_CFG['weather']['url_template'].format(location=urllib.parse.quote(location))
     try:
-        with urllib.request.urlopen(url, timeout=10) as r:
+        with urllib.request.urlopen(url, timeout=TOOLS_CFG['weather']['timeout']) as r:
             data = json.loads(r.read())
         cur = data['current_condition'][0]
         desc = cur['weatherDesc'][0]['value']

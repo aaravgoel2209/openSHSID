@@ -26,13 +26,17 @@ def conversation_list(request):
             other = last_msg.sender if last_msg.sender != request.user else last_msg.recipient
             profile = getattr(other, 'profile', None)
             avatar = profile.avatar.url if (profile and profile.avatar) else None
+            # 未读数 = 对方发给我的、我还没读的消息数（我发的不算）
+            unread = Message.objects.filter(
+                sender_id=other.id, recipient=request.user, is_read=False
+            ).count()
             conversations.append({
                 'user_id': other.id,
                 'username': other.username,
                 'avatar': avatar,
                 'last_message': last_msg.content[:80],
                 'last_message_at': last_msg.created_at,
-                'unread': False,
+                'unread': unread,
             })
 
     conversations.sort(key=lambda c: c['last_message_at'], reverse=True)
@@ -63,6 +67,24 @@ def message_list(request):
             serializer.save(sender=request.user, recipient=recipient)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_conversation_read(request, user_id):
+    """打开会话时调用：把对方发给我的未读消息全部置为已读，
+    并同步把对应的私信通知（信箱铃铛）也置为已读，避免两头不一致。"""
+    Message.objects.filter(
+        sender_id=user_id, recipient=request.user, is_read=False
+    ).update(is_read=True)
+    try:
+        from notifications.models import Notification
+        Notification.objects.filter(
+            recipient=request.user, type='message', actor_id=user_id, is_read=False
+        ).update(is_read=True)
+    except Exception:
+        pass  # notifications 不可用时不影响主流程
+    return Response({'ok': True})
 
 
 @api_view(['GET'])

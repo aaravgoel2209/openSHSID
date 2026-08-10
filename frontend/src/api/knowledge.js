@@ -17,6 +17,10 @@ export const getArticles = (grade, subject, search) => {
 export const getArticle = (id) =>
   client.get(`/knowledge/articles/${id}/`).then((r) => r.data);
 
+// 顶部搜索栏实时建议：标题匹配，返回 [{id, title, type: 'article'|'question', meta}]
+export const searchTitles = (q) =>
+  client.get('/knowledge/search-titles/', { params: { q } }).then((r) => r.data);
+
 export const createArticle = (data) =>
   client.post('/knowledge/articles/', data).then((r) => r.data);
 

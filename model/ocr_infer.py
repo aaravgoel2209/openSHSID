@@ -21,19 +21,23 @@ import threading
 from contextlib import contextmanager
 from pathlib import Path
 
-# 本地权重目录；可用环境变量覆盖（例如把大文件放到别处）
-MODEL_DIR = os.environ.get("OCR_MODEL_DIR", str(Path(__file__).resolve().parent / "ocr"))
+from config_loader import cfg, ROOT
+
+OC = cfg['ocr']
+
+# 本地权重目录（config.json ocr.model_dir，仍可用 OCR_MODEL_DIR 环境变量覆盖）
+MODEL_DIR = str(ROOT / OC['model_dir'])
 
 # 单图 / 多页（PDF）分别用的提示词。含 <image> 占位符是模型必需的。
 PROMPT_SINGLE = "<image>document parsing."
 PROMPT_MULTI = "<image>Multi page parsing."
 
-# PDF 渲染参数（性能相关，可用环境变量调）：
+# PDF 渲染参数（性能相关，config.json ocr 段）：
 #   模型内部会把图片缩放到 image_size(≈1024)，所以按固定 200 DPI 渲染 A4（长边≈2339px）
 #   纯属浪费——渲染/编码/解码的都是随后被丢弃的像素。改为按目标长边像素自适应缩放，
 #   长边约取 image_size 的 1.5 倍即够清晰，并以 DPI 上限兜底。
-_PDF_DPI_CAP = int(os.environ.get("OCR_PDF_DPI", "200"))          # 渲染 DPI 上限
-_PDF_TARGET_PX = int(os.environ.get("OCR_PDF_TARGET_PX", "1536"))  # 目标长边像素
+_PDF_DPI_CAP = OC['pdf_dpi_cap']          # 渲染 DPI 上限
+_PDF_TARGET_PX = OC['pdf_target_px']      # 目标长边像素
 
 # 懒加载后的模型缓存
 _state = {}
@@ -44,12 +48,12 @@ _infer_lock = threading.Lock()
 
 def _configure_perf(torch):
     """Ampere+ 上打开 TF32 与 cudnn autotune。对固定输入尺寸的矩阵/卷积有稳定加速，
-    bf16 权重下不影响可读性精度。可用环境变量分别关闭以便排查。"""
+    bf16 权重下不影响可读性精度。可在 config.json ocr.tf32 / ocr.cudnn_benchmark 关闭以便排查。"""
     try:
-        if os.environ.get("OCR_TF32", "1") != "0":
+        if OC['tf32']:
             torch.backends.cuda.matmul.allow_tf32 = True
             torch.backends.cudnn.allow_tf32 = True
-        if os.environ.get("OCR_CUDNN_BENCHMARK", "1") != "0":
+        if OC['cudnn_benchmark']:
             # 输入尺寸基本固定（image_size 常量），autotune 一次后持续复用最快卷积算法。
             torch.backends.cudnn.benchmark = True
     except Exception:

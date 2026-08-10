@@ -138,12 +138,15 @@ def ocr_endpoint():
 
 
 if __name__ == "__main__":
-    host = os.environ.get("OCR_HOST", "0.0.0.0")
-    port = int(os.environ.get("OCR_PORT", "5001"))
-    debug = os.environ.get("OCR_DEBUG", "0") == "1"
+    from config_loader import cfg
+    oc = cfg['ocr']
+    host = oc['host']
+    port = oc['port']
+    debug = oc['debug']
     logger.info(f"[OCR] 独立 OCR 服务启动于 {host}:{port}  ready={ocr_infer.is_available()}")
-    # OCR_WARMUP=1：启动即加载权重并跑一次极小推理，把冷启动开销从首个用户请求前移到这里。
-    if os.environ.get("OCR_WARMUP", "0") == "1":
+    # OCR_WARMUP=1（config.json ocr.warmup）：启动即加载权重并跑一次极小推理，
+    # 把冷启动开销从首个用户请求前移到这里。
+    if oc['warmup']:
         import time
         t0 = time.time()
         ok = ocr_infer.warmup()

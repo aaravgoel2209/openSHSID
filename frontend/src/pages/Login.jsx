@@ -489,7 +489,7 @@ export default function Login() {
 
       <div style={{ position: 'relative', zIndex: 10 }}>
         {/* SHSID logo floating above card */}
-        <img src={new URL('../assets/shsid-logo.png', import.meta.url).href} alt="SHSID" style={{ width: 528, height: 528, position: 'absolute', bottom: 'calc(100% - 200px)', left: '50%', transform: 'translateX(-50%)', zIndex: 30, objectFit: 'contain', pointerEvents: 'none' }} />
+        {/*<img src={new URL('../assets/shsid-logo.png', import.meta.url).href} alt="SHSID" style={{ width: 528, height: 528, position: 'absolute', bottom: 'calc(100% - 200px)', left: '50%', transform: 'translateX(-50%)', zIndex: 30, objectFit: 'contain', pointerEvents: 'none' }} />*/}
 
         {/* === Card 870×430 (−20%) === */}
         <div

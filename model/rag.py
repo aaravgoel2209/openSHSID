@@ -11,7 +11,6 @@ RAG 检索 — 基于语义向量的记忆库检索
   而非逐条 python 循环算余弦
 - Django 内容同步在语料非空时移入后台线程，不阻塞回答
 """
-import os
 import re
 import time
 import json
@@ -22,24 +21,35 @@ import urllib.request
 from collections import OrderedDict
 import numpy as np
 
+from config_loader import cfg
+
+RC = cfg['rag']
+LLM = cfg['llm']
+SECRETS = cfg['secrets']
+
 logger = logging.getLogger(__name__)
 
 _cache = {}
 
-# 检索参数（可用环境变量覆盖）
-TOP_K = int(os.environ.get('REI_RAG_TOP_K', '4'))
-MIN_SCORE = float(os.environ.get('REI_RAG_MIN_SCORE', '0.25'))
+# 检索参数（config.json rag 段；仍可用 REI_* 环境变量覆盖）
+TOP_K = RC['top_k']
+MIN_SCORE = RC['min_score']
 # embedding 服务超时（秒）；服务慢/不可用时快速失败，避免拖住每次回答
-EMBED_TIMEOUT = float(os.environ.get('REI_EMBED_TIMEOUT', '8'))
+EMBED_TIMEOUT = RC['embed_timeout']
 # 切块参数：块目标长度 / 相邻块重叠（字符数）
-CHUNK_SIZE = int(os.environ.get('REI_RAG_CHUNK_SIZE', '700'))
-CHUNK_OVERLAP = int(os.environ.get('REI_RAG_CHUNK_OVERLAP', '120'))
+CHUNK_SIZE = RC['chunk_size']
+CHUNK_OVERLAP = RC['chunk_overlap']
 # 注入 prompt 时每条内容的最大长度（防止长文撑爆上下文）
-CTX_MAX_CHARS = int(os.environ.get('REI_RAG_CTX_MAX_CHARS', '500'))
+CTX_MAX_CHARS = RC['ctx_max_chars']
+# 最相关的一条（top-1）给更大的篇幅，避免答案正文被从中间截断
+CTX_MAX_CHARS_TOP = RC['ctx_max_chars_top']
+# MMR 重排：在相关度与多样性之间平衡，抑制近重复块（记忆库频繁自动写入易产生近重复）
+MMR_ENABLED = RC['mmr_enabled']
+MMR_LAMBDA = RC['mmr_lambda']  # 越大越偏相关度，越小越偏多样性
 
 # Django 内容来源同步配置
-DJANGO_API = os.environ.get('REI_DJANGO_API', 'http://localhost:19424/api')
-SYNC_TTL = float(os.environ.get('REI_SYNC_TTL', '300'))  # 同步节流（秒）
+DJANGO_API = cfg['services']['django_api']
+SYNC_TTL = RC['sync_ttl']  # 同步节流（秒）
 _last_sync = {}  # source -> 上次同步时间戳
 _sync_lock = threading.Lock()
 _bg_syncing = False
@@ -55,11 +65,12 @@ SOURCE_LABEL = {'memory': '记忆', 'kb': '知识库', 'qa': '问答'}
 # 语料矩阵缓存：generation 在任何写入后自增，检索时发现代次变了才重建矩阵
 _corpus_generation = 0
 _corpus_cache = {}  # key=(sources) -> {'gen', 'ts', 'items', 'mat'}
-CORPUS_TTL = float(os.environ.get('REI_RAG_CORPUS_TTL', '30'))  # 记忆库外部写入的兜底刷新
+CORPUS_TTL = RC['corpus_ttl']  # 记忆库外部写入的兜底刷新
 
 # 查询向量 LRU 缓存
 _query_cache = OrderedDict()
-QUERY_CACHE_MAX = 128
+QUERY_CACHE_MAX = RC['query_cache_max']
+HTTP_GET_TIMEOUT = RC['http_get_timeout']
 
 
 def bump_generation():
@@ -72,10 +83,10 @@ def _get_embed_client():
     """embedding 客户端，独立于聊天模型（llama.cpp 的 embedding server 通常另起端口）"""
     if 'client' not in _cache:
         from openai import OpenAI
-        # 独立的 embedding 服务（聊天模型无法做 embedding）；默认 8034 端口
-        base = os.environ.get('REI_EMBED_API_BASE', 'http://192.168.2.103:8034/v1')
-        key = os.environ.get('REI_EMBED_API_KEY') or os.environ.get('REI_API_KEY', '114514')
-        model = os.environ.get('REI_EMBED_MODEL', 'embedding')
+        # 独立的 embedding 服务（聊天模型无法做 embedding）
+        base = LLM['embed_api_base']
+        key = SECRETS['rei_embed_api_key'] or SECRETS['rei_api_key']
+        model = LLM['embed_model']
         logger.info(f'[RAG] embedding 接口: {base} model={model} timeout={EMBED_TIMEOUT}s')
         # embedding 服务是直连主机：忽略系统代理（trust_env=False），否则 LAN 请求会被
         # HTTP_PROXY 劫持导致超时；同时短超时 + 不重试，异常时快速回退而非阻塞回答
@@ -160,7 +171,7 @@ def compute_item_embedding(title, content):
 def _http_get_json(url):
     # 直连本地 Django，绕过系统代理（HTTP_PROXY 可能劫持导致超时）
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(url, timeout=8) as r:
+    with opener.open(url, timeout=HTTP_GET_TIMEOUT) as r:
         return json.loads(r.read())
 
 
@@ -308,10 +319,29 @@ def _keyword_boost(query, title):
     return 0.1 * len(q & t) / len(q)
 
 
+def _mmr_select(ranked, mat, top_k, lam):
+    """MMR 重排：ranked = [(item, score, row_idx), ...]（按 score 降序）。
+    每步挑选 λ·相关度 −(1−λ)·与已选集合的最大相似度 最大者，兼顾相关与多样。
+    mat 为归一化矩阵，行内积即余弦。"""
+    selected, cand = [], list(ranked)
+    while cand and len(selected) < top_k:
+        if not selected:
+            selected.append(cand.pop(0))
+            continue
+        best_j, best_val = 0, float('-inf')
+        for j, (_, s, i) in enumerate(cand):
+            div = max(float(np.dot(mat[i], mat[si])) for (_, _, si) in selected)
+            val = lam * s - (1 - lam) * div
+            if val > best_val:
+                best_val, best_j = val, j
+        selected.append(cand.pop(best_j))
+    return selected
+
+
 def retrieve(query, top_k=TOP_K, min_score=MIN_SCORE, sources=('memory', 'kb', 'qa')):
     """在记忆库 + 知识库 + 问答中按语义相似度检索，返回 [(item_dict, score), ...]（按分数降序）。
     item_dict 含 source('memory'|'kb'|'qa')、id、title、content。
-    同一条内容多块时取最高分块（去重），content 为命中的那一块。"""
+    同一条内容多块时取最高分块（去重）；命中集经 MMR 重排以抑制近重复。"""
     items, mat = _get_matrix(sources)
     if mat is None:
         return []
@@ -327,16 +357,25 @@ def retrieve(query, top_k=TOP_K, min_score=MIN_SCORE, sources=('memory', 'kb', '
     qn = float(np.linalg.norm(q)) or 1.0
     scores = mat @ (q / qn)  # 一次矩阵乘法得到全部余弦相似度
 
-    # 同一条内容（source, id）只保留最高分块，并加标题关键词分
+    # 同一条内容（source, id）只保留最高分块，并加标题关键词分；记下行号供 MMR 用
     best = {}
     for i, it in enumerate(items):
         s = float(scores[i]) + _keyword_boost(query, it.get('title', ''))
         k = (it['source'], it['id'])
         if k not in best or s > best[k][1]:
-            best[k] = (it, s)
+            best[k] = (it, s, i)
 
     ranked = sorted(best.values(), key=lambda x: x[1], reverse=True)
-    return [(it, s) for it, s in ranked[:top_k] if s >= min_score]
+    ranked = [r for r in ranked if r[1] >= min_score]  # 先按相关度过滤
+
+    if MMR_ENABLED and len(ranked) > top_k:
+        # 只在一个候选池里做 MMR（O(pool²)），池大小有界
+        pool = ranked[:max(top_k * 4, 12)]
+        ranked = _mmr_select(pool, mat, top_k, MMR_LAMBDA)
+    else:
+        ranked = ranked[:top_k]
+
+    return [(it, s) for it, s, _ in ranked]
 
 
 def backfill_embeddings():
@@ -357,15 +396,29 @@ def backfill_embeddings():
     return n
 
 
+_SENT_ENDS = '。！？!?.\n'
+
+
+def _truncate_on_boundary(text, limit):
+    """按句子边界截断，避免从句子中间切断导致语义（甚至答案本身）丢失。"""
+    if len(text) <= limit:
+        return text
+    head = text[:limit]
+    cut = max(head.rfind(c) for c in _SENT_ENDS)
+    if cut >= limit * 0.5:            # 边界离上限不太远才用它，否则宁可硬截
+        return head[:cut + 1]
+    return head.rstrip() + '…'
+
+
 def format_context(hits):
-    """把检索结果格式化为可注入 prompt 的文本（每条截断，防止长文撑爆上下文）"""
+    """把检索结果格式化为可注入 prompt 的文本。按句子边界截断；top-1 给更大篇幅。"""
     if not hits:
         return ''
     lines = ['以下是从知识库和记忆库检索到的相关信息，可作为回答参考（如不相关请忽略）：']
-    for it, score in hits:
+    for idx, (it, score) in enumerate(hits):
         src = SOURCE_LABEL.get(it.get('source', ''), '')
         content = (it.get('content') or '').strip()
-        if len(content) > CTX_MAX_CHARS:
-            content = content[:CTX_MAX_CHARS] + '…'
+        limit = CTX_MAX_CHARS_TOP if idx == 0 else CTX_MAX_CHARS
+        content = _truncate_on_boundary(content, limit)
         lines.append(f'- [{src} ID={it["id"]} 相关度={score:.2f}] {it["title"]}：{content}')
     return '\n'.join(lines)

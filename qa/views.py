@@ -17,6 +17,7 @@ from django.conf import settings as django_settings
 
 from .models import Label, Question, Answer
 from .serializers import LabelSerializer, QuestionListSerializer, QuestionDetailSerializer, AnswerSerializer
+from OpenSHSID_backend.config_loader import cfg as app_cfg
 
 logger = logging.getLogger(__name__)
 
@@ -155,20 +156,25 @@ def _generate_rei_reply(question, trigger_answer):
     buf = []
     final_text = ''
     last_save = time.monotonic()
-    SAVE_INTERVAL = 0.4  # DB 写入节流，避免每个 token 都落库
+    SAVE_INTERVAL = app_cfg['stream']['save_interval']  # DB 写入节流，避免每个 token 都落库
+
+    from OpenSHSID_backend import rei_session
+    rei_session_id = f'qa-{question.id}'  # 按问答帖隔离对话上下文
 
     try:
         with requests.post(
-            'http://localhost:5000/rei/stream',
+            f"{app_cfg['services']['model_service_url'].rstrip('/')}/rei/stream",
             json={
                 'question_id': question.id,
-                'session_id': f'qa-{question.id}',  # 按问答帖隔离对话上下文
+                'session_id': rei_session_id,
+                # 服务端自签令牌：模型服务对所有来源一视同仁地校验
+                'session_token': rei_session.sign(rei_session_id),
                 'question_title': question.title,
                 'question_content': question.content,
                 'trigger_content': trigger_answer.content,
             },
             stream=True,
-            timeout=300,
+            timeout=app_cfg['stream']['timeout'],
             proxies={'http': None, 'https': None},  # 直连本地模型服务，绕过系统代理
         ) as resp:
             resp.raise_for_status()

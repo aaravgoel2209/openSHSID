@@ -26,6 +26,42 @@ def subject_list(request):
     return Response(serializer.data)
 
 
+@api_view(['GET'])
+def title_suggest(request):
+    """顶部搜索栏实时建议：只按标题 icontains 匹配，返回轻量 {id, title, type, meta}。
+    不查内容（快）、不带 embedding/labels（省流量），与列表搜索端点区分。"""
+    query = (request.query_params.get('q') or '').strip()
+    if not query:
+        return Response([])
+    try:
+        limit = min(int(request.query_params.get('limit', 5)), 10)
+    except (TypeError, ValueError):
+        limit = 5
+
+    from qa.models import Question
+    articles = (
+        Article.objects.filter(title__icontains=query)
+        .select_related('grade', 'subject')
+        .values('id', 'title', 'grade__name', 'subject__name')[:limit]
+    )
+    questions = Question.objects.filter(title__icontains=query).values('id', 'title')[:limit]
+
+    hits = [
+        {
+            'id': a['id'],
+            'title': a['title'],
+            'type': 'article',
+            'meta': ' · '.join(x for x in (a['grade__name'], a['subject__name']) if x),
+        }
+        for a in articles
+    ]
+    hits += [
+        {'id': q_['id'], 'title': q_['title'], 'type': 'question', 'meta': ''}
+        for q_ in questions
+    ]
+    return Response(hits)
+
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def article_list(request):

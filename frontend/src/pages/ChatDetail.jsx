@@ -4,7 +4,7 @@ import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
-import { getMessages, sendMessage } from '../api/chat';
+import { getMessages, sendMessage, markConversationRead } from '../api/chat';
 import { AuthContext } from '../context/AuthContext';
 import { resolveAvatar } from '../utils/avatar';
 
@@ -24,13 +24,26 @@ export default function ChatDetail() {
     return `/images/${COLORS[idx]}.jpg`;
   };
 
-  // 轮询新消息
+  // 轮询新消息；打开会话或有新消息（含对方新发的）到达时标记已读，
+  // 回到会话列表时未读徽标清零。
   const pollRef = useRef(null);
+  const lastCount = useRef(0);
   useEffect(() => {
-    const doFetch = () => getMessages(userId).then(setMessages).catch(() => {});
+    let cancelled = false;
+    const doFetch = () =>
+      getMessages(userId)
+        .then((msgs) => {
+          if (cancelled) return;
+          setMessages(msgs);
+          if (msgs.length !== lastCount.current) {
+            lastCount.current = msgs.length;
+            markConversationRead(userId).catch(() => {});
+          }
+        })
+        .catch(() => {});
     doFetch().then(() => setLoading(false));
     pollRef.current = setInterval(doFetch, 3000);
-    return () => clearInterval(pollRef.current);
+    return () => { cancelled = true; clearInterval(pollRef.current); };
   }, [userId]);
 
   const handleSend = async (e) => {
@@ -42,6 +55,7 @@ export default function ChatDetail() {
       setContent('');
       const msgs = await getMessages(userId);
       setMessages(msgs);
+      lastCount.current = msgs.length;
     } finally {
       setSending(false);
     }

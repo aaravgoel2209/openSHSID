@@ -25,13 +25,22 @@ export default function ChatList() {
   const [newContent, setNewContent] = useState('');
   const [sending, setSending] = useState(false);
 
-  const fetchData = () => {
+  const fetchData = (silent = false) => {
     if (!user) return;
-    setLoading(true);
-    getConversations().then(setConversations).finally(() => setLoading(false));
+    if (!silent) setLoading(true);
+    getConversations()
+      .then(setConversations)
+      .finally(() => { if (!silent) setLoading(false); });
   };
 
-  useEffect(fetchData, [user]);
+  // 首次加载 + 每 10s 轮询 + 窗口重新聚焦时刷新（未读徽标保持最新）
+  useEffect(() => {
+    fetchData();
+    const t = setInterval(() => fetchData(true), 10000);
+    const onFocus = () => fetchData(true);
+    window.addEventListener('focus', onFocus);
+    return () => { clearInterval(t); window.removeEventListener('focus', onFocus); };
+  }, [user]);
 
   useEffect(() => {
     if (search.length < 1) { setResults([]); return; }
@@ -55,6 +64,8 @@ export default function ChatList() {
     }
   };
 
+  const totalUnread = conversations.reduce((s, c) => s + (c.unread || 0), 0);
+
   if (!user) {
     return (
       <div className="text-center py-16 animate-fade-in">
@@ -77,7 +88,9 @@ export default function ChatList() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">私信</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{conversations.length} 个对话</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            {conversations.length} 个对话{totalUnread > 0 ? ` · ${totalUnread} 条未读` : ''}
+          </p>
         </div>
         <Button
           color="primary"
@@ -167,7 +180,11 @@ export default function ChatList() {
           {conversations.map((c) => (
             <div
               key={c.user_id}
-              className="group bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-4 cursor-pointer hover-lift hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200"
+              className={`group bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-xl p-4 cursor-pointer hover-lift hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all duration-200 ${
+                c.unread > 0
+                  ? '!bg-indigo-50/60 dark:!bg-indigo-950/20 !border-indigo-200 dark:!border-indigo-800/60'
+                  : ''
+              }`}
               onClick={() => navigate(`/chat/${c.user_id}`)}
             >
               <div className="flex items-center gap-3">
@@ -182,11 +199,20 @@ export default function ChatList() {
                     <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {c.username}
                     </span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0 ml-2">
-                      {c.last_message_at?.slice(5, 16).replace('T', ' ')}
+                    <span className="flex items-center gap-2 shrink-0 ml-2">
+                      {c.unread > 0 && (
+                        <span className="min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                          {c.unread > 99 ? '99+' : c.unread}
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {c.last_message_at?.slice(5, 16).replace('T', ' ')}
+                      </span>
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{c.last_message}</p>
+                  <p className={`text-sm truncate ${c.unread > 0 ? 'font-medium text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {c.last_message}
+                  </p>
                 </div>
               </div>
             </div>

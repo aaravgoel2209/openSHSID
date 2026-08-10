@@ -5,7 +5,11 @@ import { Spinner } from '@heroui/react/spinner';
 import { PaperAirplaneIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import MarkdownView from '../components/MarkdownView';
+import client from '../api/client';
 import { FLASK_BASE } from '../config';
+
+// RAG 来源标签（与后端 rag.SOURCE_LABEL 对应）
+const SRC_LABEL = { memory: '记忆', kb: '知识库', qa: '问答' };
 
 // 读取图片并按最长边缩放，导出 JPEG base64 data URL（控制体积与 token）
 function fileToDataURL(file, maxDim = 1024) {
@@ -43,26 +47,43 @@ export default function AiChat() {
   const [image, setImage] = useState(null);  // 待发送图片（base64 data URL）
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
-  // 每个用户固定一个会话，AI 聊天记录得以持久化与恢复
+  // 每个用户固定一个会话，AI 聊天记录得以持久化与恢复。
+  // session_id 与令牌一律由 Django 依登录态签发，前端不自行拼装——否则改个
+  // ID 就能读到别人的聊天记录。
   const sessionRef = useRef(null);
+  const tokenRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // 取（或刷新）会话凭证；force=true 用于令牌过期后重新签发
+  const ensureSession = async (force = false) => {
+    if (!force && sessionRef.current && tokenRef.current) {
+      return { id: sessionRef.current, token: tokenRef.current };
+    }
+    const { data } = await client.get('/auth/ai-session/');
+    sessionRef.current = data.session_id;
+    tokenRef.current = data.token;
+    return { id: data.session_id, token: data.token };
+  };
+
   // 用户就绪后：绑定固定会话并恢复历史记录
   useEffect(() => {
     if (!user) return;
-    sessionRef.current = `chat-user-${user.id}`;
-    fetch(`${FLASK_BASE}/rei/history?session_id=${encodeURIComponent(sessionRef.current)}`)
-      .then((r) => (r.ok ? r.json() : { messages: [] }))
-      .then((d) => {
+    (async () => {
+      try {
+        const { id, token } = await ensureSession(true);
+        const r = await fetch(
+          `${FLASK_BASE}/rei/history?session_id=${encodeURIComponent(id)}&session_token=${encodeURIComponent(token)}`
+        );
+        const d = r.ok ? await r.json() : { messages: [] };
         const msgs = (d.messages || [])
           .filter((m) => m.role === 'user' || m.role === 'assistant')
           .map((m) => ({ role: m.role, content: m.content }));
         if (msgs.length) setMessages(msgs);
-      })
-      .catch(() => {});
+      } catch { /* 历史恢复失败不影响开始新对话 */ }
+    })();
   }, [user]);
 
   // 更新最后一条（助手）消息
@@ -93,11 +114,18 @@ export default function AiChat() {
     ]);
     setLoading(true);
     try {
-      const res = await fetch(`${FLASK_BASE}/rei/stream`, {
+      const send = (sess) => fetch(`${FLASK_BASE}/rei/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question_title: '', question_content: '', trigger_content: userMsg, session_id: sessionRef.current, image: img }),
+        body: JSON.stringify({
+          question_title: '', question_content: '', trigger_content: userMsg,
+          session_id: sess.id, session_token: sess.token, image: img,
+        }),
       });
+      let res = await send(await ensureSession());
+      if (res.status === 401) {
+        res = await send(await ensureSession(true)); // 令牌过期 → 重新签发后重试一次
+      }
       if (!res.ok || !res.body) throw new Error('stream failed');
 
       const reader = res.body.getReader();
@@ -127,6 +155,8 @@ export default function AiChat() {
             } else if (ev.type === 'reasoning') {
               reasoningAcc += ev.text;
               patchLast({ reasoning: reasoningAcc });
+            } else if (ev.type === 'sources') {
+              patchLast({ sources: ev.items || [] });
             } else if (ev.type === 'error') {
               acc += `\n\n[出错：${ev.text}]`;
               patchLast({ content: acc });
@@ -189,6 +219,19 @@ export default function AiChat() {
                   {m.streaming && (
                     <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 align-middle bg-indigo-500 animate-pulse" aria-hidden="true" />
                   )}
+                </div>
+              )}
+              {m.role === 'assistant' && m.sources?.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-gray-200/60 dark:border-slate-700/60 text-[11px] text-gray-500 dark:text-gray-400">
+                  <div className="font-medium mb-1">参考来源</div>
+                  <ul className="space-y-0.5">
+                    {m.sources.map((s, idx) => (
+                      <li key={idx} className="truncate">
+                        · [{SRC_LABEL[s.source] || s.source}] {s.title || `#${s.id}`}
+                        <span className="opacity-60"> · {Math.round((s.score || 0) * 100)}%</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

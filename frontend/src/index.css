@@ -150,6 +150,49 @@
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
+/* ===== 个性化主题色 =====
+   HeroUI 主色组件（primary 按钮/徽章/Spinner/头像等）由 --accent 驱动、hover
+   自动派生，挂 data-accent 时在运行时直接覆盖即可。
+   Tailwind 硬编码的 blue/indigo accent 工具类则在这里映射到 --user-accent，
+   保证全站一致。未设置自定义主题色时不挂 data-accent，外观与默认完全一致。 */
+html[data-accent] {
+  --accent: var(--user-accent);
+}
+
+/* 主色按钮与 hover */
+html[data-accent] .bg-blue-600,
+html[data-accent] .bg-indigo-600 { background-color: var(--user-accent); }
+html[data-accent] .hover\:bg-blue-700:hover,
+html[data-accent] .hover\:bg-indigo-700:hover { background-color: color-mix(in oklab, var(--user-accent) 88%, black 12%); }
+
+/* 主色文字（亮色态） */
+html[data-accent] .text-blue-600,
+html[data-accent] .text-blue-700,
+html[data-accent] .text-indigo-600,
+html[data-accent] .text-indigo-700 { color: var(--user-accent); }
+/* 主色文字（暗色态：稍提亮保证对比度） */
+html[data-accent] .dark .text-blue-400,
+html[data-accent] .dark .text-indigo-400 { color: color-mix(in oklab, var(--user-accent) 72%, white 28%); }
+
+/* 主色浅底（导航高亮 / 标签底 / 头像底） */
+html[data-accent] .bg-blue-50,
+html[data-accent] .bg-indigo-50 { background-color: color-mix(in oklab, var(--user-accent) 11%, transparent); }
+html[data-accent] .bg-blue-100,
+html[data-accent] .bg-indigo-100 { background-color: color-mix(in oklab, var(--user-accent) 20%, transparent); }
+html[data-accent] .bg-blue-500,
+html[data-accent] .bg-indigo-500 { background-color: var(--user-accent); }
+html[data-accent] .dark .dark\:bg-blue-950\/50,
+html[data-accent] .dark .dark\:bg-indigo-950\/40,
+html[data-accent] .dark .dark\:bg-indigo-950\/30 { background-color: color-mix(in oklab, var(--user-accent) 28%, black 72%); }
+
+/* 焦点环与焦点边框 */
+html[data-accent] .focus\:ring-blue-400:focus { --tw-ring-color: var(--user-accent) !important; }
+html[data-accent] .focus\:border-indigo-500:focus { border-color: var(--user-accent) !important; }
+
+/* 选中文字 */
+html[data-accent] ::selection { background-color: color-mix(in oklab, var(--user-accent) 22%, transparent); }
+html[data-accent] .dark ::selection { background-color: color-mix(in oklab, var(--user-accent) 32%, transparent); }
+
 /* ===== Markdown 渲染排版（.md-body）=====
    Tailwind preflight 清掉了默认样式，这里给 renderMarkdown 的产物恢复排版层级 */
 .md-body { line-height: 1.7; word-break: break-word; }

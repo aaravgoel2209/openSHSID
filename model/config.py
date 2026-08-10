@@ -1,20 +1,20 @@
 """
 热度配置 — 用于计算 item_vector * heat 中的 heat 值
+
+所有数值集中在 config.json 的 ranking 段（model 侧唯一事实来源，
+Django 侧 knowledge/ranking.py 也从同一配置读取）。
 """
 
 import torch
 
-# 推送模式: "model" = 神经网络模型  |  "algorithm" = 算法公式
-PUSH_MODE = "algorithm"
+from config_loader import cfg
 
-HEAT_CONFIG = {
-    "initial": 2.0,
-    "change_rate": 1.0,  # 用户行为对向量更新的影响率
-    "click": 0.1,        # 用户点击一次（重复不算）
-    "skip": -0.2,        # 展示过但没点击
-    "like": 0.3,         # 点赞
-    "comment": 0.2,      # 评论
-}
+RANK_CFG = cfg['ranking']
+
+# 推送模式: "model" = 神经网络模型  |  "algorithm" = 算法公式
+PUSH_MODE = RANK_CFG['push_mode']
+
+HEAT_CONFIG = RANK_CFG['heat']
 
 
 def calc_heat(clicks: int, skips: int, likes: int, comments: int) -> float:
@@ -35,7 +35,7 @@ def score_item(item_emb, user_emb, heat) -> float:
     item = torch.tensor(item_emb, dtype=torch.float32) * heat
     user = torch.tensor(user_emb, dtype=torch.float32)
     diff = torch.clamp(item - user, min=0)
-    return diff.mean().item() * 10.0
+    return diff.mean().item() * RANK_CFG['score_multiplier']
 
 
 def _update(src: list, tgt: list, magnitude: float) -> list:
