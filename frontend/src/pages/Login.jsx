@@ -4,13 +4,13 @@ import { Button } from "@heroui/react/button";
 import { AuthContext } from "../context/AuthContext";
 
 const bgImages = [
-  new URL("../assets/background/bg-1.png", import.meta.url).href,
-  new URL("../assets/background/bg-2.png", import.meta.url).href,
-  new URL("../assets/background/bg-3.png", import.meta.url).href,
-  new URL("../assets/background/bg-4.png", import.meta.url).href,
-  new URL("../assets/background/bg-5.png", import.meta.url).href,
-  new URL("../assets/background/bg-6.png", import.meta.url).href,
-  new URL("../assets/background/bg-7.png", import.meta.url).href,
+  new URL("../assets/background/bg-1.webp", import.meta.url).href,
+  new URL("../assets/background/bg-2.webp", import.meta.url).href,
+  new URL("../assets/background/bg-3.webp", import.meta.url).href,
+  new URL("../assets/background/bg-4.webp", import.meta.url).href,
+  new URL("../assets/background/bg-5.webp", import.meta.url).href,
+  new URL("../assets/background/bg-6.webp", import.meta.url).href,
+  new URL("../assets/background/bg-7.webp", import.meta.url).href,
 ];
 
 const translations = {
