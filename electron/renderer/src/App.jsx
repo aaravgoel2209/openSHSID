@@ -15,6 +15,7 @@ import CreateArticle from './pages/CreateArticle';
 import PostbarHome from './pages/PostbarHome';
 import Toolbox from './pages/Toolbox';
 import OcrScan from './pages/OcrScan';
+import MarkdownPreview from './pages/MarkdownPreview';
 import SubbarDetail from './pages/SubbarDetail';
 import PostDetail from './pages/PostDetail';
 import Login from './pages/Login';
@@ -60,6 +61,7 @@ export default function App() {
                 <Route path="/postbar/posts/:id" element={<PostDetail />} />
                 <Route path="/toolbox" element={<Toolbox />} />
                 <Route path="/toolbox/ocr" element={<OcrScan />} />
+                <Route path="/toolbox/markdown" element={<MarkdownPreview />} />
                 <Route path="/chat" element={<ChatList />} />
                 <Route path="/chat/:userId" element={<ChatDetail />} />
                 <Route path="/chat/ai" element={<AiChat />} />

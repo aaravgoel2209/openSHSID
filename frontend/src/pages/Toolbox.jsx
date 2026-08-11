@@ -9,6 +9,13 @@ const TOOLS = [
     desc: '上传 PDF / 图片，识别文字并勾选保留，交给 AI 摘要。',
     accent: 'from-indigo-500 to-purple-600',
   },
+  {
+    to: '/toolbox/markdown',
+    icon: 'bi-markdown',
+    title: 'Markdown 预览器',
+    desc: '实时预览 Markdown（含表格、代码、公式），一键导出 PDF。',
+    accent: 'from-sky-500 to-cyan-600',
+  },
 ];
 
 export default function Toolbox() {
