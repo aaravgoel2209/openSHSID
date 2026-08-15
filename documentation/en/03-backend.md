@@ -51,7 +51,7 @@
 - **Content moderation**: `OpenSHSID_backend/moderation.py` rejects posts containing `BLOCKED_WORDS` (case-insensitive).
 - **Auto-translation**: on Question/Article creation, a daemon thread calls Flask `/translate` and caches `source_lang` / `title_translated` / `content_translated`. The frontend switches display language via `utils/lang.js`.
 - **Embedding init**: `signals.py` fills 32-dim random embeddings for new Questions/Articles (so recommendation ranking works immediately) and auto-creates `UserProfile` on signup.
-- **SQLite pragmas**: every connection gets `journal_mode=WAL`, `synchronous=NORMAL`, `busy_timeout=20000` — mitigates lock contention from concurrent streaming writes.
+- **Database: SQLite or MySQL**: chosen by `config.json django.database.type`, overridable with `DB_TYPE` (see 02-quickstart §2.3). In SQLite mode every connection gets `journal_mode=WAL`, `synchronous=NORMAL`, `busy_timeout=20000` (`signals.py` skips MySQL via `connection.vendor`) — mitigates lock contention from concurrent streaming writes. MySQL mode uses PyMySQL (registered in `OpenSHSID_backend/__init__.py`), params in `django.database.mysql`, charset `utf8mb4`.
 - **Personalized ranking**: `knowledge/ranking.py` and `qa/views.py:_rank_questions` reorder lists for logged-in users using their embedding: `avg(max(item·heat − user, 0)) · 10` (algorithm mode), cached per user for 5 s.
 - **@Rei streaming**: when an answer contains `@Rei`, `qa/views.py:_generate_rei_reply` creates an empty Answer (`is_streaming=True`), POSTs to the model service `/rei/stream` with a signed session token, and writes the SSE output to the DB in throttled increments so the frontend sees the reply "type itself out".
 - **Notifications**: `notifications/signals.py` fires on new answers/replies, likes (M2M change), and DMs.
@@ -60,6 +60,8 @@
 
 | Command | Purpose |
 |---|---|
+| `python manage.py reset_db [--yes] [--no-migrate]` | Wipe the current database (MySQL: drop all tables; SQLite: delete file) and re-run migrate — clear data before switching test/deploy environments |
+| `python manage.py migrate_sqlite_to_mysql [--reset] [--yes]` | Migrate local SQLite (`db.sqlite3`) data into the current MySQL database (dumpdata → loaddata → reset auto-increment) |
 | `python manage.py retranslate [--force] [--only qa\|knowledge]` | Re-run translation on Questions/Articles missing translations |
 | `python manage.py crawl_linkedclassroom --username <u> --password <p> [--course-ids ...]` | CLI course sync from LinkedClassroom |
 

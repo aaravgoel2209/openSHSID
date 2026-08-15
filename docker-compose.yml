@@ -5,10 +5,19 @@ services:
     ports:
       - "19424:19424"
     volumes:
+      # 仅 SQLite 模式使用（DB_TYPE=sqlite）；MySQL 模式数据在远程，此挂载无副作用
       - ./db.sqlite3:/app/db.sqlite3
     environment:
       - PYTHONUNBUFFERED=1
       - DJANGO_SETTINGS_MODULE=OpenSHSID_backend.settings
+      # 数据库选择：DB_TYPE=sqlite|mysql，其余 DB_* 仅在 mysql 模式生效
+      # （缺省时回退到镜像内 config.json 的 django.database 段）
+      - DB_TYPE=${DB_TYPE:-sqlite}
+      - DB_HOST=${DB_HOST:-}
+      - DB_PORT=${DB_PORT:-}
+      - DB_NAME=${DB_NAME:-}
+      - DB_USER=${DB_USER:-}
+      - DB_PASSWORD=${DB_PASSWORD:-}
       # AI 会话令牌签名密钥：backend 与 model 必须一致，否则模型服务会拒绝全部请求。
       # 用 .env 提供，切勿写死在仓库里：python -c "import secrets; print(secrets.token_urlsafe(48))"
       - REI_SESSION_SECRET=${REI_SESSION_SECRET:?REI_SESSION_SECRET 未设置}

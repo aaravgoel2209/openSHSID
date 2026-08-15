@@ -51,7 +51,7 @@
 - **内容审核**：`OpenSHSID_backend/moderation.py` 拒绝包含 `BLOCKED_WORDS`（不区分大小写）的发布内容。
 - **自动翻译**：Question/Article 创建时，后台线程调用 Flask `/translate`，缓存 `source_lang` / `title_translated` / `content_translated`。前端通过 `utils/lang.js` 按语言切换显示。
 - **向量初始化**：`signals.py` 为新 Question/Article 填充 32 维随机向量（保证推荐排序立即可用），并在注册时自动创建 `UserProfile`。
-- **SQLite pragma**：每个连接都会执行 `journal_mode=WAL`、`synchronous=NORMAL`、`busy_timeout=20000` —— 缓解流式写入下的锁竞争。
+- **数据库二选一（SQLite / MySQL）**：`config.json django.database.type` 决定，可用 `DB_TYPE` 环境变量覆盖（详见 02-quickstart 2.3 节）。SQLite 模式每个连接都会执行 `journal_mode=WAL`、`synchronous=NORMAL`、`busy_timeout=20000`（`signals.py` 按 `connection.vendor` 自动跳过 MySQL）—— 缓解流式写入下的锁竞争。MySQL 模式驱动为 PyMySQL（`OpenSHSID_backend/__init__.py` 注册），连接参数见 `django.database.mysql`，字符集 `utf8mb4`。
 - **个性化排序**：`knowledge/ranking.py` 与 `qa/views.py:_rank_questions` 使用登录用户的向量对列表重排：`avg(max(item·heat − user, 0)) · 10`（算法模式），按用户缓存 5 秒。
 - **@Rei 流式回复**：回答中含 `@Rei` 时，`qa/views.py:_generate_rei_reply` 先创建空回答（`is_streaming=True`），携带签名令牌 POST 到模型服务 `/rei/stream`，并将 SSE 输出按节流写入数据库，前端可看到回复「逐字打出来」。
 - **通知**：`notifications/signals.py` 在新回答/回复、点赞（M2M 变更）、私信时触发通知。
@@ -60,6 +60,8 @@
 
 | 命令 | 用途 |
 |---|---|
+| `python manage.py reset_db [--yes] [--no-migrate]` | 清空当前数据库（MySQL 删全部表 / SQLite 删文件）并重新 migrate —— 切换测试/部署环境前清数据 |
+| `python manage.py migrate_sqlite_to_mysql [--reset] [--yes]` | 把本地 SQLite（db.sqlite3）数据迁移到当前 MySQL 库（dumpdata → loaddata → 重置自增） |
 | `python manage.py retranslate [--force] [--only qa\|knowledge]` | 对缺失译文的 Question/Article 重新翻译 |
 | `python manage.py crawl_linkedclassroom --username <u> --password <p> [--course-ids ...]` | 命令行同步 LinkedClassroom 课程 |
 

@@ -91,7 +91,7 @@ docker compose up -d
 
 | 层 | 技术 |
 |---|---|
-| **后端 API** | Django 6.0.5 · Django REST Framework 3.17 · SQLite（WAL） · Token 认证 |
+| **后端 API** | Django 6.0.5 · Django REST Framework 3.17 · SQLite（WAL）/ MySQL 二选一 · Token 认证 |
 | **AI 模型服务** | Flask · PyTorch（推荐模型，BPR 在线训练） · OpenAI SDK · baidu Unlimited-OCR |
 | **前端** | React 19 · Vite 8 · HeroUI 3 · Tailwind CSS v4 · axios · marked + DOMPurify · MathJax |
 | **部署** | gunicorn · nginx · Docker Compose · electron-builder · Cordova |

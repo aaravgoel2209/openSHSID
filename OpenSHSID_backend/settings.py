@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os as _os
 from pathlib import Path
 
 # 中央配置：所有可调配置集中在项目根 config.json（密钥用环境变量注入，见 config_loader.py）
@@ -43,6 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    # 项目级配置包：无 models，仅承载共享管理命令（如 reset_db）
+    'OpenSHSID_backend',
     'qa',
     'knowledge',
     'accounts',
@@ -90,17 +93,51 @@ WSGI_APPLICATION = 'OpenSHSID_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+#
+# 数据库二选一，由 config.json django.database.type 决定（可用 DB_TYPE 环境变量覆盖）：
+#   - "sqlite"（默认）：本地文件库。OPTIONS.timeout 配合 signals.py 的 WAL/busy_timeout，
+#     缓解流式写入并发下的锁冲突；
+#   - "mysql"：远程 MySQL（测试/部署共用）。连接参数在 config.json django.database.mysql 中，
+#     仍可用 DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASSWORD 环境变量逐个覆盖。
+#     驱动用 PyMySQL（见 OpenSHSID_backend/__init__.py），无需系统级 mysqlclient。
 
-DATABASES = {
-    'default': {
-        'ENGINE': cfg['django']['database']['engine'],
-        'NAME': BASE_DIR / cfg['django']['database']['name'],
-        'OPTIONS': {
-            # 锁等待（配合 signals.py 的 WAL/busy_timeout），缓解流式写入并发下的锁冲突
-            'timeout': cfg['django']['database']['timeout'],
-        },
+def _build_databases():
+    db = cfg['django']['database']
+    db_type = _os.environ.get('DB_TYPE', db.get('type', 'sqlite')).strip().lower()
+    if db_type == 'mysql':
+        m = db.get('mysql', {})
+        _ENV_KEYS = {'name': 'DB_NAME', 'user': 'DB_USER', 'password': 'DB_PASSWORD',
+                     'host': 'DB_HOST'}
+        missing = [k for k in ('name', 'user', 'password', 'host')
+                   if not (m.get(k) or _os.environ.get(_ENV_KEYS[k]))]
+        if missing:
+            from django.core.exceptions import ImproperlyConfigured
+            raise ImproperlyConfigured(
+                f'MySQL 模式缺少连接参数: {missing}（在 config.json django.database.mysql 或 DB_* 环境变量中配置）')
+        return {
+            'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': _os.environ.get('DB_NAME') or m['name'],
+                'USER': _os.environ.get('DB_USER') or m['user'],
+                'PASSWORD': _os.environ.get('DB_PASSWORD') or m['password'],
+                'HOST': _os.environ.get('DB_HOST') or m['host'],
+                'PORT': _os.environ.get('DB_PORT') or m.get('port') or 3306,
+                'OPTIONS': dict(m.get('options') or {'charset': 'utf8mb4'}),
+            }
+        }
+    return {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / db.get('name', 'db.sqlite3'),
+            'OPTIONS': {
+                # 锁等待（配合 signals.py 的 WAL/busy_timeout），缓解流式写入并发下的锁冲突
+                'timeout': db.get('timeout', 20),
+            },
+        }
     }
-}
+
+
+DATABASES = _build_databases()
 
 
 # Password validation
@@ -149,7 +186,6 @@ CORS_ALLOW_CREDENTIALS = cfg['django']['cors']['allow_credentials']
 
 # CSRF - 信任的来源（POST/PUT/DELETE 等不安全请求会校验 Origin）
 # 开发：Vite 5173 与 Django 19424；生产域名用环境变量 CSRF_TRUSTED_ORIGINS 追加（逗号分隔）
-import os as _os
 
 CSRF_TRUSTED_ORIGINS = list(cfg['django']['csrf_trusted_origins'])
 CSRF_TRUSTED_ORIGINS += [

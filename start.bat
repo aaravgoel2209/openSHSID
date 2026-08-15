@@ -13,6 +13,9 @@ if not exist ".env.local" (
 )
 for /f "usebackq tokens=1,* delims==" %%A in (".env.local") do set "%%A=%%B"
 
+:: Auto-create/fill config.json from config.example.json (idempotent, additive only)
+python scripts\ensure_config.py
+
 :: Start Flask (port 5000)
 echo [Flask]  Starting...
 start "Flask" /B python model\app.py

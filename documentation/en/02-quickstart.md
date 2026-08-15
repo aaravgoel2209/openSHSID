@@ -64,11 +64,22 @@ All tunable settings for both Django and the Flask model service live in **`conf
 
 Loaded once per process by `OpenSHSID_backend/config_loader.py` (exposed as `cfg`).
 
+**If `config.json` is missing or lacks newly added keys, fill it automatically** (idempotent, additive only — existing values are never overwritten; `start.bat` / `backend.ps1` also run this on startup):
+
+```bash
+python scripts/ensure_config.py              # merge missing keys from config.example.json
+python scripts/ensure_config.py --dry-run    # preview only, write nothing
+```
+
+- `config.json` missing → generated verbatim from the template (placeholders stay, resolved at runtime)
+- Template gained new sections (e.g. `django.database.mysql`) → only missing keys are added; your local host / passwords are never touched
+- On exit it lists `$env`-only placeholders without defaults whose env var is unset (fail-closed points); the script never generates secrets — inject them yourself
+
 ### 2.1 Key sections
 
 | Section | Purpose | Notable defaults |
 |---|---|---|
-| `django` | SECRET_KEY, DEBUG, ALLOWED_HOSTS, CORS, CSRF, SQLite, static/media, blocked words, LC creds | SQLite `timeout: 20`; `blocked_words: ["广告","加微信","代写","赌博","色情"]` |
+| `django` | SECRET_KEY, DEBUG, ALLOWED_HOSTS, CORS, CSRF, database (SQLite/MySQL), static/media, blocked words, LC creds | SQLite by default `timeout: 20`; MySQL connection — see 2.3 |
 | `services` | Model & OCR service URLs | model `http://localhost:5000`; OCR `http://192.168.2.103:5001` |
 | `secrets` | `rei_session_secret` (env only), `rei_api_key`, `rei_embed_api_key` | — |
 | `flask` | Model service host/port/debug | port 5000 |
@@ -94,6 +105,49 @@ Loaded once per process by `OpenSHSID_backend/config_loader.py` (exposed as `cfg
 | `MODEL_SERVICE_URL`, `OCR_SERVICE_URL` | Django | Service endpoints |
 | `REI_API_BASE`, `REI_MODEL`, `REI_EMBED_API_BASE`, ... | Flask | LLM endpoint overrides |
 | `VITE_API_BASE`, `VITE_FLASK_BASE`, `VITE_DJANGO_ORIGIN` | Frontend build | Backend origins for Cordova (`.env.cordova`) |
+
+### 2.3 Database: SQLite or MySQL
+
+The Django database is chosen by `config.json → django.database.type` (or the `DB_TYPE` env var, which wins at deploy time):
+
+- **`"sqlite"` (default)**: local `db.sqlite3` with WAL + busy_timeout pragmas (`signals.py`), zero dependencies — for local development.
+- **`"mysql"`**: remote MySQL (shared by testing and deployment). Connection params live in the `django.database.mysql` section:
+
+```json
+"database": {
+  "type": "mysql",
+  "name": "db.sqlite3",
+  "timeout": 20,
+  "mysql": {
+    "host": "192.168.2.198",
+    "port": 3306,
+    "name": "openshsid",
+    "user": "openshsid",
+    "password": {"$env": "MYSQL_PASSWORD"},
+    "options": {"charset": "utf8mb4"}
+  }
+}
+```
+
+- Keep the password in the `MYSQL_PASSWORD` env var (`$env` placeholder, see section 2); at deploy time each value can also be overridden with `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD`.
+- The driver is **PyMySQL** (added to `requirements.txt`) — pure Python, no system `mysqlclient` needed; registered as MySQLdb in `OpenSHSID_backend/__init__.py`.
+- When switching databases, clear existing data first (the MySQL instance serves both test and deploy):
+
+```bash
+python manage.py reset_db --yes     # drop all tables / delete file, then re-migrate
+python manage.py flush --noinput    # lighter: keep schema, clear rows only
+```
+
+**Migrating existing data from SQLite to MySQL** (first switch, when the source has data):
+
+```bash
+python manage.py migrate_sqlite_to_mysql --reset --yes
+```
+
+Run it while in MySQL mode: it wipes the target (`--reset`), then `dumpdata`s from the local
+`db.sqlite3`, `loaddata`s into MySQL and resets auto-increment counters. Q&A/articles/chat etc.
+keep their original ids; natural-keyed models (`auth.User`, permissions) are re-resolved by
+username/codename, so all references stay consistent.
 
 ---
 

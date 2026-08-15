@@ -6,7 +6,7 @@
 
 | Service | Image | Port | Notes |
 |---|---|---|---|
-| `backend` | root `Dockerfile` | 19424 | gunicorn, 3 workers; SQLite volume-mounted; requires `REI_SESSION_SECRET` |
+| `backend` | root `Dockerfile` | 19424 | gunicorn, 3 workers; DB defaults to SQLite (volume-mounted), MySQL switchable — see 1.1; requires `REI_SESSION_SECRET` |
 | `model` | `model/Dockerfile` | 5000 | Flask; same `REI_SESSION_SECRET` |
 | `frontend` | `frontend/Dockerfile` | 80 | nginx serves the SPA and proxies `/api/ /admin/ /media/` → `backend` |
 
@@ -15,6 +15,28 @@
 ### 1.1 Backend image
 
 `python:3.13-slim` + Aliyun apt mirror + `requirements.txt` + `collectstatic --noinput`; runs `gunicorn OpenSHSID_backend.wsgi:application --bind [::]:19424 --workers 3`.
+
+**Database mode**: when `config.json` is absent from the image (it's gitignored), the build step auto-runs `cp config.example.json config.json` as a fallback; pick the database at runtime via env vars:
+
+```bash
+# Option A: local SQLite (default; mounts ./db.sqlite3)
+DB_TYPE=sqlite docker compose up -d --build
+
+# Option B: remote MySQL (shared test/deploy at 192.168.2.198)
+DB_TYPE=mysql DB_HOST=192.168.2.198 DB_PORT=3306 \
+DB_NAME=openshsid DB_USER=openshsid DB_PASSWORD=<password> \
+docker compose up -d --build
+```
+
+`DB_TYPE` defaults to `sqlite`; in MySQL mode each `DB_*` falls back to the `django.database.mysql` section inside the image's `config.json` (embed your own `config.json` before building if you want). Before first deploy against a MySQL instance with existing data, wipe it and rebuild:
+
+```bash
+# On the dev machine (MySQL mode): migrate local db.sqlite3 data to the remote DB
+python manage.py migrate_sqlite_to_mysql --reset --yes
+
+# In the container: fallback cleanup when the target already holds stale data
+docker compose exec backend python manage.py reset_db --yes
+```
 
 ### 1.2 Model image
 

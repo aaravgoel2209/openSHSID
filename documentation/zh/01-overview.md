@@ -33,13 +33,13 @@ OpenSHSID 是面向 SHSID 师生的一体化校园平台，主要功能包括：
 └───────┬──────────────────────┬───────────────────────┬──────────────┘
         │ /api /admin /media   │ /rei /click /translate│ /ocr /summarize
         ▼                      ▼                       ▼
-┌─────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ Django REST API │   │ Flask 模型服务        │   │ OCR 微服务           │
-│ 端口 19424      │   │ 端口 5000            │   │ 端口 5001            │
-│ • 7 个 app      │   │ • Rei LLM 对话（SSE）│   │ • baidu Unlimited-OCR│
-│ • SQLite        │   │ • RAG 检索           │   │ • 需要 CUDA GPU      │
-│ • Token 认证    │   │ • 推荐排序           │   │ • 图片/PDF → Markdown│
-└─────────────────┘   │ • 翻译               │   └──────────────────────┘
+┌──────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
+│ Django REST API  │   │ Flask 模型服务        │   │ OCR 微服务           │
+│ 端口 19424       │   │ 端口 5000            │   │ 端口 5001            │
+│ • 7 个 app       │   │ • Rei LLM 对话（SSE）│   │ • baidu Unlimited-OCR│
+│ • SQLite / MySQL │   │ • RAG 检索           │   │ • 需要 CUDA GPU      │
+│ • Token 认证     │   │ • 推荐排序           │   │ • 图片/PDF → Markdown│
+└──────────────────┘   │ • 翻译               │   └──────────────────────┘
                       └──────────────────────┘
 ```
 
@@ -55,7 +55,7 @@ OpenSHSID 是面向 SHSID 师生的一体化校园平台，主要功能包括：
 
 ### 后端（Python 3.13）
 - **Django 6.0.5** + **Django REST Framework 3.17** —— 纯 JSON REST API
-- **SQLite 3**（`db.sqlite3`），启用 WAL 模式与 busy_timeout pragma
+- **SQLite 3 / MySQL 二选一**：默认 `db.sqlite3`（WAL + busy_timeout pragma）；远程 MySQL（`192.168.2.198`，测试/部署共用）通过 `config.json django.database.type` 切换（详见 02-quickstart 2.3 节）
 - **django-cors-headers**、**DRF authtoken**（Token 认证）
 - **gunicorn** —— 生产 WSGI 服务器
 - **Flask 3** + **flask-cors** —— AI 模型服务
@@ -80,18 +80,20 @@ OpenSHSID 是面向 SHSID 师生的一体化校园平台，主要功能包括：
 OpenSHSID-backend/
 ├── manage.py                       # Django 入口
 ├── requirements.txt                # 后端 + 模型服务依赖
-├── config.json                     # 中央配置（Django 与 Flask 共用）
+├── config.json                     # 中央配置（Django 与 Flask 共用，被 gitignore）
+├── config.example.json             # 配置模板（补齐 config.json 的源，见 scripts/ensure_config.py）
 ├── Dockerfile                      # Django 后端镜像（gunicorn :19424）
 ├── docker-compose.yml              # backend + model + frontend 三个服务
 ├── start.bat                       # Windows 一键启动脚本（所有服务）
 ├── scripts/
 │   ├── start.ps1                   # PowerShell 启动脚本
-│   └── start.sh                    # Bash 启动脚本
+│   ├── start.sh                    # Bash 启动脚本
+│   └── ensure_config.py            # 自动生成/补齐 config.json（幂等，只增不改）
 ├── OpenSHSID_backend/              # Django 项目包
 │   ├── settings.py                 # 全部配置读取自 config.json
 │   ├── urls.py                     # 根 URLconf
 │   ├── config_loader.py            # 加载 config.json，支持 $env 占位符
-│   ├── signals.py                  # SQLite pragma、向量初始化、Profile 自动创建
+│   ├── signals.py                  # 数据库连接 pragma（SQLite）、向量初始化、Profile 自动创建
 │   ├── moderation.py               # 违禁词内容过滤
 │   ├── translation.py              # 通过 Flask /translate 异步翻译
 │   └── rei_session.py              # HMAC 会话令牌签发（model/session_auth.py 的镜像）

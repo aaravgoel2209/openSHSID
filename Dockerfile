@@ -19,6 +19,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
+# 配置兜底：镜像内没有 config.json（被 .gitignore）时用模板生成。
+# 数据库等运行时参数在 docker-compose 中用 DB_* 环境变量覆盖。
+RUN if [ ! -f config.json ]; then cp config.example.json config.json; fi
+
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 

@@ -7,4 +7,6 @@ if (Test-Path .env.local) {
         Set-Item -Path "env:$($k.Trim())" -Value $v.Trim()
     }
 }
+# 首次运行自动生成/补齐 config.json（幂等，只增不改）
+python scripts\ensure_config.py
 python manage.py runserver

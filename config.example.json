@@ -1,0 +1,213 @@
+{
+  "//": "OpenSHSID 中央配置模板 — Python 侧（Django + Flask 模型服务）唯一配置源。",
+  "//2": "复制为 config.json（被 .gitignore，不入库）后按需修改；",
+  "//3": "密钥不写入本文件：用 {\"$env\": \"VAR\"} 占位，运行时从环境变量读取；",
+  "//4": "{\"$env\": \"VAR\", \"$default\": 值} 表示环境变量优先、缺省回退 JSON 默认值（类型跟随 $default）。",
+  "//5": "详见 OpenSHSID_backend/config_loader.py 与 documentation/zh/02-quickstart.md。",
+
+  "django": {
+    "secret_key": {"$env": "DJANGO_SECRET_KEY", "$default": "django-insecure-dev-placeholder-change-me"},
+    "debug": {"$env": "DJANGO_DEBUG", "$default": true},
+    "allowed_hosts": ["*"],
+    "cors": {
+      "allow_all": true,
+      "allow_credentials": true
+    },
+    "csrf_trusted_origins": [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:19424",
+      "http://127.0.0.1:19424"
+    ],
+    "database": {
+      "//db": "数据库二选一：type=\"sqlite\"（本地 db.sqlite3，默认）或 \"mysql\"（远程 MySQL）。可用 DB_TYPE/DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD 环境变量覆盖（部署时优先于本文件）。",
+      "type": "sqlite",
+      "name": "db.sqlite3",
+      "timeout": 20,
+      "mysql": {
+        "host": "192.168.2.198",
+        "port": 3306,
+        "name": "openshsid",
+        "user": "openshsid",
+        "password": {"$env": "MYSQL_PASSWORD"},
+        "options": {"charset": "utf8mb4"}
+      }
+    },
+    "sqlite_pragmas": {
+      "journal_mode": "WAL",
+      "synchronous": "NORMAL",
+      "busy_timeout": 20000
+    },
+    "static_url": "static/",
+    "static_root": "staticfiles",
+    "media_url": "/media/",
+    "media_root": "media",
+    "blocked_words": ["广告", "加微信", "代写", "赌博", "色情"],
+    "linkedclassroom": {
+      "username": {"$env": "LINKEDCLASSROOM_USERNAME", "$default": ""},
+      "password": {"$env": "LINKEDCLASSROOM_PASSWORD", "$default": ""}
+    }
+  },
+
+  "services": {
+    "model_service_url": {"$env": "MODEL_SERVICE_URL", "$default": "http://localhost:5000"},
+    "ocr_service_url": {"$env": "OCR_SERVICE_URL", "$default": "http://192.168.2.103:5001"},
+    "django_api": {"$env": "REI_DJANGO_API", "$default": "http://localhost:19424/api"}
+  },
+
+  "secrets": {
+    "rei_session_secret": {"$env": "REI_SESSION_SECRET"},
+    "rei_api_key": {"$env": "REI_API_KEY", "$default": "114514"},
+    "rei_embed_api_key": {"$env": "REI_EMBED_API_KEY"}
+  },
+
+  "flask": {
+    "host": {"$env": "REI_FLASK_HOST", "$default": "0.0.0.0"},
+    "port": 5000,
+    "debug": {"$env": "REI_FLASK_DEBUG", "$default": false}
+  },
+
+  "llm": {
+    "api_base": {"$env": "REI_API_BASE", "$default": "http://factory.zengyuxiang.cn/v1"},
+    "model_name": {"$env": "REI_MODEL", "$default": "gemma-4-E4B-it-Q4_K_M.gguf"},
+    "embed_model": {"$env": "REI_EMBED_MODEL", "$default": "embedding"},
+    "embed_api_base": {"$env": "REI_EMBED_API_BASE", "$default": "http://192.168.2.103:8034/v1"},
+    "max_retries": 0,
+    "http_timeout": {"connect": 10.0, "read": 120.0, "write": 10.0, "pool": 10.0},
+    "chat_temperature": 0.7,
+    "summary_temperature": 0.3,
+    "translate_temperature": 0.3,
+    "rewrite_temperature": 0.2,
+    "rewrite_max_tokens": 128,
+    "tool_max_rounds": 10,
+    "rag_query_rewrite": {"$env": "REI_RAG_QUERY_REWRITE", "$default": false},
+    "compact_at_tokens": {"$env": "REI_COMPACT_AT_TOKENS", "$default": 100000},
+    "compact_keep_recent": {"$env": "REI_COMPACT_KEEP_RECENT", "$default": 12},
+    "history_msg_limit": 6,
+    "history_text_truncate": 200
+  },
+
+  "context_budget": {
+    "ctx_window": {"$env": "REI_CTX_WINDOW", "$default": 262144},
+    "max_output": {"$env": "REI_MAX_OUTPUT", "$default": 8192},
+    "safety_margin": {"$env": "REI_CTX_MARGIN", "$default": 2048},
+    "image_tokens": {"$env": "REI_IMAGE_TOKENS", "$default": 300},
+    "summary_reserve": {"$env": "REI_SUMMARY_RESERVE", "$default": 600},
+    "summary_max_tokens": {"$env": "REI_SUMMARY_MAX_TOKENS", "$default": 512},
+    "qa_max_tokens": {"$env": "REI_QA_MAX_TOKENS", "$default": 32000}
+  },
+
+  "session_auth": {
+    "ttl_seconds": {"$env": "REI_SESSION_TTL", "$default": 604800},
+    "secret": {"$env": "REI_SESSION_SECRET"}
+  },
+
+  "rag": {
+    "top_k": {"$env": "REI_RAG_TOP_K", "$default": 4},
+    "min_score": {"$env": "REI_RAG_MIN_SCORE", "$default": 0.25},
+    "embed_timeout": {"$env": "REI_EMBED_TIMEOUT", "$default": 8.0},
+    "chunk_size": {"$env": "REI_RAG_CHUNK_SIZE", "$default": 700},
+    "chunk_overlap": {"$env": "REI_RAG_CHUNK_OVERLAP", "$default": 120},
+    "ctx_max_chars": {"$env": "REI_RAG_CTX_MAX_CHARS", "$default": 500},
+    "ctx_max_chars_top": {"$env": "REI_RAG_CTX_MAX_CHARS_TOP", "$default": 1000},
+    "mmr_enabled": {"$env": "REI_RAG_MMR", "$default": true},
+    "mmr_lambda": {"$env": "REI_RAG_MMR_LAMBDA", "$default": 0.7},
+    "sync_ttl": {"$env": "REI_SYNC_TTL", "$default": 300.0},
+    "corpus_ttl": {"$env": "REI_RAG_CORPUS_TTL", "$default": 30.0},
+    "query_cache_max": 128,
+    "http_get_timeout": 8
+  },
+
+  "ranking": {
+    "push_mode": "algorithm",
+    "heat": {
+      "initial": 2.0,
+      "change_rate": 1.0,
+      "click": 0.1,
+      "skip": -0.2,
+      "like": 0.3,
+      "comment": 0.2,
+      "decay": 0.1,
+      "answer_initial": 1.0,
+      "answer_like": 0.2
+    },
+    "score_multiplier": 10.0,
+    "cache_ttl": 5
+  },
+
+  "reco_model": {
+    "emb_dim": 32,
+    "hidden": 64,
+    "dropout": 0.1,
+    "optimizer_lr": 0.001
+  },
+
+  "training": {
+    "data_dir": "model/data",
+    "model_path": "model/data/model.pt",
+    "log_path": "model/data/log.jsonl",
+    "save_interval": 10,
+    "max_grad_norm": 1.0
+  },
+
+  "database": {
+    "path": "model/data/local.db"
+  },
+
+  "ocr": {
+    "host": {"$env": "OCR_HOST", "$default": "0.0.0.0"},
+    "port": {"$env": "OCR_PORT", "$default": 5001},
+    "debug": {"$env": "OCR_DEBUG", "$default": false},
+    "warmup": {"$env": "OCR_WARMUP", "$default": false},
+    "model_dir": {"$env": "OCR_MODEL_DIR", "$default": "model/ocr"},
+    "pdf_dpi_cap": {"$env": "OCR_PDF_DPI", "$default": 200},
+    "pdf_target_px": {"$env": "OCR_PDF_TARGET_PX", "$default": 1536},
+    "tf32": {"$env": "OCR_TF32", "$default": true},
+    "cudnn_benchmark": {"$env": "OCR_CUDNN_BENCHMARK", "$default": true}
+  },
+
+  "tools": {
+    "django_api": "http://localhost:19424/api",
+    "bing": {
+      "base_url": "https://cn.bing.com/search",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      "timeout": 15,
+      "page_sleep": 1
+    },
+    "weather": {
+      "url_template": "https://wttr.in/{location}?format=j1",
+      "timeout": 10
+    },
+    "api_get_timeout": 8,
+    "memory_search": {"top_k": 5, "min_score": 0.0},
+    "rag_search": {"top_k": 6, "min_score": 0.0},
+    "memory_fallback_min_chars": 2
+  },
+
+  "crawler": {
+    "base_url": "https://www.linkedclassroom.com",
+    "login_path": "/login/index.php",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    "timeout": 15,
+    "proxy_timeout": 30,
+    "login_probe_timeout": 10
+  },
+
+  "stream": {
+    "timeout": 300,
+    "save_interval": 0.4
+  },
+
+  "translate": {
+    "timeout": 120,
+    "service_check_timeout": 3
+  },
+
+  "ports": {
+    "django": 19424,
+    "flask": 5000,
+    "ocr": 5001,
+    "embed": 8034,
+    "react": 5173
+  }
+}

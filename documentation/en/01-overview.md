@@ -33,13 +33,13 @@ The system is composed of **three backend processes** and **one frontend**:
 └───────┬──────────────────────┬───────────────────────┬──────────────┘
         │ /api /admin /media   │ /rei /click /translate│ /ocr /summarize
         ▼                      ▼                       ▼
-┌─────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ Django REST API │   │ Flask model service  │   │ OCR microservice     │
-│ port 19424      │   │ port 5000            │   │ port 5001            │
-│ • 7 apps        │   │ • Rei LLM chat (SSE) │   │ • baidu Unlimited-OCR│
-│ • SQLite        │   │ • RAG retrieval      │   │ • requires CUDA GPU  │
-│ • Token auth    │   │ • Recommendation     │   │ • image/PDF → Markdown
-└─────────────────┘   │ • Translation        │   └──────────────────────┘
+┌──────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
+│ Django REST API  │   │ Flask model service  │   │ OCR microservice     │
+│ port 19424       │   │ port 5000            │   │ port 5001            │
+│ • 7 apps         │   │ • Rei LLM chat (SSE) │   │ • baidu Unlimited-OCR│
+│ • SQLite / MySQL │   │ • RAG retrieval      │   │ • requires CUDA GPU  │
+│ • Token auth     │   │ • Recommendation     │   │ • image/PDF → Markdown
+└──────────────────┘   │ • Translation        │   └──────────────────────┘
                       └──────────────────────┘
 ```
 
@@ -55,7 +55,7 @@ The system is composed of **three backend processes** and **one frontend**:
 
 ### Backend (Python 3.13)
 - **Django 6.0.5** + **Django REST Framework 3.17** — JSON-only REST API
-- **SQLite 3** (`db.sqlite3`) with WAL mode + busy_timeout pragmas
+- **SQLite 3 / MySQL (choose one)**: default `db.sqlite3` (WAL + busy_timeout pragmas); remote MySQL (`192.168.2.198`, shared test/deploy) via `config.json django.database.type` (see 02-quickstart §2.3)
 - **django-cors-headers**, **django-rest-framework authtoken** (Token auth)
 - **gunicorn** — production WSGI server
 - **Flask 3** + **flask-cors** — the AI model service
@@ -80,18 +80,20 @@ The system is composed of **three backend processes** and **one frontend**:
 OpenSHSID-backend/
 ├── manage.py                       # Django entry point
 ├── requirements.txt                # Backend + model service deps
-├── config.json                     # Central config (Django + Flask share)
+├── config.json                     # Central config (Django + Flask share, gitignored)
+├── config.example.json             # Config template (source for filling config.json, see scripts/ensure_config.py)
 ├── Dockerfile                      # Django backend image (gunicorn :19424)
 ├── docker-compose.yml              # backend + model + frontend services
 ├── start.bat                       # Windows one-click launcher (all services)
 ├── scripts/
 │   ├── start.ps1                   # PowerShell launcher
-│   └── start.sh                    # Bash launcher
+│   ├── start.sh                    # Bash launcher
+│   └── ensure_config.py            # Auto-create/fill config.json (idempotent, additive only)
 ├── OpenSHSID_backend/              # Django project package
 │   ├── settings.py                 # All settings read from config.json
 │   ├── urls.py                     # Root URLconf
 │   ├── config_loader.py            # Loads config.json with $env placeholders
-│   ├── signals.py                  # SQLite pragmas, embedding init, profile auto-create
+│   ├── signals.py                  # DB connection pragmas (SQLite), embedding init, profile auto-create
 │   ├── moderation.py               # Blocked-words content filter
 │   ├── translation.py              # Async translation via Flask /translate
 │   └── rei_session.py              # HMAC session token signing (mirror of model/session_auth.py)

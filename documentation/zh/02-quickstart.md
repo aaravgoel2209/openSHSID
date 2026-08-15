@@ -64,11 +64,22 @@ Django 与 Flask 模型服务的全部可调配置集中在项目根目录的 **
 
 由 `OpenSHSID_backend/config_loader.py` 在进程内解析一次（对外暴露为 `cfg`）。
 
+**`config.json` 缺失或缺少新配置项时，可一键自动补齐**（幂等、只增不改，已有值不会被覆盖；`start.bat` / `backend.ps1` 启动时也会自动执行）：
+
+```bash
+python scripts/ensure_config.py              # 从 config.example.json 补齐缺失键
+python scripts/ensure_config.py --dry-run    # 只预览会补什么，不写文件
+```
+
+- `config.json` 不存在 → 用模板原样生成（`$env` / `$default` 占位符保留，运行时解析）
+- 模板新增了配置段（如 `django.database.mysql`）→ 只补缺失键，本地改过的 host / 密码等一律不动
+- 结束时提示"只有 `$env`、无默认值且环境变量未设置"的项（fail closed 点），密钥需自行注入环境变量，脚本不生成密钥
+
 ### 2.1 主要配置段
 
 | 配置段 | 用途 | 默认值举例 |
 |---|---|---|
-| `django` | SECRET_KEY、DEBUG、ALLOWED_HOSTS、CORS、CSRF、SQLite、静态/媒体路径、违禁词、LC 凭据 | SQLite `timeout: 20`；`blocked_words: ["广告","加微信","代写","赌博","色情"]` |
+| `django` | SECRET_KEY、DEBUG、ALLOWED_HOSTS、CORS、CSRF、数据库（SQLite/MySQL 二选一）、静态/媒体路径、违禁词、LC 凭据 | 默认 SQLite `timeout: 20`；MySQL 连接见下方 2.3 节 |
 | `services` | 模型服务与 OCR 服务地址 | model `http://localhost:5000`；OCR `http://192.168.2.103:5001` |
 | `secrets` | `rei_session_secret`（仅环境变量）、`rei_api_key`、`rei_embed_api_key` | — |
 | `flask` | 模型服务 host/port/debug | 端口 5000 |
@@ -94,6 +105,50 @@ Django 与 Flask 模型服务的全部可调配置集中在项目根目录的 **
 | `MODEL_SERVICE_URL`、`OCR_SERVICE_URL` | Django | 服务地址 |
 | `REI_API_BASE`、`REI_MODEL`、`REI_EMBED_API_BASE` 等 | Flask | LLM 接口覆盖 |
 | `VITE_API_BASE`、`VITE_FLASK_BASE`、`VITE_DJANGO_ORIGIN` | 前端构建 | Cordova 构建的后端地址（`.env.cordova`） |
+
+### 2.3 数据库选择（SQLite / MySQL 二选一）
+
+Django 数据库由 `config.json → django.database.type` 决定，也可用 `DB_TYPE` 环境变量覆盖（部署时优先）：
+
+- **`"sqlite"`（默认）**：本地文件库 `db.sqlite3`，启用 WAL + busy_timeout pragma（见 `signals.py`），零依赖，适合本地开发。
+- **`"mysql"`**：远程 MySQL（测试/部署共用同一库）。连接参数在 `django.database.mysql` 段：
+
+```json
+"database": {
+  "type": "mysql",
+  "name": "db.sqlite3",
+  "timeout": 20,
+  "mysql": {
+    "host": "192.168.2.198",
+    "port": 3306,
+    "name": "openshsid",
+    "user": "openshsid",
+    "password": {"$env": "MYSQL_PASSWORD"},
+    "options": {"charset": "utf8mb4"}
+  }
+}
+```
+
+- 密码建议走环境变量 `MYSQL_PASSWORD`（config_loader 的 `$env` 占位，见第 2 节）；部署时也可用 `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` 逐个覆盖。
+- 驱动为 **PyMySQL**（已加入 `requirements.txt`），纯 Python 实现，无需系统级 `mysqlclient`；由 `OpenSHSID_backend/__init__.py` 注册为 MySQLdb。
+- 切换库后需要清数据时（该 MySQL 库同时承担测试与部署，务必在切换环境前清理）：
+
+```bash
+python manage.py reset_db --yes     # 删掉全部表/文件并重新 migrate
+python manage.py flush --noinput    # 轻量版：保留表结构，只清数据
+```
+
+`reset_db` 会 DROP 当前库全部表后重建；SQLite 模式则删除 db 文件后重建。
+
+**从 SQLite 迁移既有数据到 MySQL**（首次切库、源库有数据时）：
+
+```bash
+python manage.py migrate_sqlite_to_mysql --reset --yes
+```
+
+该命令在 MySQL 模式下运行：先用 `reset_db` 清空目标库（`--reset`），再从本地 `db.sqlite3`
+`dumpdata` 导出、`loaddata` 导入，最后重置自增序列。问答/文章/聊天等数据保留原 id；
+`auth.User` 等带自然键的模型按用户名/权限名重新解析，引用关系全部保持一致。
 
 ---
 

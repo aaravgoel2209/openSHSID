@@ -6,7 +6,7 @@
 
 | 服务 | 镜像 | 端口 | 说明 |
 |---|---|---|---|
-| `backend` | 根 `Dockerfile` | 19424 | gunicorn 3 workers；SQLite 卷挂载；必须设置 `REI_SESSION_SECRET` |
+| `backend` | 根 `Dockerfile` | 19424 | gunicorn 3 workers；数据库默认 SQLite 卷挂载，可切 MySQL（见 1.1）；必须设置 `REI_SESSION_SECRET` |
 | `model` | `model/Dockerfile` | 5000 | Flask；使用与 backend 相同的 `REI_SESSION_SECRET` |
 | `frontend` | `frontend/Dockerfile` | 80 | nginx 托管 SPA 并代理 `/api/ /admin/ /media/` → `backend` |
 
@@ -15,6 +15,28 @@
 ### 1.1 后端镜像
 
 `python:3.13-slim` + 阿里云 apt 镜像 + `requirements.txt` + `collectstatic --noinput`；运行 `gunicorn OpenSHSID_backend.wsgi:application --bind [::]:19424 --workers 3`。
+
+**数据库模式**：镜像内没有 `config.json`（被 .gitignore）时，构建阶段自动 `cp config.example.json config.json` 兜底，运行时通过环境变量选择数据库：
+
+```bash
+# 方式 A：本地 SQLite（默认，卷挂载 ./db.sqlite3）
+DB_TYPE=sqlite docker compose up -d --build
+
+# 方式 B：远程 MySQL（测试/部署共用 192.168.2.198）
+DB_TYPE=mysql DB_HOST=192.168.2.198 DB_PORT=3306 \
+DB_NAME=openshsid DB_USER=openshsid DB_PASSWORD=<密码> \
+docker compose up -d --build
+```
+
+`DB_TYPE` 缺省为 `sqlite`；MySQL 模式下 `DB_*` 缺省回退到镜像内 `config.json` 的 `django.database.mysql` 段（可提前写入自己的 config.json 再构建镜像）。首次部署到已有数据的 MySQL 前，先清数据再迁移：
+
+```bash
+# 本地开发机（MySQL 模式）：把本地 db.sqlite3 的数据迁到远程库
+python manage.py migrate_sqlite_to_mysql --reset --yes
+
+# 容器内：目标库已有旧数据时的兜底清理（重建空库）
+docker compose exec backend python manage.py reset_db --yes
+```
 
 ### 1.2 模型服务镜像
 
