@@ -3,6 +3,8 @@ import { Cog6ToothIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { uploadAvatar } from '../api/auth';
 import { useUI } from '../context/UIContext';
+import { useLang } from '../context/LanguageContext';
+import { getPrefs, updatePrefs } from '../config/prefs';
 import GlassPanel from '../components/GlassPanel';
 
 const LEVELS = [
@@ -48,6 +50,7 @@ function compressAvatar(file, size = 128, quality = 0.88) {
 export default function Settings() {
   const { complexity, setComplexity } = useUI();
   const { user, refreshUser } = useContext(AuthContext);
+  const { t } = useLang();
 
   const fileRef = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -58,6 +61,17 @@ export default function Settings() {
 
   const currentAvatar = user?.avatar || null;
   const fallbackSrc = user ? `/images/${getAvatarColor(user.username)}.jpg` : null;
+
+  // 实验功能：浏览器端机器翻译（OPUS-MT）尝鲜开关，默认关闭
+  const [mtExperimental, setMtExperimental] = useState(() => getPrefs().mt_experimental === true);
+  const [mtMsg, setMtMsg] = useState(null); // { type: 'ok'|'err', text }
+
+  function handleToggleMt() {
+    const next = !mtExperimental;
+    setMtExperimental(next);
+    updatePrefs({ mt_experimental: next });
+    setMtMsg({ type: 'ok', text: next ? '已开启，详情页将显示翻译工具条' : '已关闭' });
+  }
 
   const handleFileChange = useCallback(async (e) => {
     const file = e.target.files?.[0];
@@ -224,6 +238,43 @@ export default function Settings() {
         {(complexity === 'complex' || complexity === 'extreme') && (
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
             液态玻璃特效在 Chromium 内核浏览器中效果最佳（Safari/Firefox 仅部分支持）。目前正在开发中
+          </p>
+        )}
+      </GlassPanel>
+
+      {/* ── Experimental features section ── */}
+      <GlassPanel
+        plainClass="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 mt-4"
+        glassContentClass="p-6 mt-4"
+        cornerRadius={20}
+      >
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('settings.experimental')}</h2>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings.mtExperimental')}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('settings.mtExperimentalDesc')}</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={mtExperimental}
+            onClick={handleToggleMt}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              mtExperimental ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                mtExperimental ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {mtMsg && (
+          <p className={`text-sm mt-3 ${mtMsg.type === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+            {mtMsg.text}
           </p>
         )}
       </GlassPanel>

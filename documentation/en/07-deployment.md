@@ -65,6 +65,14 @@ Two-stage: `node:24-alpine` builds (`npm ci && npm run build`), then `nginx:alpi
 - Build: `cd cordova && npm install && npm run add:android && npm run run:android` (env auto-detection for `ANDROID_HOME`/`JAVA_HOME`; iOS needs Xcode + CocoaPods on macOS).
 - Known mobile limitation: the LinkedClassroom popup-login flow (`window.open`) doesn't work in a WebView; an in-app browser plugin rework is needed if LC login is required on mobile.
 
+## 4. Browser-side machine translation (no server-side changes)
+
+The browser-side MT (multilingual translation) feature does **not** touch our own servers — models are fetched directly from the [ModelScope](https://modelscope.cn/models) CDN by the browser on first translation. The Django / Flask images require NO changes. See [05-frontend.md §7 Browser-side multilingual translation](05-frontend.md#7-browser-side-multilingual-translation).
+
+**Escape hatch**: to self-host the models (e.g. if ModelScope's CORS fails in your network), add the reverse-proxy snippet from [05-frontend.md](05-frontend.md#7-browser-side-multilingual-translation) to your own nginx (`/mt-models/` → `modelscope.cn/models`) and set `VITE_MT_MODEL_BASE=https://your-domain/mt-models` at frontend build time.
+
+**Electron / Cordova**: models are fetched over the public internet directly — no Electron main-process or Cordova proxy changes needed. The Cordova `config.xml` whitelist already includes `https://*.modelscope.cn/*` (covers the origin + CDN redirect domains).
+
 ---
 
 **Next**: [08 — Development & Limitations](08-development.md)

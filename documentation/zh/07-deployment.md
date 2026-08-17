@@ -65,6 +65,14 @@ docker compose exec backend python manage.py reset_db --yes
 - 构建：`cd cordova && npm install && npm run add:android && npm run run:android`（自动探测 `ANDROID_HOME`/`JAVA_HOME`；iOS 需要 macOS 上的 Xcode + CocoaPods）。
 - 已知移动端限制：LinkedClassroom 的弹窗登录（`window.open`）在 WebView 中不可用；若移动端需要 LC 登录，需要改用应用内浏览器插件。
 
+## 4. 浏览器端机器翻译（无需服务器侧改动）
+
+浏览器端 MT（多语翻译）功能**完全不经过自有服务器**——模型由浏览器首次翻译时从 [ModelScope](https://modelscope.cn/models) CDN 直链下载，Django / Flask 镜像无需任何改动。详见 [05-frontend.md §7 浏览器端多语翻译](05-frontend.md#7-浏览器端多语翻译)。
+
+**逃生门**：如需自托管模型（例如 ModelScope CORS 在你的网络环境实测失败），在自有 nginx 加 [05-frontend.md](05-frontend.md#7-浏览器端多语翻译) 里的反代片段（`/mt-models/` → `modelscope.cn/models`），并在前端构建时设 `VITE_MT_MODEL_BASE=https://your-domain/mt-models` 指向自有域。
+
+**Electron / Cordova**：模型走外网直连，无需在 Electron 主进程或 Cordova 端做代理改动；Cordova `config.xml` 白名单已加入 `https://*.modelscope.cn/*`（覆盖源站 + CDN 重定向域）。
+
 ---
 
 **下一篇**：[08 — 开发规范与已知限制](08-development.md)

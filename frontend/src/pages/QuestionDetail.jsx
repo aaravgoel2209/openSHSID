@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
-import { TextArea } from '@heroui/react/textarea';
 import { ArrowLeftIcon, EyeIcon, HandThumbUpIcon } from '@heroicons/react/24/outline';
 import { getQuestion, createAnswer, toggleQuestionLike, toggleAnswerLike } from '../api/qa';
 import client from '../api/client';
@@ -11,6 +10,8 @@ import { useLang } from '../context/LanguageContext';
 import { localize } from '../utils/lang';
 import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
+import MtTranslateBar from '../components/MtTranslateBar.jsx';
+import { getPrefs } from '../config/prefs';
 
 export default function QuestionDetail() {
   const { id } = useParams();
@@ -23,6 +24,7 @@ export default function QuestionDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [waitingRei, setWaitingRei] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [mtResult, setMtResult] = useState(null);
   const viewed = useRef(null);
 
   const fetchData = () => {
@@ -36,7 +38,10 @@ export default function QuestionDetail() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- 预存在的数据拉取模式：setLoading(true) 在异步 fetch 之前
   useEffect(fetchData, [id]);
+
+  useEffect(() => () => setMtResult(null), [question?.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,7 +103,10 @@ export default function QuestionDetail() {
   }
 
   const loc = localize(question, lang);
-  const display = showOriginal ? { title: question.title, content: question.content } : loc;
+  // 优先级：原文 < 服务端缓存 zh/en 译文 (loc) < MT 译文 (mtResult)
+  const display = showOriginal
+    ? { title: question.title, content: question.content }
+    : (mtResult ? mtResult : loc);
 
   return (
     <div className="animate-fade-in">
@@ -123,6 +131,16 @@ export default function QuestionDetail() {
               {showOriginal ? t('common.showTranslation') : t('common.showOriginal')}
             </button>
           </div>
+        )}
+
+        {/* 浏览器端 MT 翻译工具条：实验功能，默认关闭，需在设置中手动开启 */}
+        {getPrefs().mt_experimental && (
+          <MtTranslateBar
+            title={question.title}
+            content={question.content}
+            sourceLang={question.source_lang}
+            onTranslated={setMtResult}
+          />
         )}
 
         {/* Labels */}
@@ -320,7 +338,7 @@ function AnswerCard({ answer, question, user, onToggleLike, onReply }) {
                   data: { answer_id: answer.id },
                 });
                 onReply();
-              } catch {}
+              } catch { /* 删除失败忽略 */ }
             }}
             className="hover:text-rose-500 transition-colors font-medium ml-auto"
           >

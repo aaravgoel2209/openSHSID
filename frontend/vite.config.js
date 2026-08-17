@@ -71,7 +71,13 @@ export default defineConfig(({ mode }) => {
           navigateFallbackDenylist: [/^\/admin/, /^\/api/, /^\/static/, /^\/rei/, /^\/click/, /^\/translate/],
           // MathJax（~2MB）只在出现公式时才动态加载，不进预缓存以免拖慢 SW 安装；
           // 首次用到后按 CacheFirst 运行时缓存，之后离线也能排版公式。
-          globIgnores: ['**/tex-mml-svg-*.js'],
+          //
+          // onnxruntime-web 的 ort-wasm-*.wasm（~21.6MB）也排除出预缓存：该 wasm
+          // 由 transformers.js 在运行时经 Cache API（env.useBrowserCache=true）
+          // 按需拉取，不走 service worker 预缓存。若让它进 precache 会因超过
+          // workbox 默认 2MB 上限而让 `npm run build` 在 PWA 后处理阶段报错，且
+          // 21.6MB 进 SW 安装包会严重拖慢首次安装。参见 todo 6 / learnings L4.5。
+          globIgnores: ['**/tex-mml-svg-*.js', '**/*.wasm'],
           runtimeCaching: [{
             urlPattern: /\/assets\/tex-mml-svg-.*\.js$/,
             handler: 'CacheFirst',

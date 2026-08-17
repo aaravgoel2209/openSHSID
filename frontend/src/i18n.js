@@ -33,6 +33,21 @@ export const STRINGS = {
     'common.translating': '翻译中…',
     'common.showOriginal': '显示原文',
     'common.showTranslation': '显示译文',
+    // 浏览器端机器翻译 (MT)
+    'mt.translate': '翻译',
+    'mt.target.ja': '日本語',
+    'mt.target.ko': '한국어',
+    'mt.downloading': '下载翻译模型…',
+    'mt.translating': '翻译中…',
+    'mt.doneNote': '已机器翻译，可能不准确',
+    'mt.relayedNote': '经英语中转',
+    'mt.retry': '重试',
+    'mt.unsupported': '暂不支持该内容语言',
+    'mt.failed': '翻译失败',
+    // 设置 - 实验功能
+    'settings.experimental': '实验功能',
+    'settings.mtExperimental': '浏览器端机器翻译（尝鲜）',
+    'settings.mtExperimentalDesc': '在文章/问答详情页提供日语翻译。机器翻译质量有限，仅作尝鲜。',
     // 发布成功提示（右上角弹出）
     'toast.articlePublished': '文章已发布',
     'toast.questionPublished': '问题已发布',
@@ -137,6 +152,21 @@ export const STRINGS = {
     'common.translating': 'Translating…',
     'common.showOriginal': 'Show original',
     'common.showTranslation': 'Show translation',
+    // Browser-side MT
+    'mt.translate': 'Translate',
+    'mt.target.ja': '日本語',
+    'mt.target.ko': '한국어',
+    'mt.downloading': 'Downloading translation model…',
+    'mt.translating': 'Translating…',
+    'mt.doneNote': 'Machine-translated, may be inaccurate',
+    'mt.relayedNote': 'via English pivot',
+    'mt.retry': 'Retry',
+    'mt.unsupported': 'This content language is not supported',
+    'mt.failed': 'Translation failed',
+    // Settings - Experimental
+    'settings.experimental': 'Experimental',
+    'settings.mtExperimental': 'Browser-side machine translation (beta)',
+    'settings.mtExperimentalDesc': 'Japanese translation on article/question detail pages. Machine translation quality is limited; use at your own discretion.',
     // Publish-success toast (top-right)
     'toast.articlePublished': 'Article published',
     'toast.questionPublished': 'Question posted',

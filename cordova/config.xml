@@ -13,6 +13,15 @@
     <allow-navigation href="http://openshsid.zengyuxiang.cn/*" />
     <allow-navigation href="https://openshsid.zengyuxiang.cn/*" />
 
+    <!-- 浏览器端 MT（OPUS-MT via @huggingface/transformers）模型从 ModelScope 拉取：
+         小文件（config/tokenizer）直接来自 modelscope.cn；ONNX 权重经 302 重定向到
+         cdn-lfs-cn-1.modelscope.cn。白名单同时放行 apex 与 *.modelscope.cn 以覆盖
+         区域 CDN 变体（见 G3 / learnings L11.7）。HTTPS，无需明文例外。 -->
+    <access origin="https://modelscope.cn/*" />
+    <access origin="https://*.modelscope.cn/*" />
+    <allow-navigation href="https://modelscope.cn/*" />
+    <allow-navigation href="https://*.modelscope.cn/*" />
+
     <!-- 未被上面白名单覆盖的外链（如分享链接里的第三方网址）交给系统处理，
          而不是让应用内 WebView 卡住/白屏——与 Electron 版 setWindowOpenHandler 的思路一致 -->
     <allow-intent href="http://*/*" />

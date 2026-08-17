@@ -12,6 +12,9 @@ import { useLang } from '../context/LanguageContext';
 import { localize } from '../utils/lang';
 import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
+import MtTranslateBar from '../components/MtTranslateBar.jsx';
+import { FLASK_BASE } from '../config';
+import { getPrefs } from '../config/prefs';
 
 const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];
 const avatarUrl = (name) => {
@@ -50,6 +53,8 @@ export default function ArticleDetail() {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [mtResult, setMtResult] = useState(null);
+  const [prevArticleId, setPrevArticleId] = useState(article?.id);
   const [copied, setCopied] = useState(false);
   const [commentContent, setCommentContent] = useState('');
   const [commentSubmitting, setCommentSubmitting] = useState(false);
@@ -60,6 +65,7 @@ export default function ArticleDetail() {
 
   useEffect(() => {
     const viewedId = viewed.current;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 路由切换需同步进入加载态（既有逻辑，仅作 lint 合规）
     setLoading(true);
     getArticle(id).then((data) => {
       setArticle(data);
@@ -69,7 +75,7 @@ export default function ArticleDetail() {
         if (user && data.embedding) {
           client.get('/auth/profile/').then((prof) => {
             const userEmb = prof.data.embedding?.vector || Array(32).fill(0);
-            fetch('', {
+            fetch(`${FLASK_BASE}/click`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -96,8 +102,19 @@ export default function ArticleDetail() {
     return <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-300">文章不存在。</div>;
   }
 
+  // 切换文章时清除上一次的 MT 译文：用 render 期 prevId 模式（React 推荐）替代 effect 内 setState，
+  // 避开 react-hooks/set-state-in-effect 规则（L6.5）；条件达成后立即自洽，不会循环渲染
+  if (article.id !== prevArticleId) {
+    setPrevArticleId(article.id);
+    setMtResult(null);
+  }
+
   const loc = localize(article, lang);
-  const display = showOriginal ? { title: article.title, content: article.content } : loc;
+  // 优先级：原文 < 服务端缓存 zh/en 译文 (loc) < 浏览器端 MT 译文 (mtResult)
+  // MT 工具条仅翻译 ja/ko，与 loc 的 zh/en 服务端缓存互不冲突
+  const display = showOriginal
+    ? { title: article.title, content: article.content }
+    : (mtResult ? mtResult : loc);
 
   // 站内路径 + 完整链接（复制引用用当前显示语言的标题）
   const articlePath = `/knowledge/${article.id}`;
@@ -148,6 +165,9 @@ export default function ArticleDetail() {
           </button>
         </div>
       )}
+
+      {/* 浏览器端 MT 翻译工具条（ja/ko）；实验功能，默认关闭，需在设置中手动开启；与上方服务端译文徽标独立共存 */}
+      {getPrefs().mt_experimental && <MtTranslateBar title={article.title} content={article.content} sourceLang={article.source_lang} onTranslated={setMtResult} />}
 
       {/* Meta bar */}
       <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4 flex-wrap">
@@ -226,7 +246,7 @@ export default function ArticleDetail() {
               try {
                 await client.delete(`/knowledge/articles/${id}/`);
                 navigate('/');
-              } catch {}
+              } catch { /* ignored */ }
             }}
           >删除</Button>
         )}
@@ -346,7 +366,7 @@ function CommentCard({ comment, article, user, t, onToggleLike, onChanged }) {
               try {
                 await deleteComment(article.id, comment.id);
                 onChanged();
-              } catch {}
+              } catch { /* ignored */ }
             }}
             className="hover:text-rose-500 transition-colors font-medium ml-auto"
           >
