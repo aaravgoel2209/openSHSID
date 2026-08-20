@@ -4,10 +4,10 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
 import { SunIcon, MoonIcon, PlusIcon, Bars3Icon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
-import { useLang } from '../context/LanguageContext';
-import { useUI } from '../context/UIContext';
+import { AuthContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
+import { useLang } from '../context/useLang';
+import { useUI } from '../context/useUI';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
 import AboutDialog from './AboutDialog';
@@ -37,7 +37,7 @@ export default function Layout() {
   const { user, logout } = useContext(AuthContext);
   const { isDark, toggle } = useContext(ThemeContext);
   const { lang, setLang, t } = useLang();
-  const { complexity, hasGlass } = useUI();
+  const { hasGlass } = useUI();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -48,7 +48,6 @@ export default function Layout() {
     const idx = NAV_LINKS.findIndex(l => location.pathname.startsWith(l.to));
     return idx >= 0 ? idx : 0;
   }, [location.pathname]);
-  const prevIndex = useRef(navIndex);
 
   // 当前是否在浏览某个子吧 → 右栏显示「吧务团队」
   const activeSubbarId = useMemo(() => {

@@ -7,8 +7,8 @@ import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem 
 import { HandThumbUpIcon } from '@heroicons/react/24/outline';
 import { getArticle, toggleArticleLike, createComment, toggleCommentLike, deleteComment } from '../api/knowledge';
 import client from '../api/client';
-import { AuthContext } from '../context/AuthContext';
-import { useLang } from '../context/LanguageContext';
+import { AuthContext } from '../context/authContext';
+import { useLang } from '../context/useLang';
 import { localize } from '../utils/lang';
 import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
@@ -65,7 +65,6 @@ export default function ArticleDetail() {
 
   useEffect(() => {
     const viewedId = viewed.current;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 路由切换需同步进入加载态（既有逻辑，仅作 lint 合规）
     setLoading(true);
     getArticle(id).then((data) => {
       setArticle(data);

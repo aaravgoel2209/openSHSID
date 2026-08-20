@@ -5,7 +5,7 @@ import { Spinner } from '@heroui/react/spinner';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { getMessages, sendMessage, markConversationRead } from '../api/chat';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import { resolveAvatar } from '../utils/avatar';
 
 export default function ChatDetail() {

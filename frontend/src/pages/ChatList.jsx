@@ -4,7 +4,7 @@ import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { PlusIcon, ChatBubbleLeftEllipsisIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { getConversations, searchUsers, sendMessage } from '../api/chat';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import { resolveAvatar } from '../utils/avatar';
 
 const AVATAR_COLORS = ['blue','green','red','purple','orange','indigo','emerald','sky','rose'];

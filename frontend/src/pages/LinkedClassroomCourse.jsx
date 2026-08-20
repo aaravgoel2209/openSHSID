@@ -1,7 +1,6 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Spinner } from '@heroui/react/spinner';
-import { AuthContext } from '../context/AuthContext';
 import { getCourse, downloadResourceUrl } from '../api/crawler';
 
 const LC_TEAL = '#00a9ce';
@@ -51,16 +50,6 @@ const FA_TO_BI = {
   'fa-cog':          'bi-gear-fill',
 };
 
-function tileGradient(title) {
-  const PALETTES = [
-    ['#4f46e5','#7c3aed'],['#0891b2','#0e7490'],['#059669','#047857'],
-    ['#d97706','#b45309'],['#dc2626','#b91c1c'],['#7c3aed','#6d28d9'],
-    ['#0284c7','#0369a1'],['#16a34a','#15803d'],
-  ];
-  const idx = Math.abs((title || '').split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 0)) % PALETTES.length;
-  const [a, b] = PALETTES[idx];
-  return `linear-gradient(135deg, ${a}, ${b})`;
-}
 
 function SectionTile({ section, isOpen, onToggle }) {
   const [hovered, setHovered] = useState(false);
@@ -185,7 +174,6 @@ function ActivityRow({ act }) {
 export default function LinkedClassroomCourse() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [openSection, setOpenSection] = useState(null);

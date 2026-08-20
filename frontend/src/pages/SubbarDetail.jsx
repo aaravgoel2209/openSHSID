@@ -7,9 +7,9 @@ import { Label } from '@heroui/react/label';
 import { Input } from '@heroui/react/input';
 import { ArrowLeftIcon, PlusIcon, ChatBubbleLeftRightIcon, EyeIcon, HandThumbUpIcon } from '@heroicons/react/24/outline';
 import { getSubbar, getSubbarPosts, createPost } from '../api/postbar';
-import { AuthContext } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { useLang } from '../context/LanguageContext';
+import { AuthContext } from '../context/authContext';
+import { useToast } from '../context/useToast';
+import { useLang } from '../context/useLang';
 import MarkdownInput from '../components/MarkdownInput';
 
 export default function SubbarDetail() {

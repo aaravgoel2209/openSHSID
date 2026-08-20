@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from '@heroui/react/spinner';
 import { Button } from '@heroui/react/button';
 import { ChatBubbleLeftRightIcon, BookOpenIcon, CalendarIcon } from '@heroicons/react/24/outline';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import { getQuestions } from '../api/qa';
 import { getArticles } from '../api/knowledge';
 import client from '../api/client';

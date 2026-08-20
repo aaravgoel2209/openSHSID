@@ -6,7 +6,7 @@ import {
   ArrowLeftIcon, DocumentArrowUpIcon, SparklesIcon, ClipboardIcon,
   BookmarkIcon, CheckIcon, CameraIcon,
 } from '@heroicons/react/24/outline';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import { ocrScan, ocrScanStream, summarizeText, saveToKnowledge } from '../api/toolbox';
 import MarkdownView from '../components/MarkdownView';
 import { copyText as copyToClipboard } from '../utils/clipboard';

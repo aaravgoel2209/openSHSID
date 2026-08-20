@@ -1,8 +1,8 @@
 import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
-import { ThemeContext } from '../context/ThemeContext';
-import { useLang } from '../context/LanguageContext';
+import { ThemeContext } from '../context/themeContext';
+import { useLang } from '../context/useLang';
 import AboutDialog from './AboutDialog';
 
 // 登录/注册页没有 Layout，用不上侧边栏/搜索/通知——只留 Electron 需要的部分：

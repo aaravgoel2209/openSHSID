@@ -6,8 +6,8 @@ import { Button } from '@heroui/react/button';
 import { EyeIcon, HandThumbUpIcon, BookOpenIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { getArticles } from '../api/knowledge';
 import client from '../api/client';
-import { AuthContext } from '../context/AuthContext';
-import { useLang } from '../context/LanguageContext';
+import { AuthContext } from '../context/authContext';
+import { useLang } from '../context/useLang';
 import { localizeTitle } from '../utils/lang';
 
 const FLASK_URL = '';

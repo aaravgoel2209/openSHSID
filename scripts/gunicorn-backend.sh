@@ -52,11 +52,11 @@ set +a
 "$PYTHON" scripts/ensure_config.py
 
 gunicorn_cmd=(gunicorn --workers 2 --bind 0.0.0.0:19424 --worker-tmp-dir /dev/shm --access-logfile - --error-logfile - OpenSHSID_backend.wsgi:application)
-gunicorn_model_cmd=(gunicorn --workers 1 --bind 0.0.0.0:5000 --worker-tmp-dir /dev/shm --access-logfile - --error-logfile - model.app:app)
+gunicorn_model_cmd=(gunicorn --workers 1 --bind 0.0.0.0:5000 --worker-tmp-dir /dev/shm --access-logfile - --error-logfile - app:app)
 
 echo "[Flask]   Starting gunicorn on :5000..."
 (
-    cd "$ROOT"
+    cd "$ROOT/model"
     exec "${gunicorn_model_cmd[@]}"
 ) &
 flask_pid=$!

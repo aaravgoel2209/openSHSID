@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Spinner } from '@heroui/react/spinner';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import { getCourses, getCredentials, saveCredentials, deleteCredentials, syncCourses, clearSessionCache, getBrowserLoginHtml } from '../api/crawler';
 
 const LC_TEAL = '#155cfb';

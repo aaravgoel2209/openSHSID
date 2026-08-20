@@ -5,8 +5,8 @@ import { Spinner } from '@heroui/react/spinner';
 import { ArrowLeftIcon, EyeIcon, HandThumbUpIcon } from '@heroicons/react/24/outline';
 import { getQuestion, createAnswer, toggleQuestionLike, toggleAnswerLike } from '../api/qa';
 import client from '../api/client';
-import { AuthContext } from '../context/AuthContext';
-import { useLang } from '../context/LanguageContext';
+import { AuthContext } from '../context/authContext';
+import { useLang } from '../context/useLang';
 import { localize } from '../utils/lang';
 import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
@@ -38,7 +38,6 @@ export default function QuestionDetail() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- 预存在的数据拉取模式：setLoading(true) 在异步 fetch 之前
   useEffect(fetchData, [id]);
 
   useEffect(() => () => setMtResult(null), [question?.id]);

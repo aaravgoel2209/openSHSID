@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useLang } from '../context/LanguageContext';
+import { useLang } from '../context/useLang';
 import MarkdownView from './MarkdownView';
 
 // Markdown 输入框：工具栏（加粗/斜体/代码/链接/列表…）+ 编辑/预览切换。

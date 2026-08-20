@@ -4,10 +4,10 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@heroui/react/avatar';
 import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react/dropdown';
 import { SunIcon, MoonIcon, PlusIcon, Bars3Icon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
-import { useLang } from '../context/LanguageContext';
-import { useUI } from '../context/UIContext';
+import { AuthContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
+import { useLang } from '../context/useLang';
+import { useUI } from '../context/useUI';
 import NotificationBell from './NotificationBell';
 import GlassPanel from './GlassPanel';
 import AboutDialog from './AboutDialog';
@@ -51,7 +51,7 @@ export default function Layout() {
   const { user, logout } = useContext(AuthContext);
   const { isDark, toggle } = useContext(ThemeContext);
   const { lang, setLang, t } = useLang();
-  const { complexity, hasGlass } = useUI();
+  const { hasGlass } = useUI();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -62,7 +62,6 @@ export default function Layout() {
     const idx = NAV_LINKS.findIndex(l => location.pathname.startsWith(l.to));
     return idx >= 0 ? idx : 0;
   }, [location.pathname]);
-  const prevIndex = useRef(navIndex);
 
   // 当前是否在浏览某个子吧 → 右栏显示「吧务团队」
   const activeSubbarId = useMemo(() => {
@@ -288,13 +287,15 @@ export default function Layout() {
     </>
   );
 
-  const pageDirection = useMemo(() => {
-    const diff = navIndex - (prevIndex.current ?? navIndex);
-    prevIndex.current = navIndex;
-    if (diff > 0) return 1;
-    if (diff < 0) return -1;
-    return 0;
-  }, [navIndex]);
+  // 页面切换方向：必须在 navIndex 变化的当帧就正确（framer-motion 挂载动画读取它）。
+  // 用 state 存上一个 navIndex 并在渲染期条件更新（React「存上一帧值」官方模式），
+  // 语义与原 useRef 版逐帧一致：首次渲染为 0，之后保持上次方向直到 navIndex 再变。
+  const [pageDirState, setPageDirState] = useState({ prev: navIndex, dir: 0 });
+  if (pageDirState.prev !== navIndex) {
+    const diff = navIndex - pageDirState.prev;
+    setPageDirState({ prev: navIndex, dir: diff > 0 ? 1 : diff < 0 ? -1 : 0 });
+  }
+  const pageDirection = pageDirState.dir;
 
   return (
     // overflow-x-clip 而非 hidden：hidden 会把该 div 变成滚动容器，
@@ -342,7 +343,7 @@ export default function Layout() {
                   <div className="py-3 text-center text-xs text-gray-400">未找到匹配的内容</div>
                 ) : (
                   <ul className="max-h-80 overflow-y-auto py-1">
-                    {suggestions.map((s, i) => (
+                    {suggestions.map((s) => (
                       <li key={`${s.type}-${s.id}`}>
                         <button
                           type="button"

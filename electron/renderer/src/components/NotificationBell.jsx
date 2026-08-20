@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BellIcon } from '@heroicons/react/24/outline';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import {
   getNotifications, getUnreadCount,
   markNotificationRead, markAllNotificationsRead,

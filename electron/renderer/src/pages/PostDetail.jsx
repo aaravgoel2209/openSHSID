@@ -7,7 +7,7 @@ import {
   getPost, viewPost, togglePostLike, deletePost,
   createComment, deleteComment, toggleCommentLike,
 } from '../api/postbar';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
 

@@ -7,8 +7,8 @@ import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem 
 import { HandThumbUpIcon } from '@heroicons/react/24/outline';
 import { getArticle, toggleArticleLike, createComment, toggleCommentLike, deleteComment } from '../api/knowledge';
 import client from '../api/client';
-import { AuthContext } from '../context/AuthContext';
-import { useLang } from '../context/LanguageContext';
+import { AuthContext } from '../context/authContext';
+import { useLang } from '../context/useLang';
 import { localize } from '../utils/lang';
 import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';

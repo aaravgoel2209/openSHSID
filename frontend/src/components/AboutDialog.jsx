@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { useLang } from '../context/LanguageContext';
+import { useLang } from '../context/useLang';
 import { FLASK_BASE } from '../config';
 
 /* global __BUILD_INFO__ */

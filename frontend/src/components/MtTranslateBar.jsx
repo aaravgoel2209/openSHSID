@@ -23,7 +23,7 @@
 //   onTranslated(null|result) 控制 mtResult，二者分层不冲突。）
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useLang } from '../context/LanguageContext.jsx';
+import { useLang } from '../context/useLang';
 import { translateArticle } from '../mt/engine.js';
 import { MT_TARGETS } from '../mt/models.js';
 

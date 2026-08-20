@@ -5,11 +5,11 @@ import { TextField } from '@heroui/react/textfield';
 import { Label } from '@heroui/react/label';
 import { Input } from '@heroui/react/input';
 import { TextArea } from '@heroui/react/textarea';
-import { createQuestion } from '../api/qa';
+
 import { getLabels } from '../api/labels';
-import { AuthContext } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { useLang } from '../context/LanguageContext';
+import { AuthContext } from '../context/authContext';
+import { useToast } from '../context/useToast';
+import { useLang } from '../context/useLang';
 import client from '../api/client';
 
 

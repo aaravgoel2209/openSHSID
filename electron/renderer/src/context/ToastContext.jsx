@@ -1,10 +1,10 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ToastContext } from './toastContext';
 
 // 全局轻量级通知（右上角弹出、自动消失）。用法：
 //   const { showToast } = useToast();
 //   showToast({ message: '文章已发布', type: 'success', action: { label: '查看', onPress: () => nav(url) } });
-const ToastContext = createContext({ showToast: () => {} });
 
 const ICONS = {
   success: 'bi-check-circle-fill text-emerald-500',
@@ -66,8 +66,4 @@ export function ToastProvider({ children }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  return useContext(ToastContext);
 }

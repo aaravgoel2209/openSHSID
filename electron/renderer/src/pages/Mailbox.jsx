@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import {
   getNotifications, markNotificationRead,
   markAllNotificationsRead, clearNotifications,

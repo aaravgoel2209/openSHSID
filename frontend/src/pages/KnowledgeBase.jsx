@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import { getArticles } from '../api/knowledge';
+
 import { getLabels } from '../api/labels';
 import client from '../api/client';
-import { useLang } from '../context/LanguageContext';
+import { useLang } from '../context/useLang';
 import { localizeTitle } from '../utils/lang';
 
 export default function KnowledgeBase() {

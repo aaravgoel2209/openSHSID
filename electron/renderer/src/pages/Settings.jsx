@@ -1,9 +1,9 @@
 import { useContext, useRef, useState, useCallback, useEffect } from 'react';
 import { Cog6ToothIcon, CameraIcon } from '@heroicons/react/24/outline';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import { uploadAvatar } from '../api/auth';
-import { useUI } from '../context/UIContext';
-import { useLang } from '../context/LanguageContext';
+import { useUI } from '../context/useUI';
+import { useLang } from '../context/useLang';
 import { getPrefs, updatePrefs } from '../config/prefs';
 import { FLASK_BASE } from '../config';
 import GlassPanel from '../components/GlassPanel';

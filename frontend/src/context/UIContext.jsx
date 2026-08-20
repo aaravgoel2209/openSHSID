@@ -1,9 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { getPrefs, updatePrefs } from '../config/prefs';
-
-const UIContext = createContext(null);
-
-export const useUI = () => useContext(UIContext);
+import { UIContext } from './uiContext';
 
 // 界面复杂度：simple(兼容) | normal(普通) | complex(复杂) | extreme(极致)
 // complex / extreme 会启用 liquid-glass 特效（extreme 更强：全站卡片玻璃化）

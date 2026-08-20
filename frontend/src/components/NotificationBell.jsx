@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BellIcon } from '@heroicons/react/24/outline';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import {
   getNotifications, getUnreadCount,
   markNotificationRead, markAllNotificationsRead,
@@ -60,7 +60,7 @@ export default function NotificationBell() {
 
   const openItem = async (n) => {
     if (!n.is_read) {
-      try { await markNotificationRead(n.id); } catch {}
+      try { await markNotificationRead(n.id); } catch { /* 标记已读失败可忽略 —— 本地状态已先行更新 */ }
       setItems((l) => l.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)));
       setUnread((c) => Math.max(0, c - 1));
     }
@@ -69,7 +69,7 @@ export default function NotificationBell() {
   };
 
   const readAll = async () => {
-    try { await markAllNotificationsRead(); } catch {}
+    try { await markAllNotificationsRead(); } catch { /* 全部标记失败可忽略 —— 本地状态已先行更新 */ }
     setItems((l) => l.map((x) => ({ ...x, is_read: true })));
     setUnread(0);
   };

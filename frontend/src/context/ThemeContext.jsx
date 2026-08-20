@@ -1,7 +1,6 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
-import { getPrefs, updatePrefs, subscribe, DEFAULT_ACCENT } from '../config/prefs';
-
-export const ThemeContext = createContext({ isDark: false, toggle: () => {} });
+import { useState, useEffect, useCallback } from 'react';
+import { getPrefs, updatePrefs, subscribe } from '../config/prefs';
+import { ThemeContext } from './themeContext';
 
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(() => {

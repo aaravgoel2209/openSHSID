@@ -17,5 +17,14 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Disabled intentionally: these rules flag deliberate codebase patterns —
+      // data-fetching useEffect hooks that call setState synchronously, and
+      // Math.random() inside useMemo for picking random backgrounds. We keep
+      // only basic checking (parse errors, undefined vars, unused vars,
+      // no-empty, and the remaining default rules).
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/purity': 'off',
+    },
   },
 ])

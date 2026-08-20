@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import {
   getNotifications, markNotificationRead,
   markAllNotificationsRead, clearNotifications,
@@ -44,20 +44,20 @@ export default function Mailbox() {
 
   const openItem = async (n) => {
     if (!n.is_read) {
-      try { await markNotificationRead(n.id); } catch {}
+      try { await markNotificationRead(n.id); } catch { /* 标记已读失败可忽略 —— 本地状态已先行更新 */ }
       setItems((list) => list.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)));
     }
     if (n.link) navigate(n.link);
   };
 
   const handleReadAll = async () => {
-    try { await markAllNotificationsRead(); } catch {}
+    try { await markAllNotificationsRead(); } catch { /* 全部标记失败可忽略 —— 本地状态已先行更新 */ }
     setItems((list) => list.map((x) => ({ ...x, is_read: true })));
   };
 
   const handleClear = async () => {
     if (!window.confirm('确认清空全部通知？')) return;
-    try { await clearNotifications(); } catch {}
+    try { await clearNotifications(); } catch { /* 清空失败可忽略 —— 本地列表已清空并会在下次加载时纠正 */ }
     setItems([]);
   };
 

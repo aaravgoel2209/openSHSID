@@ -1,7 +1,7 @@
 import { useState, useContext, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import AuthTopbar from '../components/AuthTopbar';
 
 const bgImages = [

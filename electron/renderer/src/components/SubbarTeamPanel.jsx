@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSubbarTeam, addManager, removeManager } from '../api/postbar';
-import { AuthContext } from '../context/AuthContext';
-import { useLang } from '../context/LanguageContext';
+import { AuthContext } from '../context/authContext';
+import { useLang } from '../context/useLang';
 import GlassPanel from './GlassPanel';
 
 // 右栏「吧务团队」面板：显示吧主 + 吧务；吧主可任免吧务。

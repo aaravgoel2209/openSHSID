@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { useUI } from '../context/UIContext';
+import { useUI } from '../context/useUI';
 
 const glassMap = {
   simple: '',

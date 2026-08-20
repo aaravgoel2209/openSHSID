@@ -1,7 +1,7 @@
 import { useState, useContext, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@heroui/react/button';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 
 const bgImages = [
   new URL('../assets/background/bg-1.webp', import.meta.url).href,

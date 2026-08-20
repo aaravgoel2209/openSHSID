@@ -1,15 +1,42 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSubbarTeam, addManager, removeManager } from '../api/postbar';
-import { AuthContext } from '../context/AuthContext';
-import { useLang } from '../context/LanguageContext';
+import { useLang } from '../context/useLang';
 import GlassPanel from './GlassPanel';
+
+// 列表行：React 组件必须静态声明在渲染期之外（react-hooks/static-components），
+// 渲染期所需的 busy/t/navigate/handleRemove 经 props 传入，名字与原闭包变量一致。
+function Member({ id, username, role, removable, busy, t, navigate, handleRemove }) {
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <button
+        onClick={() => navigate(`/profile/${id}`)}
+        className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-medium text-blue-700 dark:text-blue-300 shrink-0"
+      >
+        {username?.charAt(0).toUpperCase()}
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">{username}</p>
+        <p className="text-[10px] text-gray-400">{role}</p>
+      </div>
+      {removable && (
+        <button
+          onClick={() => handleRemove(id)}
+          disabled={busy}
+          title={t('postbar.removeManager')}
+          className="text-gray-300 hover:text-rose-500 transition-colors text-sm shrink-0"
+        >
+          <i className="bi bi-x-lg" />
+        </button>
+      )}
+    </div>
+  );
+}
 
 // 右栏「吧务团队」面板：显示吧主 + 吧务；吧主可任免吧务。
 // 挂在 Layout 右侧栏，仅在浏览某个子吧（/postbar/b/:id）时出现。
 export default function SubbarTeamPanel({ subbarId }) {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
   const { t } = useLang();
   const [sub, setSub] = useState(null);
   const [name, setName] = useState('');
@@ -48,31 +75,6 @@ export default function SubbarTeamPanel({ subbarId }) {
     }
   };
 
-  const Member = ({ id, username, role, removable }) => (
-    <div className="flex items-center gap-2 py-1">
-      <button
-        onClick={() => navigate(`/profile/${id}`)}
-        className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-medium text-blue-700 dark:text-blue-300 shrink-0"
-      >
-        {username?.charAt(0).toUpperCase()}
-      </button>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">{username}</p>
-        <p className="text-[10px] text-gray-400">{role}</p>
-      </div>
-      {removable && (
-        <button
-          onClick={() => handleRemove(id)}
-          disabled={busy}
-          title={t('postbar.removeManager')}
-          className="text-gray-300 hover:text-rose-500 transition-colors text-sm shrink-0"
-        >
-          <i className="bi bi-x-lg" />
-        </button>
-      )}
-    </div>
-  );
-
   return (
     <GlassPanel
       className="mt-3"
@@ -86,10 +88,10 @@ export default function SubbarTeamPanel({ subbarId }) {
 
       <div className="space-y-0.5">
         {sub.creator_name && (
-          <Member id={sub.created_by} username={sub.creator_name} role={t('postbar.owner')} removable={false} />
+          <Member id={sub.created_by} username={sub.creator_name} role={t('postbar.owner')} removable={false} busy={busy} t={t} navigate={navigate} handleRemove={handleRemove} />
         )}
         {sub.managers?.map((m) => (
-          <Member key={m.id} id={m.id} username={m.username} role={t('postbar.manager')} removable={sub.is_owner} />
+          <Member key={m.id} id={m.id} username={m.username} role={t('postbar.manager')} removable={sub.is_owner} busy={busy} t={t} navigate={navigate} handleRemove={handleRemove} />
         ))}
         {(!sub.managers || sub.managers.length === 0) && (
           <p className="text-[11px] text-gray-400 py-1">{t('postbar.noManagers')}</p>

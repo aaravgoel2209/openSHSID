@@ -1,6 +1,6 @@
 import { LiquidGlass } from '@khvicha/react-liquid-glass';
 import '@khvicha/react-liquid-glass/style.css';
-import { useUI } from '../context/UIContext';
+import { useUI } from '../context/useUI';
 
 export default function GlassPanel({
   children,

@@ -4,7 +4,7 @@ import { Button } from '@heroui/react/button';
 import { Spinner } from '@heroui/react/spinner';
 import { PlusIcon, ChatBubbleLeftRightIcon, EyeIcon, HandThumbUpIcon } from '@heroicons/react/24/outline';
 import { getQuestions } from '../api/qa';
-import { useLang } from '../context/LanguageContext';
+import { useLang } from '../context/useLang';
 import { localizeTitle } from '../utils/lang';
 
 export default function Home() {

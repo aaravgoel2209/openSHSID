@@ -1,7 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { STRINGS } from '../i18n';
-
-export const LanguageContext = createContext({ lang: 'zh', setLang: () => {}, t: (k) => k });
+import { LanguageContext } from './languageContext';
 
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState(() => {
@@ -31,8 +30,4 @@ export function LanguageProvider({ children }) {
       {children}
     </LanguageContext.Provider>
   );
-}
-
-export function useLang() {
-  return useContext(LanguageContext);
 }

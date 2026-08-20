@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useLang } from '../context/LanguageContext';
+import { useLang } from '../context/useLang';
 import { onPwaEvent, applyPwaUpdate, initPwa } from '../pwa';
 
 // 新版本可用 / 离线可用 提示条。initPwa() 只在支持 SW 的构建里生效

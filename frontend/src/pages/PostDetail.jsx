@@ -7,7 +7,7 @@ import {
   getPost, viewPost, togglePostLike, deletePost,
   createComment, deleteComment, toggleCommentLike,
 } from '../api/postbar';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import MarkdownView from '../components/MarkdownView';
 import MarkdownInput from '../components/MarkdownInput';
 
@@ -100,7 +100,7 @@ export default function PostDetail() {
                 try {
                   await deletePost(post.id);
                   navigate(post.subbar ? `/postbar/b/${post.subbar}` : '/postbar');
-                } catch {}
+                } catch { /* 删除失败则停留在原地 —— confirm 已拦截误触，无额外提示 */ }
               }}
               className="flex items-center gap-1 text-gray-400 hover:text-rose-500 transition-colors ml-auto"
             >
@@ -221,7 +221,7 @@ function CommentCard({ comment, post, user, onToggleLike, onChanged }) {
               try {
                 await deleteComment(post.id, comment.id);
                 onChanged();
-              } catch {}
+              } catch { /* 删除失败则回复保留 —— confirm 已拦截误触，无额外提示 */ }
             }}
             className="hover:text-rose-500 transition-colors font-medium ml-auto"
           >

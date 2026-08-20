@@ -1,10 +1,10 @@
 import { useContext, useRef, useState, useCallback, useEffect } from 'react';
 import { Cog6ToothIcon, CameraIcon } from '@heroicons/react/24/outline';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 import { uploadAvatar } from '../api/auth';
 import { resolveAvatar } from '../utils/avatar';
-import { useUI } from '../context/UIContext';
-import { useLang } from '../context/LanguageContext';
+import { useUI } from '../context/useUI';
+import { useLang } from '../context/useLang';
 import { getServerOverride, setServerOverride, DJANGO_ORIGIN, FLASK_BASE } from '../config';
 import { getPrefs, updatePrefs, ACCENT_PRESETS, DEFAULT_ACCENT } from '../config/prefs';
 import GlassPanel from '../components/GlassPanel';

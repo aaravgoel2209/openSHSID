@@ -8,7 +8,7 @@ import { Input } from '@heroui/react/input';
 import { TextArea } from '@heroui/react/textarea';
 import { PlusIcon, UserGroupIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { getSubbars, createSubbar } from '../api/postbar';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/authContext';
 
 export default function PostbarHome() {
   const navigate = useNavigate();
