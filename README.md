@@ -27,6 +27,7 @@
 -  **贴吧** —— 类 Reddit 的子吧、帖子、嵌套回复、吧务管理
 -  **通知中心** —— 回答 / 回复 / 点赞 / 私信实时通知
 -  **LinkedClassroom** —— Moodle 课程浏览：课程 / 章节 / 活动同步，图片与文件代理
+-  **浏览器端多语翻译** —— 文章/问答详情页一键翻译成日语（OPUS-MT 浏览器端推理，模型从 ModelScope 直链下载，服务器零带宽）
 -  **多端形态** —— 网页（含 PWA）、Electron 桌面端、Cordova Android / iOS，同一套前端
 
 ##  演示
@@ -51,7 +52,7 @@
 ### 一键启动（Windows）
 
 ```bat
-start.bat
+scripts\start.bat
 ```
 
 首次运行自动生成 `REI_SESSION_SECRET` 到 `.env.local`，随后依次启动 Flask 模型服务（:5000）、Django（:19424）、React（:5173）。
@@ -145,3 +146,4 @@ Alpha a0.6.3 part2 p1 fixed cordova android preparing for ios
 
 - 项目处于 **Alpha** 阶段（当前 `a0.7.0`），部分默认配置面向开发环境，公网部署前请参考文档「已知限制」一节加固
 - 详细部署与运维细节见 [`documentation/`](documentation/README.md)
+- 本项目准备使用GPL license v3 

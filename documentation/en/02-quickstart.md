@@ -14,7 +14,7 @@
 ### One-click launch (Windows)
 
 ```bat
-start.bat
+scripts\start.bat
 ```
 
 This generates a `REI_SESSION_SECRET` into `.env.local` on first run, then starts Flask (5000), runs Django migrations, starts Django (19424), waits for both to accept connections, and finally starts the React dev server (5173).
@@ -64,7 +64,7 @@ All tunable settings for both Django and the Flask model service live in **`conf
 
 Loaded once per process by `OpenSHSID_backend/config_loader.py` (exposed as `cfg`).
 
-**If `config.json` is missing or lacks newly added keys, fill it automatically** (idempotent, additive only — existing values are never overwritten; `start.bat` / `backend.ps1` also run this on startup):
+**If `config.json` is missing or lacks newly added keys, fill it automatically** (idempotent, additive only — existing values are never overwritten; `scripts/start.bat` / `scripts/backend.ps1` also run this on startup):
 
 ```bash
 python scripts/ensure_config.py              # merge missing keys from config.example.json

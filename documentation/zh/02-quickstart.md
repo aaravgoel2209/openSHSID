@@ -14,7 +14,7 @@
 ### 一键启动（Windows）
 
 ```bat
-start.bat
+scripts\start.bat
 ```
 
 首次运行会生成 `REI_SESSION_SECRET` 写入 `.env.local`，然后依次启动 Flask（5000）、执行 Django 迁移、启动 Django（19424），等待两个后端就绪后再启动 React 开发服务器（5173）。
@@ -64,7 +64,7 @@ Django 与 Flask 模型服务的全部可调配置集中在项目根目录的 **
 
 由 `OpenSHSID_backend/config_loader.py` 在进程内解析一次（对外暴露为 `cfg`）。
 
-**`config.json` 缺失或缺少新配置项时，可一键自动补齐**（幂等、只增不改，已有值不会被覆盖；`start.bat` / `backend.ps1` 启动时也会自动执行）：
+**`config.json` 缺失或缺少新配置项时，可一键自动补齐**（幂等、只增不改，已有值不会被覆盖；`scripts/start.bat` / `scripts/backend.ps1` 启动时也会自动执行）：
 
 ```bash
 python scripts/ensure_config.py              # 从 config.example.json 补齐缺失键
