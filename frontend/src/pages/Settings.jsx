@@ -1,11 +1,11 @@
-import { useContext, useRef, useState, useCallback } from 'react';
+import { useContext, useRef, useState, useCallback, useEffect } from 'react';
 import { Cog6ToothIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { AuthContext } from '../context/AuthContext';
 import { uploadAvatar } from '../api/auth';
 import { resolveAvatar } from '../utils/avatar';
 import { useUI } from '../context/UIContext';
 import { useLang } from '../context/LanguageContext';
-import { getServerOverride, setServerOverride, DJANGO_ORIGIN } from '../config';
+import { getServerOverride, setServerOverride, DJANGO_ORIGIN, FLASK_BASE } from '../config';
 import { getPrefs, updatePrefs, ACCENT_PRESETS, DEFAULT_ACCENT } from '../config/prefs';
 import GlassPanel from '../components/GlassPanel';
 
@@ -76,9 +76,26 @@ export default function Settings() {
     updatePrefs({ accent: value });
   }
 
-  // 实验功能：浏览器端机器翻译（OPUS-MT）尝鲜开关，默认关闭
+  // 开发者选项：AI 机器翻译尝鲜开关，默认关闭
   const [mtExperimental, setMtExperimental] = useState(() => getPrefs().mt_experimental === true);
   const [mtMsg, setMtMsg] = useState(null); // { type: 'ok'|'err', text }
+  // 当前翻译模型（向 Flask /models 拉取；失败则隐藏该行）
+  const [translationModel, setTranslationModel] = useState(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch(`${FLASK_BASE}/models`, { signal: ctrl.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then((data) => {
+        const ids = ((data && data.models) || []).map((m) => m && m.id).filter(Boolean);
+        if (ids.length > 0) setTranslationModel(ids.join(', '));
+      })
+      .catch(() => { /* 模型服务不可用时静默：不渲染该行 */ });
+    return () => ctrl.abort();
+  }, []);
 
   function handleToggleMt() {
     const next = !mtExperimental;
@@ -423,13 +440,13 @@ export default function Settings() {
         </p>
       </GlassPanel>
 
-      {/* ── Experimental features section ── */}
+      {/* ── Developer options section (was Experimental) ── */}
       <GlassPanel
         plainClass="bg-white dark:bg-slate-900/50 border border-gray-200/80 dark:border-slate-800/80 rounded-2xl p-6 mt-4"
         glassContentClass="p-6 mt-4"
         cornerRadius={20}
       >
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('settings.experimental')}</h2>
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('settings.developer')}</h2>
 
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
@@ -452,6 +469,12 @@ export default function Settings() {
             />
           </button>
         </div>
+
+        {translationModel && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+            {t('settings.translationModel')}: <code className="font-mono">{translationModel}</code>
+          </p>
+        )}
 
         {mtMsg && (
           <p className={`text-sm mt-3 ${mtMsg.type === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>

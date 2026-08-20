@@ -100,3 +100,4 @@ secrets.py
 # 本地密钥（AI 会话签名），不入库
 .env.local
 /config.json
+/.omo/

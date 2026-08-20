@@ -139,6 +139,11 @@ export default defineConfig(({ mode }) => {
           target: 'http://127.0.0.1:5000',
           changeOrigin: true,
         },
+        // 翻译模型信息（关于弹窗 / 设置页）
+        '/models': {
+          target: 'http://127.0.0.1:5000',
+          changeOrigin: true,
+        },
       },
     },
   }

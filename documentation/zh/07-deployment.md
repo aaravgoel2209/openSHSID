@@ -65,13 +65,18 @@ docker compose exec backend python manage.py reset_db --yes
 - 构建：`cd cordova && npm install && npm run add:android && npm run run:android`（自动探测 `ANDROID_HOME`/`JAVA_HOME`；iOS 需要 macOS 上的 Xcode + CocoaPods）。
 - 已知移动端限制：LinkedClassroom 的弹窗登录（`window.open`）在 WebView 中不可用；若移动端需要 LC 登录，需要改用应用内浏览器插件。
 
-## 4. 浏览器端机器翻译（无需服务器侧改动）
+## 4. 多语翻译（复用 Flask 模型服务）
 
-浏览器端 MT（多语翻译）功能**完全不经过自有服务器**——模型由浏览器首次翻译时从 [ModelScope](https://modelscope.cn/models) CDN 直链下载，Django / Flask 镜像无需任何改动。详见 [05-frontend.md §7 浏览器端多语翻译](05-frontend.md#7-浏览器端多语翻译)。
+翻译由 Flask 模型服务的 `/translate` 完成——与 Rei 助手共用同一 LLM 推理后端（模型由 `config.json` 的 `llm.model_name` 指定），Django 无需任何改动，也无需部署额外的翻译组件。详见 [05-frontend.md §7 多语翻译（服务端）](05-frontend.md#7-多语翻译服务端)。
 
-**逃生门**：如需自托管模型（例如 ModelScope CORS 在你的网络环境实测失败），在自有 nginx 加 [05-frontend.md](05-frontend.md#7-浏览器端多语翻译) 里的反代片段（`/mt-models/` → `modelscope.cn/models`），并在前端构建时设 `VITE_MT_MODEL_BASE=https://your-domain/mt-models` 指向自有域。
+**反向代理**：线上 nginx 需把 `/translate` 与新增的 `/models`（连同既有 `/rei`、`/click`）转发到 Flask（:5000）：
 
-**Electron / Cordova**：模型走外网直连，无需在 Electron 主进程或 Cordova 端做代理改动；Cordova `config.xml` 白名单已加入 `https://*.modelscope.cn/*`（覆盖源站 + CDN 重定向域）。
+```nginx
+location = /translate { proxy_pass http://127.0.0.1:5000; }
+location = /models    { proxy_pass http://127.0.0.1:5000; }
+```
+
+**Electron / Cordova**：不再访问任何模型仓库（浏览器端 ModelScope 直链已废弃），桌面 / 移动端与网页走同一条后端通道；`cordova/config.xml` 里遗留的 ModelScope 白名单已不再使用（保留无害）。
 
 ---
 

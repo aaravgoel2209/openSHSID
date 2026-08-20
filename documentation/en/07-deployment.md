@@ -65,13 +65,18 @@ Two-stage: `node:24-alpine` builds (`npm ci && npm run build`), then `nginx:alpi
 - Build: `cd cordova && npm install && npm run add:android && npm run run:android` (env auto-detection for `ANDROID_HOME`/`JAVA_HOME`; iOS needs Xcode + CocoaPods on macOS).
 - Known mobile limitation: the LinkedClassroom popup-login flow (`window.open`) doesn't work in a WebView; an in-app browser plugin rework is needed if LC login is required on mobile.
 
-## 4. Browser-side machine translation (no server-side changes)
+## 4. Multilingual translation (reuses the Flask model service)
 
-The browser-side MT (multilingual translation) feature does **not** touch our own servers — models are fetched directly from the [ModelScope](https://modelscope.cn/models) CDN by the browser on first translation. The Django / Flask images require NO changes. See [05-frontend.md §7 Browser-side multilingual translation](05-frontend.md#7-browser-side-multilingual-translation).
+Translation is done by the Flask model service's `/translate` endpoint — it shares the same LLM backend as the Rei assistant (model selected via `config.json` → `llm.model_name`). Django needs no changes and no extra translation component is deployed. See [05-frontend.md §7 Server-side multilingual translation](05-frontend.md#7-server-side-multilingual-translation).
 
-**Escape hatch**: to self-host the models (e.g. if ModelScope's CORS fails in your network), add the reverse-proxy snippet from [05-frontend.md](05-frontend.md#7-browser-side-multilingual-translation) to your own nginx (`/mt-models/` → `modelscope.cn/models`) and set `VITE_MT_MODEL_BASE=https://your-domain/mt-models` at frontend build time.
+**Reverse proxy**: nginx must forward `/translate` and the new `/models` (plus the existing `/rei`, `/click`) to Flask (:5000):
 
-**Electron / Cordova**: models are fetched over the public internet directly — no Electron main-process or Cordova proxy changes needed. The Cordova `config.xml` whitelist already includes `https://*.modelscope.cn/*` (covers the origin + CDN redirect domains).
+```nginx
+location = /translate { proxy_pass http://127.0.0.1:5000; }
+location = /models    { proxy_pass http://127.0.0.1:5000; }
+```
+
+**Electron / Cordova**: no model repository is contacted anymore (the browser-side ModelScope direct links are retired) — desktop and mobile use the same backend channel as the web app; the leftover ModelScope whitelist entries in `cordova/config.xml` are unused (harmless to keep).
 
 ---
 

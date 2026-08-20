@@ -1,13 +1,24 @@
+# OpenSHSID Python 依赖（Django 后端 + Flask 模型服务共用）
+# 安装: pip install -r requirements.txt
+# OCR 推理依赖（需 CUDA GPU，仅模型机安装）见 model/requirements-ocr.txt
+
+# --- Django 后端 ---
 django>=6.0,<6.1
 djangorestframework>=3.17,<3.18
 django-cors-headers>=4.9,<5.0
+pymysql>=1.1              # MySQL 模式驱动（install_as_MySQLdb，无需 mysqlclient 的 C 库）
+
+# --- 生产部署 ---
 gunicorn>=26.0,<27.0
+
+# --- HTTP 客户端 / 爬虫 ---
 requests>=2.31,<3.0
 beautifulsoup4>=4.12,<5.0
-pymysql>=1.1
-mysqlclient >= 2.2.1
+
+# --- Flask 模型服务 (model/) ---
 torch
 flask
 flask-cors
 openai
 httpx
+numpy

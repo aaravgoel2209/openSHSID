@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useLang } from '../context/LanguageContext';
+import { FLASK_BASE } from '../config';
 
 /* global __BUILD_INFO__ */
 // 构建时由 vite.config.js 的 define 注入：commit 首行、短 hash、提交日期、构建时间
@@ -18,6 +20,27 @@ function Row({ label, children }) {
 export default function AboutDialog({ open, onClose }) {
   const { lang, t } = useLang();
   const desktop = window.desktop;
+  const [translationModel, setTranslationModel] = useState(null);
+
+  // 每次打开时向 Flask 模型服务拉取模型列表（翻译与 Rei 同模型）。
+  // 失败 / 无模型时静默隐藏该行；关闭时 abort 未完成的请求。
+  useEffect(() => {
+    if (!open) return undefined;
+    const ctrl = new AbortController();
+    // 异步清空上次的值（effect 体内不同步 setState），成功后由下方 then 覆写
+    Promise.resolve().then(() => setTranslationModel(null));
+    fetch(`${FLASK_BASE}/models`, { signal: ctrl.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then((data) => {
+        const ids = ((data && data.models) || []).map((m) => m && m.id).filter(Boolean);
+        if (ids.length > 0) setTranslationModel(ids.join(', '));
+      })
+      .catch(() => { /* 模型服务不可用 /  abort 时静默：不渲染该行 */ });
+    return () => ctrl.abort();
+  }, [open]);
 
   return (
     <AnimatePresence>
@@ -85,6 +108,12 @@ export default function AboutDialog({ open, onClose }) {
                   ? `Electron ${desktop.versions?.electron} · Chrome ${desktop.versions?.chrome}`
                   : navigator.userAgent.match(/Chrome\/[\d.]+|Firefox\/[\d.]+|Safari\/[\d.]+/)?.[0] || 'Browser'}
               </Row>
+              {/* 翻译模型（fetch 失败或无模型时不渲染该行） */}
+              {translationModel && (
+                <Row label={t('about.translationModel')}>
+                  {translationModel}
+                </Row>
+              )}
             </div>
           </motion.div>
         </motion.div>

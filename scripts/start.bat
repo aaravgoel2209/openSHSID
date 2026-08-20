@@ -2,6 +2,11 @@
 chcp 65001 >nul
 title SHSID Campus
 
+:: This script lives in scripts/ — always run from the repo root so the
+:: root-relative paths below (.env.local, scripts\ensure_config.py, model\,
+:: manage.py, frontend\) resolve no matter where it is invoked from.
+cd /d "%~dp0.."
+
 echo === SHSID Campus Starting... ===
 echo.
 

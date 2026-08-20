@@ -199,6 +199,7 @@
   },
 
   "translate": {
+    "//note": "/translate 的 target 接受任意 ISO 语言代码或英文语言名（如 ja/ko/fr/German）；留空时自动中↔英互翻。翻译由 llm.model_name 指定的 LLM 完成（与 Rei 同一推理后端）。",
     "timeout": 120,
     "service_check_timeout": 3
   },

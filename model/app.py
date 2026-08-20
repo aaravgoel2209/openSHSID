@@ -478,14 +478,23 @@ def _detect_lang(text):
 
 
 def _translate_text(text, target=None):
-    """调用 AI 模型在中英之间翻译。
-    target 为 'zh'/'en' 时翻译到指定语言；为空时自动取与源语言相反的一方。
-    返回 (译文, 源语言, 目标语言)。"""
+    """调用 AI 模型做翻译。target 为任意语言代码或英文语言名（'zh'/'en'/'ja'/'French'…）；
+    为空时自动取与源语言相反的中/英一方。返回 (译文, 源语言, 目标语言)。"""
     client, model_name = _get_rei_client()
     src = _detect_lang(text)
-    if target not in ('zh', 'en'):
+    if target is None:
         target = 'en' if src == 'zh' else 'zh'
-    target_name = '简体中文' if target == 'zh' else 'English'
+    # zh/en 保持既有提示词行为；其他语言目标直接透传给大模型处理
+    target_name = {
+        'zh': '简体中文',
+        'en': 'English',
+        'ja': '日本語',
+        'ko': '한국어',
+        'fr': 'French',
+        'de': 'German',
+        'es': 'Spanish',
+        'ru': 'Russian',
+    }.get(target, target)
     # 先把数学公式抠成占位符，避免模型翻译时改坏 LaTeX（导致前端 MathJax 无法渲染）
     masked, math_store = _protect_math(text)
     system_prompt = (
@@ -558,23 +567,37 @@ def click_endpoint():
 
 @app.route("/translate", methods=["POST"])
 def translate_endpoint():
-    """中英互译。请求体：{"text": "...", "target": "zh"|"en"|null}
-    target 省略/为空时自动检测源语言并翻到另一种语言。
-    返回：{"translation": "...", "source_lang": "zh"|"en", "target_lang": "zh"|"en"}"""
+    """任意目标语言翻译。请求体：{"text": "...", "target": "zh"|"en"|"ja"|"ko"|"French"|...|null}
+    target 省略/为空时自动检测源语言并翻到另一种语言（中↔英）；
+    其他语言代码/名称直接透传给 LLM 处理（ISO 代码或英文语言名皆可）。
+    返回：{"translation": "...", "source_lang": "zh"|"en", "target_lang": "<target>"}"""
     try:
         data = request.get_json() or {}
         text = (data.get("text") or "").strip()
         target = data.get("target") or None
         if not text:
             return jsonify({"error": "text 不能为空"}), 400
-        if target not in (None, 'zh', 'en'):
-            return jsonify({"error": "target 只能为 'zh' 或 'en'"}), 400
 
         translation, src, tgt = _translate_text(text, target)
         return jsonify({"translation": translation, "source_lang": src, "target_lang": tgt})
     except Exception as e:
         logger.error(f'[Translate] 端点处理失败: {e}', exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/models", methods=["GET"])
+def models_endpoint():
+    """代理 LLM 推理后端的模型列表，供前端「关于 / 设置」页展示当前翻译（同 Rei）模型。
+    返回：{"models": [{"id": ..., "object": "model"}, ...]}；失败时 {"error": ..., "models": []}"""
+    try:
+        client, _model_name = _get_rei_client()
+        page = client.models.list()
+        rows = getattr(page, 'data', None) or []
+        models = [{'id': m.id, 'object': getattr(m, 'object', 'model')} for m in rows]
+        return jsonify({"models": models})
+    except Exception as e:
+        logger.error(f'[Models] 获取模型列表失败: {e}', exc_info=True)
+        return jsonify({"error": str(e), "models": []}), 500
 
 
 def _summarize_text(text, instruction=''):

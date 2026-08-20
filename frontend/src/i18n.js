@@ -44,10 +44,12 @@ export const STRINGS = {
     'mt.retry': '重试',
     'mt.unsupported': '暂不支持该内容语言',
     'mt.failed': '翻译失败',
-    // 设置 - 实验功能
-    'settings.experimental': '实验功能',
-    'settings.mtExperimental': '浏览器端机器翻译（尝鲜）',
-    'settings.mtExperimentalDesc': '在文章/问答详情页提供日语翻译。机器翻译质量有限，仅作尝鲜。',
+    // 设置 - 开发者选项（原实验功能）
+    'settings.experimental': '实验功能', // 保留键（不再使用）
+    'settings.developer': '开发者选项',
+    'settings.mtExperimental': 'AI 机器翻译（尝鲜）',
+    'settings.mtExperimentalDesc': '用 AI 翻译文章和问答。翻译质量由服务端 AI 决定。',
+    'settings.translationModel': '翻译模型',
     // 发布成功提示（右上角弹出）
     'toast.articlePublished': '文章已发布',
     'toast.questionPublished': '问题已发布',
@@ -118,6 +120,7 @@ export const STRINGS = {
     'about.runtime': '运行环境',
     'about.unknown': '（无提交信息）',
     'about.close': '关闭',
+    'about.translationModel': '翻译模型',
     // PWA
     'pwa.updateAvailable': '有新版本可用',
     'pwa.offlineReady': '已可离线使用',
@@ -163,10 +166,12 @@ export const STRINGS = {
     'mt.retry': 'Retry',
     'mt.unsupported': 'This content language is not supported',
     'mt.failed': 'Translation failed',
-    // Settings - Experimental
-    'settings.experimental': 'Experimental',
-    'settings.mtExperimental': 'Browser-side machine translation (beta)',
-    'settings.mtExperimentalDesc': 'Japanese translation on article/question detail pages. Machine translation quality is limited; use at your own discretion.',
+    // Settings - Developer (was Experimental)
+    'settings.experimental': 'Experimental', // kept (unused)
+    'settings.developer': 'Developer',
+    'settings.mtExperimental': 'AI machine translation (beta)',
+    'settings.mtExperimentalDesc': 'Translate articles and questions with AI. Quality depends on server model.',
+    'settings.translationModel': 'Translation model',
     // Publish-success toast (top-right)
     'toast.articlePublished': 'Article published',
     'toast.questionPublished': 'Question posted',
@@ -231,6 +236,7 @@ export const STRINGS = {
     'about.runtime': 'Runtime',
     'about.unknown': '(no commit info)',
     'about.close': 'Close',
+    'about.translationModel': 'Translation model',
     'pwa.updateAvailable': 'A new version is available',
     'pwa.offlineReady': 'Ready to work offline',
     'pwa.reload': 'Reload',

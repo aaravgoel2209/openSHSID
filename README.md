@@ -40,7 +40,7 @@
 
 ---
 
-## 🚀 快速开始
+##  快速开始
 
 ### 环境要求
 
@@ -88,7 +88,7 @@ docker compose up -d
 
 ---
 
-## 🏗️ 技术栈
+##  技术栈
 
 | 层 | 技术 |
 |---|---|
@@ -99,7 +99,7 @@ docker compose up -d
 
 架构概览：**Django**（REST API）与 **Flask**（AI 服务）双后端，共享 `config.json` 配置与 `REI_SESSION_SECRET` 密钥；**React** 前端一套代码构建 Web / PWA / Electron / Cordova 四种形态。
 
-## 📄 文档
+##  文档
 
 完整技术文档见 [`documentation/`](documentation/README.md)，包含中英双语、按模块拆分：
 
@@ -115,7 +115,7 @@ docker compose up -d
 
 ---
 
-## 📌 开发须知
+##  开发须知
 
 ### Commit 规范
 
@@ -142,8 +142,26 @@ Alpha a0.6.3 part2 p1 fixed cordova android preparing for ios
 
 ---
 
-## 📝 说明
+##  说明
 
 - 项目处于 **Alpha** 阶段（当前 `a0.7.0`），部分默认配置面向开发环境，公网部署前请参考文档「已知限制」一节加固
 - 详细部署与运维细节见 [`documentation/`](documentation/README.md)
-- 本项目准备使用GPL license v3 
+- 本项目使用GPL license v3 
+
+## 条款
+   
+ OpenSHSID - A opensource web project for SHSID 
+    Copyright (C) 2026  The OpenSHSID Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
